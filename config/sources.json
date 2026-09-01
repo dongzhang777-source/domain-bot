@@ -19,5 +19,33 @@
     "url": "https://api.github.com/search/repositories?q=topic:llm+created:%3E2026-08-25&sort=stars&order=desc&per_page=15",
     "weight": 0.5,
     "enabled": true
+  },
+  {
+    "id": "exa-llm-news",
+    "type": "exa",
+    "url": "large language model inference agent news this week",
+    "weight": 0.6,
+    "enabled": true
+  },
+  {
+    "id": "hf-daily-papers",
+    "type": "jina",
+    "url": "https://huggingface.co/papers",
+    "weight": 0.6,
+    "enabled": true
+  },
+  {
+    "id": "v2ex-hot",
+    "type": "v2ex",
+    "url": "https://www.v2ex.com/api/topics/hot.json",
+    "weight": 0.2,
+    "enabled": true
+  },
+  {
+    "id": "bili-llm",
+    "type": "bili",
+    "url": "大模型 最新",
+    "weight": 0.2,
+    "enabled": true
   }
 ]

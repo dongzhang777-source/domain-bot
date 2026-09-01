@@ -83,4 +83,20 @@ describe('e2e: 采集 → 提炼 → 记忆 → 推送 → 反馈 → 进化', (
     const sourceOfCluster = resolved.source
     expect(next[sourceOfCluster]!).toBeGreaterThan(sources.find((s) => s.id === sourceOfCluster)!.weight)
   })
+
+  it('每源配额：单一密集源不得霸占全部推送位', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-e2e-'))
+    const rssFlood = `<?xml version="1.0"?><rss><channel>${Array.from({ length: 8 }, (_, i) =>
+      `<item><title>LLM inference benchmark study number ${i} with open source release</title><description>llm inference outperform SOTA benchmark release ${i}</description><link>https://e.com/r${i}</link></item>`).join('')}</channel></rss>`
+    const fetchFn = async (url: string) => ({
+      ok: true,
+      status: 200,
+      text: async () => (String(url).includes('api.github.com') ? GH_JSON : rssFlood),
+    })
+    const r = await runOnce({ domain, sources, memoryDir: join(dir, 'memory'), fetchFn, now: 3000 })
+    const bySource = new Map<string, number>()
+    for (const c of r.digest!.clusters) for (const it of c.items) bySource.set(it.source, (bySource.get(it.source) ?? 0) + 1)
+    expect(bySource.get('rss-1')).toBeLessThanOrEqual(3)
+    expect(bySource.get('gh-1')).toBeGreaterThanOrEqual(1)
+  })
 })

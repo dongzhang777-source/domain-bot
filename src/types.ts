@@ -41,7 +41,8 @@ export interface FeedbackRecord {
 
 export interface SourceConfig {
   id: string
-  type: 'rss' | 'github'
+  /** exa 的 url 字段放搜索词；bili 同理；jina 放目标网页 URL */
+  type: 'rss' | 'github' | 'exa' | 'v2ex' | 'bili' | 'jina'
   url: string
   weight: number
   enabled: boolean
@@ -59,3 +60,8 @@ export type FetchFn = (
   url: string,
   init?: RequestInit,
 ) => Promise<{ ok: boolean; status?: number; text: () => Promise<string> }>
+
+export type SpawnFn = (
+  cmd: string,
+  args: string[],
+) => Promise<{ stdout: string; stderr: string }>

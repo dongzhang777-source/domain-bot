@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applySourceWeight, selectSources, sourceValue, updateWeights } from '../src/memory/evolve.js'
+import { applySourceWeight, sourceValue, updateWeights } from '../src/memory/evolve.js'
 import type { SourceConfig } from '../src/types.js'
 
 const sources: SourceConfig[] = [
@@ -28,18 +28,5 @@ describe('evolve', () => {
   it('有效分随源权重放大', () => {
     expect(applySourceWeight(0.8, 1)).toBeCloseTo(1.2, 10)
     expect(applySourceWeight(0.8, 0)).toBeCloseTo(0.4, 10)
-  })
-
-  it('ε-greedy：最高权重源必采，低权重源按概率探索', () => {
-    const always = selectSources(sources, 0.15, () => 0.99)
-    expect(always.fetched.map((s) => s.id)).toContain('good')
-    expect(always.fetched.map((s) => s.id)).not.toContain('off')
-
-    const allIn = selectSources(sources, 0.15, () => 0)
-    expect(allIn.fetched).toHaveLength(2)
-    expect(allIn.skipped).toHaveLength(0)
-
-    const noExplore = selectSources(sources, 0.15, () => 0.99)
-    expect(noExplore.skipped.map((s) => s.id)).toContain('noisy')
   })
 })

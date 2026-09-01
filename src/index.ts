@@ -1,14 +1,15 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { Digest, DomainConfig, FetchFn, ScoredItem, SourceConfig } from './types.js'
+import type { Digest, DomainConfig, FetchFn, ScoredItem, SourceConfig, SpawnFn } from './types.js'
 import { dedupe } from './collector/dedupe.js'
 import { fetchRss } from './collector/adapters/rss.js'
 import { fetchGithub } from './collector/adapters/github.js'
+import { fetchBili, fetchExa, fetchJina, fetchV2ex } from './collector/adapters/agentreach.js'
 import { filterRelevant } from './refinery/filter.js'
 import { makeScorerFromEnv } from './refinery/scorer.js'
 import { buildClusters } from './refinery/cluster.js'
 import { MemoryStore } from './memory/store.js'
-import { applySourceWeight, selectSources } from './memory/evolve.js'
+import { applySourceWeight } from './memory/evolve.js'
 import { pushFile } from './push/file.js'
 import { sendDigestTelegram } from './push/telegram.js'
 
@@ -19,6 +20,7 @@ export interface RunOptions {
   outDir?: string
   telegram?: { token: string; chatId: string }
   fetchFn?: FetchFn
+  spawnFn?: SpawnFn
   now?: number
 }
 
@@ -38,13 +40,15 @@ export interface RunResult {
 export async function runOnce(opts: RunOptions): Promise<RunResult> {
   const now = opts.now ?? Date.now()
   const store = new MemoryStore(opts.memoryDir)
-  const { fetched, skipped } = selectSources(opts.sources)
+  // 全量抓取：源数量少且免登录，逐一尝试，单源失败不阻塞；权重只影响排序（applySourceWeight）
+  const enabled = opts.sources.filter((s) => s.enabled)
+  const skipped: SourceConfig[] = []
 
   const collected: ScoredItem[] = []
   let collectedCount = 0
-  for (const source of fetched) {
+  for (const source of enabled) {
     try {
-      const items = source.type === 'github' ? await fetchGithub(source, opts.fetchFn) : await fetchRss(source, opts.fetchFn)
+      const items = await collectSource(source, opts.fetchFn, opts.spawnFn)
       collectedCount += items.length
       collected.push(...items.map((i) => ({ ...i, valueScore: 0, isNew: false, reason: '' })))
     } catch (err) {
@@ -67,7 +71,18 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
   }))
   scored = scored.filter((s) => s.valueScore >= opts.domain.scoreThreshold * 0.5)
   scored.sort((a, b) => b.valueScore - a.valueScore)
-  scored = scored.slice(0, opts.domain.maxPerDigest)
+  // 每源配额：arXiv 类关键词密集源不得霸占全部推送位，保证渠道多样性
+  const perSourceCap = Math.max(2, Math.ceil(opts.domain.maxPerDigest / 2))
+  const perSourceCount = new Map<string, number>()
+  const diversified: ScoredItem[] = []
+  for (const item of scored) {
+    const used = perSourceCount.get(item.source) ?? 0
+    if (used >= perSourceCap) continue
+    perSourceCount.set(item.source, used + 1)
+    diversified.push(item)
+    if (diversified.length >= opts.domain.maxPerDigest) break
+  }
+  scored = diversified
 
   const digestId = now.toString(36)
   const digest: Digest = {
@@ -111,6 +126,24 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
       pushed: digest.clusters.length,
       skippedSources: skipped.map((s) => s.id),
     },
+  }
+}
+
+/** 按源类型路由到对应适配器（RSS/Atom/arXiv、GitHub、Agent-Reach 免登录通道）。 */
+async function collectSource(source: SourceConfig, fetchFn?: FetchFn, spawnFn?: SpawnFn) {
+  switch (source.type) {
+    case 'rss':
+      return fetchRss(source, fetchFn)
+    case 'github':
+      return fetchGithub(source, fetchFn)
+    case 'exa':
+      return fetchExa(source, spawnFn)
+    case 'v2ex':
+      return fetchV2ex(source, fetchFn)
+    case 'bili':
+      return fetchBili(source, spawnFn)
+    case 'jina':
+      return fetchJina(source, fetchFn, process.env.DOMAIN_BOT_JINA_API_KEY || undefined)
   }
 }
 
