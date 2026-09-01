@@ -66,6 +66,16 @@ describe('HeuristicScorer', () => {
     const [seven] = await scorer.score([item('k1 k2 k3 k4 k5 k6 k7 release benchmark sota outperform beat', '')], d)
     expect(seven!.valueScore).toBeLessThan(1)
   })
+
+  it('signalWords 可从 config 覆盖（换领域不需改代码）', async () => {
+    const scorer = new HeuristicScorer()
+    const custom: DomainConfig = { ...domain, signalWords: ['涨价', '断供'] }
+    const [hit, miss] = await scorer.score([
+      item('llm 芯片涨价', ''), item('llm release benchmark sota', ''),
+    ], custom)
+    // 内置英文信号词已失效，自定义中文信号词生效
+    expect(hit!.valueScore).toBeGreaterThan(miss!.valueScore)
+  })
 })
 
 describe('LlmScorer', () => {
