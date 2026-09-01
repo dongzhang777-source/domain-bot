@@ -1,0 +1,22 @@
+{
+  "name": "domain-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "自进化领域专家 bot —— 千 bot 工厂需求命题的假门测试探针",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "start": "npm run build && node dist/index.js --once",
+    "loop": "npm run build && node dist/index.js"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

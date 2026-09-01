@@ -1,0 +1,4 @@
+{
+  "channel": "file",
+  "outDir": "outbox"
+}

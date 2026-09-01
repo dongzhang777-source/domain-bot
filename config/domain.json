@@ -1,0 +1,25 @@
+{
+  "domain": "ai-llm",
+  "keywords": [
+    "llm",
+    "large language model",
+    "ai agent",
+    "inference",
+    "fine-tune",
+    "fine-tuning",
+    "benchmark",
+    "embedding",
+    "rag",
+    "retrieval",
+    "transformer",
+    "reasoning model",
+    "tokenizer",
+    "quantization",
+    "on-device ai",
+    "edge ai",
+    " multimodal "
+  ],
+  "scoreThreshold": 0.45,
+  "maxPerDigest": 6,
+  "clusterThreshold": 0.35
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "arxiv-cs-ai",
+    "type": "rss",
+    "url": "http://export.arxiv.org/rss/cs.AI",
+    "weight": 0.5,
+    "enabled": true
+  },
+  {
+    "id": "huggingface-blog",
+    "type": "rss",
+    "url": "https://huggingface.co/blog/feed.xml",
+    "weight": 0.5,
+    "enabled": true
+  },
+  {
+    "id": "github-new-llm-tools",
+    "type": "github",
+    "url": "https://api.github.com/search/repositories?q=topic:llm+created:%3E2026-08-25&sort=stars&order=desc&per_page=15",
+    "weight": 0.5,
+    "enabled": true
+  }
+]
