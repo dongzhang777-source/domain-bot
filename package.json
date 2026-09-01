@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "start": "npm run build && node dist/index.js --once",
-    "loop": "npm run build && node dist/index.js"
+    "loop": "npm run build && node dist/index.js",
+    "snapshot": "node scripts/snapshot-evidence.mjs"
   },
   "dependencies": {
     "fast-xml-parser": "^4.5.0"
