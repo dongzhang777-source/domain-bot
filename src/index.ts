@@ -10,6 +10,8 @@ import { makeScorerFromEnv } from './refinery/scorer.js'
 import { buildClusters } from './refinery/cluster.js'
 import { MemoryStore } from './memory/store.js'
 import { applySourceWeight } from './memory/evolve.js'
+import { refreshWeights } from './memory/weights.js'
+import { pollFeedback } from './feedback/receiver.js'
 import { pushFile } from './push/file.js'
 import { sendDigestTelegram } from './push/telegram.js'
 
@@ -62,7 +64,8 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
 
   const scorer = makeScorerFromEnv()
   const scores = await scorer.score(relevant, opts.domain)
-  const weightOf = new Map(opts.sources.map((s) => [s.id, s.weight]))
+  // 权重优先级：memory/weights.json（已学到）> config/sources.json（首次先验）
+  const weightOf = new Map(Object.entries(refreshWeights(store, opts.sources)))
 
   // 过滤用原始分：源权重只应影响排序，不该把低权源整体挡在候选池外，
   // 否则低权源永远进不了推送 → 永远拿不到反馈 → 权重再也回不来（反馈死锁）。
@@ -165,6 +168,7 @@ async function main(): Promise<void> {
   const domain = loadJson<DomainConfig>(join(root, 'config/domain.json'))
   const sources = loadJson<SourceConfig[]>(join(root, 'config/sources.json'))
   const push = loadJson<{ channel: string; outDir: string }>(join(root, 'config/push.json'))
+  const memoryDir = join(root, 'memory')
 
   const once = process.argv.includes('--once')
   const telegram =
@@ -172,9 +176,20 @@ async function main(): Promise<void> {
       ? { token: process.env.DOMAIN_BOT_TELEGRAM_TOKEN, chatId: process.env.DOMAIN_BOT_TELEGRAM_CHAT_ID }
       : undefined
 
-  const pollMs = Number(process.env.DOMAIN_BOT_POLL_MS) || 3_600_000
+  const pollMs = Number(process.env.DOMAIN_BOT_POLL_MS) || 86_400_000   // 默认每天 1 轮（裁决 R9）
+
+  // 常驻反馈接收：Telegram 👍/👎 → feedback.json → weights.json。--once 模式不起。
+  if (telegram && !once) {
+    pollFeedback(
+      { token: telegram.token, store: new MemoryStore(memoryDir), sources },
+      { onError: (e) => console.error('[feedback] 轮询异常（5s 后重试）:', e instanceof Error ? e.message : e) },
+    ).catch((e) => console.error('[feedback] 循环意外退出:', e))
+  } else if (telegram) {
+    console.log('[feedback] --once 模式未启动回调接收；本轮的 👍/👎 将在下次常驻运行时入账')
+  }
+
   do {
-    const result = await runOnce({ domain, sources, memoryDir: join(root, 'memory'), outDir: push.outDir, telegram })
+    const result = await runOnce({ domain, sources, memoryDir, outDir: push.outDir, telegram })
     console.log(
       `[run] 采集 ${result.stats.collected} → 去重删 ${result.stats.deduped} → 相关 ${result.stats.relevant} → 推送 ${result.stats.pushed} 簇`,
       result.pushedPaths,
