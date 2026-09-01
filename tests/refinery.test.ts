@@ -37,6 +37,35 @@ describe('HeuristicScorer', () => {
     expect(strong.valueScore).toBeGreaterThan(weak.valueScore)
     expect(strong.valueScore).toBeLessThanOrEqual(1)
   })
+
+  it('打分不饱和：典型 arXiv 摘要不得触顶，且四个质量档位可区分', async () => {
+    const scorer = new HeuristicScorer()
+    const realDomain: DomainConfig = { ...domain, keywords: [
+      'llm', 'large language model', 'inference', 'benchmark', 'transformer',
+      'rag', 'retrieval', 'quantization', 'reasoning model', 'tokenizer',
+    ] }
+    const [arxiv, mid, press, weak] = await scorer.score([
+      item('Attention Is All You Need Revisited: Efficient Transformer Inference',
+        'We present a new benchmark for large language model inference with quantization and retrieval augmented generation. Our open source release outperforms SOTA on reasoning model tasks.'),
+      item('A survey of retrieval augmented generation for llm', 'We review rag pipelines.'),
+      item('New model release: open source llm beats SOTA on inference benchmark',
+        'breakthrough outperform state-of-the-art open-source release benchmark'),
+      item('Notes on tokenizer design', 'Some details.'),
+    ], realDomain)
+    // 旧公式下 arxiv 与 press 都是 1.000（零区分度）
+    expect(arxiv!.valueScore).toBeLessThan(0.99)
+    expect(press!.valueScore).toBeLessThan(0.99)
+    expect(arxiv!.valueScore).toBeGreaterThan(press!.valueScore)
+    expect(press!.valueScore).toBeGreaterThan(mid!.valueScore)
+    expect(mid!.valueScore).toBeGreaterThan(weak!.valueScore)
+  })
+
+  it('饱和点上移：7 个关键词命中不得触顶 1.0', async () => {
+    const scorer = new HeuristicScorer()
+    const d: DomainConfig = { ...domain, keywords: ['k1','k2','k3','k4','k5','k6','k7','k8','k9'] }
+    const [seven] = await scorer.score([item('k1 k2 k3 k4 k5 k6 k7 release benchmark sota outperform beat', '')], d)
+    expect(seven!.valueScore).toBeLessThan(1)
+  })
 })
 
 describe('LlmScorer', () => {

@@ -21,11 +21,15 @@ export class HeuristicScorer implements Scorer {
   private signals = ['release', 'benchmark', 'sota', 'state-of-the-art', 'outperform', 'beat', 'open source', 'open-source', 'new model', 'breakthrough', 'surpass']
 
   async score(items: RawItem[], domain: DomainConfig): Promise<ScoreResult[]> {
+    const signals = domain.signalWords?.length ? domain.signalWords : this.signals
     return items.map((item) => {
       const hay = ' ' + normalizeText(item.title + ' ' + item.body) + ' '
       const kwHits = domain.keywords.filter((k) => hay.includes(normalizeText(k))).length
-      const signalHits = this.signals.filter((s) => hay.includes(s)).length
-      const valueScore = Math.min(1, 0.3 + 0.15 * kwHits + 0.12 * signalHits)
+      const signalHits = signals.filter((s) => hay.includes(normalizeText(s))).length
+      // sqrt 压缩：命中数边际递减，避免关键词密集源（arXiv 摘要长）一律触顶 1.0
+      const kwPart = Math.min(1, Math.sqrt(kwHits) / Math.sqrt(8))
+      const sigPart = Math.min(1, Math.sqrt(signalHits) / Math.sqrt(6))
+      const valueScore = 0.25 + 0.5 * kwPart + 0.25 * sigPart
       const reason = `关键词命中 ${kwHits}，信号词命中 ${signalHits}`
       return { valueScore, reason }
     })

@@ -51,6 +51,8 @@ export interface SourceConfig {
 export interface DomainConfig {
   domain: string
   keywords: string[]
+  /** 领域无关的"有新闻价值"信号词；缺省时回落到 HeuristicScorer 内置列表 */
+  signalWords?: string[]
   scoreThreshold: number
   maxPerDigest: number
   clusterThreshold: number
