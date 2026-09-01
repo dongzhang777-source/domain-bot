@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { Digest, DomainConfig, FetchFn, ScoredItem, SourceConfig, SpawnFn } from './types.js'
+import type { Digest, DomainConfig, FetchFn, RawItem, ScoredItem, SourceConfig, SpawnFn } from './types.js'
 import { dedupe } from './collector/dedupe.js'
 import { fetchRss } from './collector/adapters/rss.js'
 import { fetchGithub } from './collector/adapters/github.js'
@@ -63,13 +63,22 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
   const scorer = makeScorerFromEnv()
   const scores = await scorer.score(relevant, opts.domain)
   const weightOf = new Map(opts.sources.map((s) => [s.id, s.weight]))
-  let scored: ScoredItem[] = relevant.map((item, i) => ({
+
+  // 过滤用原始分：源权重只应影响排序，不该把低权源整体挡在候选池外，
+  // 否则低权源永远进不了推送 → 永远拿不到反馈 → 权重再也回不来（反馈死锁）。
+  const passed: Array<{ item: RawItem; raw: number; reason: string }> = []
+  for (let i = 0; i < relevant.length; i++) {
+    const s = scores[i]!
+    if (s.valueScore >= opts.domain.scoreThreshold) passed.push({ item: relevant[i]!, raw: s.valueScore, reason: s.reason })
+  }
+
+  // 排序用加权分（Task 8 会把 weightOf 换成持久化权重，Task 10 会在这里插入新颖性因子）
+  let scored: ScoredItem[] = passed.map(({ item, raw, reason }) => ({
     ...item,
-    valueScore: applySourceWeight(scores[i].valueScore, weightOf.get(item.source) ?? 0.5),
+    valueScore: applySourceWeight(raw, weightOf.get(item.source) ?? 0.5),
     isNew: store.isNovel(item),
-    reason: scores[i].reason,
+    reason,
   }))
-  scored = scored.filter((s) => s.valueScore >= opts.domain.scoreThreshold * 0.5)
   scored.sort((a, b) => b.valueScore - a.valueScore)
   // 每源配额：arXiv 类关键词密集源不得霸占全部推送位，保证渠道多样性
   const perSourceCap = Math.max(2, Math.ceil(opts.domain.maxPerDigest / 2))

@@ -84,6 +84,38 @@ describe('e2e: 采集 → 提炼 → 记忆 → 推送 → 反馈 → 进化', (
     expect(next[sourceOfCluster]!).toBeGreaterThan(sources.find((s) => s.id === sourceOfCluster)!.weight)
   })
 
+  it('scoreThreshold 真的生效：调高门槛必须清空推送', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-th-'))
+    // ⚠️ 两轮必须用不同 memoryDir。共用会让第一轮归档把第二轮 dedupe 清零，
+    //    测试将因错误的原因通过（改代码前它也是绿的），红灯步骤失效。
+    const loose = await runOnce({
+      domain: { ...domain, scoreThreshold: 0.1 }, sources,
+      memoryDir: join(dir, 'm1'), outDir: join(dir, 'a'), fetchFn: mockFetch(), now: 1000,
+    })
+    const strict = await runOnce({
+      domain: { ...domain, scoreThreshold: 0.99 }, sources,
+      memoryDir: join(dir, 'm2'), outDir: join(dir, 'b'), fetchFn: mockFetch(), now: 1000,
+    })
+    expect(loose.stats.pushed).toBeGreaterThan(0)
+    expect(strict.stats.pushed).toBe(0)
+  })
+
+  it('过滤用原始分：权重被压到 0 的源仍留在候选池（防反馈死锁）', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-dl-'))
+    const lopsided: SourceConfig[] = [
+      { id: 'rss-1', type: 'rss', url: 'http://e/rss', weight: 0, enabled: true },
+      { id: 'gh-1', type: 'github', url: 'https://api.github.com/search/x', weight: 0.9, enabled: true },
+    ]
+    const r = await runOnce({ domain, sources: lopsided, memoryDir: join(dir, 'memory'), outDir: join(dir, 'o'), fetchFn: mockFetch(), now: 1000 })
+    // rss 原始分 0.7282 ≥ 0.45 → 该进候选池；但加权后 0.7282×0.5 = 0.364 < 0.45。
+    // 若过滤错用加权分，rss-1 会被整体挡掉 → 永远拿不到反馈 → 权重再也回不来。
+    expect(r.stats.relevant).toBe(3)
+    const mem = JSON.parse(readFileSync(join(dir, 'memory', 'archive.json'), 'utf8')) as {
+      entries: Array<{ source: string }>
+    }
+    expect(mem.entries.some((e) => e.source === 'rss-1')).toBe(true)
+  })
+
   it('每源配额：单一密集源不得霸占全部推送位', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'dbot-e2e-'))
     const rssFlood = `<?xml version="1.0"?><rss><channel>${Array.from({ length: 8 }, (_, i) =>
