@@ -48,6 +48,12 @@ describe('MemoryStore', () => {
     expect(s2.feedbackBySource()).toEqual({ 'rss-1': { up: 0, down: 1 }, 'gh-1': { up: 1, down: 0 } })
   })
 
+  it('权重持久化：saveWeights 后新实例能读回', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-w-'))
+    new MemoryStore(dir).saveWeights({ s1: 0.72 }, 3)
+    expect(new MemoryStore(dir).weightsState()).toEqual({ weights: { s1: 0.72 }, processedFeedback: 3 })
+  })
+
   it('digestRef 登记/解析', () => {
     const store = tempStore()
     store.registerDigestRef('d1:0', 'd1', 'item-1', 'rss-1')

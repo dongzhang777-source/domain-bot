@@ -1,0 +1,155 @@
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { jaccard, tokenize } from '../collector/dedupe.js'
+import type { FeedbackRecord, FeedbackSignal, RawItem, ScoredItem } from '../types.js'
+
+export interface ArchiveEntry {
+  id: string
+  title: string
+  url: string
+  source: string
+  firstSeenAt: number
+  lastSeenAt: number
+  hitCount: number
+}
+
+interface Archive {
+  entries: ArchiveEntry[]
+  /** 推送时登记的 ref → 条目映射，供 Telegram 回调查询 */
+  digestRefs: Record<string, { digestId: string; itemId: string; source: string }>
+}
+
+export interface WeightsState {
+  weights: Record<string, number>
+  /** 已参与权重计算的反馈条数；闸门，防止无新反馈时反复向先验回归 */
+  processedFeedback: number
+}
+
+const MAX_ENTRIES = 2000
+
+/** JSON 文件记忆库：归档（新颖性判定）+ 反馈信号 + digest 引用。可导出、可人工修正（直接改 JSON）。 */
+export class MemoryStore {
+  private archive: Archive = { entries: [], digestRefs: {} }
+  private feedback: FeedbackRecord[] = []
+  private tokenCache = new Map<string, Set<string>>()
+  private weights: WeightsState = { weights: {}, processedFeedback: 0 }
+
+  constructor(private dir: string) {
+    mkdirSync(dir, { recursive: true })
+    this.load()
+  }
+
+  private load(): void {
+    try {
+      this.archive = JSON.parse(readFileSync(join(this.dir, 'archive.json'), 'utf8')) as Archive
+    } catch {
+      /* 首次运行无归档 */
+    }
+    try {
+      this.feedback = JSON.parse(readFileSync(join(this.dir, 'feedback.json'), 'utf8')) as FeedbackRecord[]
+    } catch {
+      /* 首次运行无反馈 */
+    }
+    try {
+      this.weights = JSON.parse(readFileSync(join(this.dir, 'weights.json'), 'utf8')) as WeightsState
+    } catch {
+      /* 首次运行无权重 */
+    }
+  }
+
+  private saveArchive(): void {
+    writeFileSync(join(this.dir, 'archive.json'), JSON.stringify(this.archive, null, 2))
+  }
+
+  private saveFeedback(): void {
+    writeFileSync(join(this.dir, 'feedback.json'), JSON.stringify(this.feedback, null, 2))
+  }
+
+  weightsState(): WeightsState {
+    return { weights: { ...this.weights.weights }, processedFeedback: this.weights.processedFeedback }
+  }
+
+  saveWeights(weights: Record<string, number>, processedFeedback: number): void {
+    this.weights = { weights: { ...weights }, processedFeedback }
+    writeFileSync(join(this.dir, 'weights.json'), JSON.stringify(this.weights, null, 2))
+  }
+
+  feedbackCount(): number {
+    return this.feedback.length
+  }
+
+  knownIds(): Set<string> {
+    return new Set(this.archive.entries.map((e) => e.id))
+  }
+
+  /** 新颖性判定：与归档条目标题的最大 jaccard < 阈值即为新信息。 */
+  isNovel(item: RawItem, threshold = 0.7): boolean {
+    const tokens = tokenize(item.title)
+    for (const e of this.archive.entries) {
+      let cached = this.tokenCache.get(e.id)
+      if (!cached) {
+        cached = tokenize(e.title)
+        this.tokenCache.set(e.id, cached)
+      }
+      if (jaccard(cached, tokens) >= threshold) return false
+    }
+    return true
+  }
+
+  /** 把本轮入库条目写入归档；已存在的只刷新 lastSeenAt/hitCount。 */
+  recordItems(items: ScoredItem[], now: number): void {
+    const byId = new Map(this.archive.entries.map((e) => [e.id, e]))
+    for (const item of items) {
+      const existing = byId.get(item.id)
+      if (existing) {
+        existing.lastSeenAt = now
+        existing.hitCount++
+      } else {
+        const entry: ArchiveEntry = {
+          id: item.id,
+          title: item.title,
+          url: item.url,
+          source: item.source,
+          firstSeenAt: now,
+          lastSeenAt: now,
+          hitCount: 1,
+        }
+        byId.set(item.id, entry)
+        this.archive.entries.push(entry)
+      }
+    }
+    if (this.archive.entries.length > MAX_ENTRIES) {
+      this.archive.entries.sort((a, b) => b.lastSeenAt - a.lastSeenAt)
+      this.archive.entries.length = MAX_ENTRIES
+    }
+    this.saveArchive()
+  }
+
+  registerDigestRef(ref: string, digestId: string, itemId: string, source: string): void {
+    this.archive.digestRefs[ref] = { digestId, itemId, source }
+    this.saveArchive()
+  }
+
+  resolveRef(ref: string): { digestId: string; itemId: string; source: string } | undefined {
+    return this.archive.digestRefs[ref]
+  }
+
+  recordFeedback(fb: FeedbackRecord): void {
+    this.feedback.push(fb)
+    this.saveFeedback()
+  }
+
+  feedbackBySource(): Record<string, { up: number; down: number }> {
+    const stats: Record<string, { up: number; down: number }> = {}
+    for (const fb of this.feedback) {
+      stats[fb.source] ??= { up: 0, down: 0 }
+      stats[fb.source][fb.signal]++
+    }
+    return stats
+  }
+
+  /** 导出全部记忆（人工审查/迁移用）。 */
+  export(): { archive: Archive; feedback: FeedbackRecord[] } {
+    return { archive: this.archive, feedback: this.feedback }
+  }
+}

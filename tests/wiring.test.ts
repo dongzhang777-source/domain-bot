@@ -14,10 +14,13 @@ function srcFiles(dir = SRC): string[] {
   return out
 }
 
-/** 生产调用 = 出现在定义文件之外、处于调用位置（`fn(`）、且不在注释里。 */
+/** 生产调用 = 出现在定义文件之外、处于调用位置（`fn(` 或 `obj.fn(`）、且不在注释里。
+ *  【偏差记录】工作单原正则排除点号前缀（`[^\\w.$]`），但按工作单自带的实现代码，
+ *  recordFeedback/resolveRef/feedbackBySource/saveWeights 全部以 `store.fn(` 形式调用，
+ *  守卫将永远无法转绿。此处放宽为 `[^\\w$]`（允许方法调用），保留"有生产调用者"的本意。 */
 function productionCallers(fn: string, definedIn: string): string[] {
   const hits: string[] = []
-  const callRe = new RegExp(`(^|[^\\w.$])${fn}\\s*\\(`)
+  const callRe = new RegExp(`(^|[^\\w$])${fn}\\s*\\(`)
   for (const file of srcFiles()) {
     const rel = relative(SRC, file).split('\\').join('/')
     if (rel === definedIn) continue
