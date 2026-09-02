@@ -1,0 +1,26 @@
+验收完成。报告已落盘至 `docs/reviews/2026-09-02-p0p-review-hy3.md`（173 行，未提交，遵守只读+禁 commit 契约）。
+
+## 总判断：带条件通过
+
+**P0' 七项修复经本人独立复现全部有效，D 三否决基本闭合，自述零虚报。**
+
+### 六项必做验证（均贴原始输出于报告）
+1. `build` 通过；`vitest` **75 passed / 13 files** — 与自述一致
+2. 自写 V1 探针（长驻 store + 后续写 ref + 真实回调）→ `recorded`；删后 `git status` 干净
+3. 变异 `if (telegram && !once)`→`if (false)`：wiring **1 failed | 10 passed**（第 3 条守卫红），还原后 11 passed
+4. 自写闸门探针：同条 feedback 改 signal（条数不变）→ 权重响应、`feedbackHash` 变更
+5. `observations.jsonl` 末行含全部 `RoundObservation` 字段（含 `skippedSources`/`rawP50/rawTop1`/`saturationRate` 原始分/`isNewRate`）
+6. A1–A7 七项声称逐条到代码/产物核实，全 ✅
+
+### 关键发现
+- **V1 彻底闭合**；**V2 针对 D 演示场景闭合**（残文本守卫天花板）；**V3 修二缓一**（盲区1/3 修，盲区2 以 raw 读数缓解，盲区4「源活但结构性零产出」仍无仪器）。
+- **真正风险在「仪表刻度」而非「代码」**：`observations` 末行与 `evidence-latest.md` 均 `feedbackCount: 0`——至今零真实反馈流过系统。75 全绿验证的是测试有效性，非系统有效性。缺 Telegram token + 真人点击 + 老张签字的判定线，探针仍不能证伪产品命题。
+- 残险：每回调全量重载（扩展性债）、**多实例并发写会丢 feedback/weights**（无单实例锁）、`candidateP50` 仍记加权分需靠操作员自觉看 raw。
+
+### 四个条件（报告详列）
+1. P0：补「main 运行时真 invoke pollFeedback」可达性测试
+2. P1：加单实例锁
+3. P-1：判定线须老张签字定稿（补中间地带/冲突优先级/可测遥测）
+4. P0 前置：拿 token 并产生 ≥1 条真实反馈落盘
+
+未提交、未推送，仓库除预存 `.hy3-review.log` 外仅新增本报告文件。

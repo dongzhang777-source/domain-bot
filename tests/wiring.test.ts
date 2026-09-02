@@ -55,16 +55,17 @@ describe('接线守卫：反馈回路必须在生产路径接通', () => {
 // ---- A2：启动链守卫（V2 教训：摘掉 pollFeedback 启动行，67 条测试无一会红） ----
 import { readFileSync as rf2 } from 'node:fs'
 
-describe('启动链守卫：main 必须把采集与反馈接收真正跑起来', () => {
+describe('启动链守卫：startBot 必须把采集与反馈接收真正跑起来', () => {
   const indexSrc = rf2(join(SRC, 'index.ts'), 'utf8')
-  const mainBody = indexSrc.slice(indexSrc.indexOf('async function main()'))
+  const mainBody = indexSrc.slice(indexSrc.indexOf('export async function startBot'))
 
   it('main 内必须调用 runOnce（否则采集管线不启动）', () => {
     expect(mainBody).toMatch(/\brunOnce\s*\(/)
   })
 
-  it('main 内必须在常驻分支调用 pollFeedback（否则反馈接收端不启动，按钮按了没人听）', () => {
-    expect(mainBody).toMatch(/pollFeedback\s*\(/)
+  it('startBot 内必须在常驻分支调用反馈接收（startFeedback，默认实现即 pollFeedback）', () => {
+    expect(mainBody).toMatch(/startFeedback\s*\(/)
+    expect(mainBody).toMatch(/pollFeedbackFn\s*\?\?\s*pollFeedback/)
   })
 
   it('常驻分支的启动条件必须包含 telegram 判定（无 token 不该崩，有 token 不该跳过）', () => {

@@ -16,6 +16,7 @@ import { refreshWeights } from './memory/weights.js'
 import { pollFeedback } from './feedback/receiver.js'
 import { pushFile } from './push/file.js'
 import { sendDigestTelegram } from './push/telegram.js'
+import { acquireLock, releaseLock } from './runtime/lock.js'
 
 export interface RunOptions {
   domain: DomainConfig
@@ -195,20 +196,51 @@ async function main(): Promise<void> {
   const domain = loadJson<DomainConfig>(join(root, 'config/domain.json'))
   const sources = loadJson<SourceConfig[]>(join(root, 'config/sources.json'))
   const push = loadJson<{ outDir: string }>(join(root, 'config/push.json'))
-  const memoryDir = join(root, 'memory')
 
-  const once = process.argv.includes('--once')
-  const telegram =
-    process.env.DOMAIN_BOT_TELEGRAM_TOKEN && process.env.DOMAIN_BOT_TELEGRAM_CHAT_ID
-      ? { token: process.env.DOMAIN_BOT_TELEGRAM_TOKEN, chatId: process.env.DOMAIN_BOT_TELEGRAM_CHAT_ID }
-      : undefined
+  await startBot({
+    domain,
+    sources,
+    memoryDir: join(root, 'memory'),
+    outDir: push.outDir,
+    telegram:
+      process.env.DOMAIN_BOT_TELEGRAM_TOKEN && process.env.DOMAIN_BOT_TELEGRAM_CHAT_ID
+        ? { token: process.env.DOMAIN_BOT_TELEGRAM_TOKEN, chatId: process.env.DOMAIN_BOT_TELEGRAM_CHAT_ID }
+        : undefined,
+    once: process.argv.includes('--once'),
+    pollMs: Number(process.env.DOMAIN_BOT_POLL_MS) || 86_400_000,   // 默认每天 1 轮（裁决 R9）
+  }).catch((err) => {
+    console.error(err)
+    process.exit(1)
+  })
+}
 
-  const pollMs = Number(process.env.DOMAIN_BOT_POLL_MS) || 86_400_000   // 默认每天 1 轮（裁决 R9）
+export interface StartBotOptions {
+  domain: DomainConfig
+  sources: SourceConfig[]
+  memoryDir: string
+  outDir?: string
+  telegram?: { token: string; chatId: string }
+  once?: boolean
+  pollMs?: number
+  /** 测试钩子：限制轮数（默认无限） */
+  maxRounds?: number
+  fetchFn?: FetchFn
+  spawnFn?: SpawnFn
+  /** 测试钩子：注入 pollFeedback 替身，验证运行时可达性（hy3 条件 1） */
+  pollFeedbackFn?: typeof pollFeedback
+}
+
+export async function startBot(opts: StartBotOptions): Promise<void> {
+  const { domain, sources, memoryDir, outDir, telegram, once = false, pollMs = 86_400_000 } = opts
+  const startFeedback = opts.pollFeedbackFn ?? pollFeedback
+
+  // 单实例锁（hy3 条件 2）：loop + --once 并发写同一 memoryDir 会 last-writer-wins 丢反馈
+  acquireLock(memoryDir)
 
   // 常驻反馈接收：Telegram 👍/👎 → feedback.json → weights.json。--once 模式不起。
   // 只传 memoryDir：接收端每次回调从盘重建 store，不持有长驻快照（V1 事故教训）。
   if (telegram && !once) {
-    pollFeedback(
+    startFeedback(
       { token: telegram.token, memoryDir, sources },
       { onError: (e) => console.error('[feedback] 轮询异常（5s 后重试）:', e instanceof Error ? e.message : e) },
     ).catch((e) => console.error('[feedback] 循环意外退出:', e))
@@ -216,15 +248,18 @@ async function main(): Promise<void> {
     console.log('[feedback] --once 模式未启动回调接收；本轮的 👍/👎 将在下次常驻运行时入账')
   }
 
+  let rounds = 0
   do {
-    const result = await runOnce({ domain, sources, memoryDir, outDir: push.outDir, telegram })
+    const result = await runOnce({ domain, sources, memoryDir, outDir, telegram, fetchFn: opts.fetchFn, spawnFn: opts.spawnFn })
     console.log(
       `[run] 采集 ${result.stats.collected} → 去重删 ${result.stats.deduped} → 相关 ${result.stats.relevant} → 推送 ${result.stats.pushed} 条`,
       result.pushedPaths,
     )
-    if (once) break
+    rounds++
+    if (once || (opts.maxRounds !== undefined && rounds >= opts.maxRounds)) break
     await new Promise((r) => setTimeout(r, pollMs))
-  } while (!once)
+  } while (true)
+  releaseLock(memoryDir)
 }
 
 // CLI 入口：被测试导入时不执行 main
