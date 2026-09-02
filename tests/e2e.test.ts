@@ -1,8 +1,10 @@
-import { mkdtempSync, readdirSync, readFileSync, existsSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, existsSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { runOnce } from '../src/index.js'
+import { processTelegramUpdate } from '../src/feedback/receiver.js'
+import { MemoryStore } from '../src/memory/store.js'
 import type { DomainConfig, SourceConfig } from '../src/types.js'
 
 const RSS_XML = `<?xml version="1.0"?><rss><channel>
@@ -166,5 +168,52 @@ describe('观测与降级', () => {
     const r = await runOnce({ domain, sources, memoryDir: join(dir, 'memory'), outDir: join(dir, 'out'), fetchFn, now: 1000 })
     expect(r.stats.skippedSources).toEqual(['rss-1'])
     expect(r.stats.collected).toBe(1)   // 只剩 github 一条
+  })
+})
+
+describe('端到端反测试（只走真实入口）', () => {
+  it('反测试：真实 Telegram 回调路径改变持久化权重，且下一轮 runOnce 自己读到', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-loop-'))
+    const memoryDir = join(dir, 'memory')
+    const r1 = await runOnce({ domain, sources, memoryDir, fetchFn: mockFetch(), now: 1000 })
+    const ref = r1.digest!.clusters[0]!.ref
+    const before = r1.observation.weights
+    const target = new MemoryStore(memoryDir).resolveRef(ref)!.source
+
+    // 只走真实回调入口：不手工调 recordFeedback / updateWeights / saveWeights
+    const res = await processTelegramUpdate(
+      { update_id: 1, callback_query: { id: 'cq', data: `fb:u:${ref}` } },
+      {
+        token: 't',
+        store: new MemoryStore(memoryDir),
+        sources,
+        fetchFn: async () => ({ ok: true, status: 200, text: async () => '{}' }),
+        now: () => 1500,
+      },
+    )
+    expect(res).toBe('recorded')
+
+    // 下一轮 runOnce 必须自己从盘上读到新权重（不是测试注入 → 不构成循环论证）
+    const r2 = await runOnce({ domain, sources, memoryDir, fetchFn: mockFetch(), now: 2000 })
+    const after = r2.observation.weights[target]!
+    expect(after).toBeGreaterThan(before[target]!)
+    const onDisk = JSON.parse(readFileSync(join(memoryDir, 'weights.json'), 'utf8')).weights[target]
+    expect(after).toBeCloseTo(onDisk, 10)          // 读到的就是盘上的，不是重算的
+    expect(existsSync(join(memoryDir, 'feedback.json'))).toBe(true)
+  })
+
+  it('反测试：手工追加 feedback.json 也驱动进化（无 Telegram 时的兜底路径）', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-manual-'))
+    const memoryDir = join(dir, 'memory')
+    const r1 = await runOnce({ domain, sources, memoryDir, fetchFn: mockFetch(), now: 1000 })
+    const resolved = new MemoryStore(memoryDir).resolveRef(r1.digest!.clusters[0]!.ref)!
+
+    // 模拟用户照 digest 里的说明手工追加一条 👎
+    writeFileSync(join(memoryDir, 'feedback.json'), JSON.stringify([
+      { itemId: resolved.itemId, digestId: resolved.digestId, source: resolved.source, signal: 'down', at: 1500 },
+    ]))
+
+    const r2 = await runOnce({ domain, sources, memoryDir, fetchFn: mockFetch(), now: 2000 })
+    expect(r2.observation.weights[resolved.source]!).toBeLessThan(0.5)   // 👎 使权重下降
   })
 })
