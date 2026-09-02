@@ -68,6 +68,11 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
 
   const known = store.knownIds()
   const { kept } = dedupe(collected, known)
+  // D3（小巴 impl 审查）：按源三段计数——fetched（活着）/ afterDedupe（有新内容）/ afterFilter（新内容相关）。
+  // 纯重复（afterDedupe=0，返回的全是已归档内容）是健康状态，不得计入 zeroYield——否则平稳期
+  // （arXiv 周末重发已归档条目）全源假触发 I-3「仪器故障」。此前的二段口径把两者合并了。
+  const sourceAfterDedupe: Record<string, number> = {}
+  for (const it of kept) sourceAfterDedupe[it.source] = (sourceAfterDedupe[it.source] ?? 0) + 1
   const { kept: relevant } = filterRelevant(kept, opts.domain)
   // B′2：按源记录过滤后产出——「采集成功但零相关」的源（v2ex/bili 类）在 skippedSources 口径下不可见（I-3 盲区）。
   const sourceRelevant: Record<string, number> = {}
@@ -139,6 +144,7 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
     feedbackCount: store.feedbackCount(),
     enabledSourceIds: enabled.map((s) => s.id),
     sourceFetched,
+    sourceAfterDedupe,
     sourceRelevant,
   })
   appendObservation(opts.memoryDir, observation)

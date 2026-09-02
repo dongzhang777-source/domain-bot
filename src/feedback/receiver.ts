@@ -91,21 +91,42 @@ export function saveOffset(memoryDir: string, offset: number): void {
   writeFileSync(offsetPath(memoryDir), JSON.stringify({ offset }, null, 2))
 }
 
-/** 常驻长轮询：单实例，收到回调即落盘。出错退避 5s 后继续，不退出。
- *  offset 每批落盘一次：崩溃丢失的只是「已处理未落盘」一段，重放部分由 recordFeedback 去重兜底。 */
+/** D2（小巴 impl 审查）：逐条确认。offset 只在该条成功后推进——此前「处理前推进」会让 Telegram 把
+ *  处理失败的 update 服务端确认删除，该条反馈永久丢失且去重兜底覆盖不到。失败重试 3 次（退避 1x/2x/3x）
+ *  仍失败则跳过并留痕：坏 update 不得卡死整条队列，跳过即该条反馈丢失（日志留痕，宁丢一条不丢一队）。 */
+export async function applyUpdates(
+  deps: ReceiverDeps,
+  updates: TelegramUpdate[],
+  opts: { onError?: (err: unknown) => void; retryDelayMs?: number } = {},
+): Promise<void> {
+  const delay = opts.retryDelayMs ?? 1000
+  let offset = loadOffset(deps.memoryDir)
+  for (const u of updates) {
+    let done = false
+    for (let attempt = 1; attempt <= 3 && !done; attempt++) {
+      try {
+        await processTelegramUpdate(u, deps)
+        done = true
+      } catch (err) {
+        opts.onError?.(err)
+        if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * delay))
+      }
+    }
+    if (!done) console.error(`[feedback] update ${u.update_id} 连续 3 次处理失败，跳过（该条反馈丢失，已留痕）`)
+    offset = Math.max(offset, u.update_id + 1)
+    saveOffset(deps.memoryDir, offset)
+  }
+}
+
+/** 常驻长轮询：单实例，收到回调即落盘。出错退避 5s 后继续，不退出。 */
 export async function pollFeedback(
   deps: ReceiverDeps,
-  opts: { onError?: (err: unknown) => void } = {},
+  opts: { onError?: (err: unknown) => void; retryDelayMs?: number } = {},
 ): Promise<never> {
-  let offset = loadOffset(deps.memoryDir)
   for (;;) {
     try {
-      const updates = await fetchUpdates(deps.token, offset, deps.fetchFn)
-      for (const u of updates) {
-        offset = Math.max(offset, u.update_id + 1)
-        await processTelegramUpdate(u, deps)
-      }
-      if (updates.length > 0) saveOffset(deps.memoryDir, offset)
+      const updates = await fetchUpdates(deps.token, loadOffset(deps.memoryDir), deps.fetchFn)
+      if (updates.length > 0) await applyUpdates(deps, updates, opts)
     } catch (err) {
       opts.onError?.(err)
       await new Promise((r) => setTimeout(r, 5000))

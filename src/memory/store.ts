@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { jaccard, tokenize } from '../collector/dedupe.js'
 import type { FeedbackRecord, FeedbackSignal, RawItem, ScoredItem, ViewRecord } from '../types.js'
@@ -48,35 +48,50 @@ export class MemoryStore {
     this.load()
   }
 
+  /** 加载失败不得静默清零（D6，小巴 impl 审查）：坏文件改名留存（.corrupt-<ts>），从空状态继续并告警。
+   *  此前 catch 全静默——崩溃落在写窗口产生的截断文件会被当成「首次运行」，反馈全史无声丢失。 */
+  private loadJson<T>(name: string, label: string): T | null {
+    const path = join(this.dir, name)
+    if (!existsSync(path)) return null
+    try {
+      return JSON.parse(readFileSync(path, 'utf8')) as T
+    } catch {
+      const bad = `${path}.corrupt-${Date.now()}`
+      try {
+        renameSync(path, bad)
+      } catch {
+        /* 改名失败则保留原文件，下次启动再试 */
+      }
+      console.error(`[store] ${label} 解析失败，坏文件移至 ${bad}（不静默清零）`)
+      return null
+    }
+  }
+
   private load(): void {
-    try {
-      this.archive = JSON.parse(readFileSync(join(this.dir, 'archive.json'), 'utf8')) as Archive
-    } catch {
-      /* 首次运行无归档 */
-    }
-    try {
-      this.feedback = JSON.parse(readFileSync(join(this.dir, 'feedback.json'), 'utf8')) as FeedbackRecord[]
-    } catch {
-      /* 首次运行无反馈 */
-    }
-    try {
-      this.weights = JSON.parse(readFileSync(join(this.dir, 'weights.json'), 'utf8')) as WeightsState
-    } catch {
-      /* 首次运行无权重 */
-    }
-    try {
-      this.views = JSON.parse(readFileSync(join(this.dir, 'views.json'), 'utf8')) as ViewRecord[]
-    } catch {
-      /* 首次运行无已读记录 */
-    }
+    const a = this.loadJson<Archive>('archive.json', 'archive.json')
+    if (a) this.archive = a
+    const f = this.loadJson<FeedbackRecord[]>('feedback.json', 'feedback.json')
+    if (f) this.feedback = f
+    const w = this.loadJson<WeightsState>('weights.json', 'weights.json')
+    if (w) this.weights = w
+    const v = this.loadJson<ViewRecord[]>('views.json', 'views.json')
+    if (v) this.views = v
+  }
+
+  /** D6：非原子直写在崩溃窗口会产生截断文件——tmp+rename 原子替换。 */
+  private writeFileAtomic(name: string, data: string): void {
+    const finalPath = join(this.dir, name)
+    const tmp = `${finalPath}.tmp`
+    writeFileSync(tmp, data)
+    renameSync(tmp, finalPath)
   }
 
   private saveArchive(): void {
-    writeFileSync(join(this.dir, 'archive.json'), JSON.stringify(this.archive, null, 2))
+    this.writeFileAtomic('archive.json', JSON.stringify(this.archive, null, 2))
   }
 
   private saveFeedback(): void {
-    writeFileSync(join(this.dir, 'feedback.json'), JSON.stringify(this.feedback, null, 2))
+    this.writeFileAtomic('feedback.json', JSON.stringify(this.feedback, null, 2))
   }
 
   weightsState(): WeightsState {
@@ -85,7 +100,7 @@ export class MemoryStore {
 
   saveWeights(weights: Record<string, number>, feedbackHash: string): void {
     this.weights = { weights: { ...weights }, feedbackHash }
-    writeFileSync(join(this.dir, 'weights.json'), JSON.stringify(this.weights, null, 2))
+    this.writeFileAtomic('weights.json', JSON.stringify(this.weights, null, 2))
   }
 
   feedbackCount(): number {
@@ -96,7 +111,7 @@ export class MemoryStore {
   recordView(digestId: string, at: number): boolean {
     if (this.views.some((v) => v.digestId === digestId)) return false
     this.views.push({ digestId, at })
-    writeFileSync(join(this.dir, 'views.json'), JSON.stringify(this.views, null, 2))
+    this.writeFileAtomic('views.json', JSON.stringify(this.views, null, 2))
     return true
   }
 

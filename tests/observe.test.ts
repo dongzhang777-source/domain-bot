@@ -39,22 +39,32 @@ describe('observeRound', () => {
     expect(obs.zeroYieldSources).toEqual([])
   })
 
-  it('按源产出与零产出源（B′2）：区分源挂/活着但零相关/活着有产出', () => {
+  it('按源三元组与零产出源（B′2+D3）：区分源挂/纯重复(健康)/有新但零相关', () => {
     const obs = observeRound({
       candidates: [], rawScores: [], pushed: [], weights: {}, at: 1000, collected: 10, relevant: 3,
       skippedSources: ['dead-src'],
       enabledSourceIds: ['arxiv', 'v2ex', 'bili', 'dead-src', 'empty'],
       sourceFetched: { arxiv: 8, v2ex: 2, bili: 0, empty: 0 },
+      sourceAfterDedupe: { arxiv: 5, v2ex: 2, bili: 0, empty: 0 },
       sourceRelevant: { arxiv: 3 },
     })
     expect(obs.sourceYield).toEqual({
-      arxiv: { fetched: 8, afterFilter: 3 },
-      v2ex: { fetched: 2, afterFilter: 0 },
-      bili: { fetched: 0, afterFilter: 0 },
-      empty: { fetched: 0, afterFilter: 0 },
+      arxiv: { fetched: 8, afterDedupe: 5, afterFilter: 3 },
+      v2ex: { fetched: 2, afterDedupe: 2, afterFilter: 0 },
+      bili: { fetched: 0, afterDedupe: 0, afterFilter: 0 },
+      empty: { fetched: 0, afterDedupe: 0, afterFilter: 0 },
     })
-    // dead-src 属于 skippedSources（源挂了），不进 zeroYieldSources
-    expect(obs.zeroYieldSources).toEqual(['v2ex', 'bili', 'empty'])
+    // dead-src 属于 skippedSources（源挂了）；bili/empty 纯重复或返回空（afterDedupe=0）是健康状态，不进 zeroYield
+    expect(obs.zeroYieldSources).toEqual(['v2ex'])
+  })
+
+  it('quantile 离散约定锁定（D7）：2 元素 P50=P90=上界', () => {
+    const obs = observeRound({
+      candidates: [mk('a', 's1', 0.2), mk('b', 's1', 0.9)], rawScores: [0.2, 0.9], pushed: [], weights: {},
+      at: 1000, collected: 2, relevant: 2, skippedSources: [], feedbackCount: 0,
+    })
+    expect(obs.rawP50).toBe(0.9)
+    expect(obs.rawP90).toBe(0.9)
   })
 
   it('空候选不炸（除零）', () => {

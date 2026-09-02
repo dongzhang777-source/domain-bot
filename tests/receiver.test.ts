@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { processTelegramUpdate, loadOffset, saveOffset, type TelegramUpdate } from '../src/feedback/receiver.js'
+import { processTelegramUpdate, loadOffset, saveOffset, applyUpdates, type TelegramUpdate } from '../src/feedback/receiver.js'
 import { MemoryStore } from '../src/memory/store.js'
 import type { SourceConfig } from '../src/types.js'
 
@@ -77,6 +77,36 @@ describe('offset 持久化（C′10）', () => {
     saveOffset(dir, 42)
     expect(loadOffset(dir)).toBe(42)
     expect(JSON.parse(readFileSync(join(dir, 'feedback-offset.json'), 'utf8'))).toEqual({ offset: 42 })
+  })
+})
+
+describe('applyUpdates 逐条确认（D2，小巴 impl 审查）', () => {
+  it('毒 update 重试 3 次后跳过，后续 update 仍处理；offset 逐条推进不卡队', async () => {
+    const { dir, called } = setup()
+    void called
+    // c1 的 answerCallbackQuery 恒抛错 → update 1 是毒 update；c2 正常
+    const deps = {
+      token: 't', memoryDir: dir, sources, now: () => 900,
+      fetchFn: async (url: string, init?: RequestInit) => {
+        if (String(url).includes('answerCallbackQuery') && String(init?.body).includes('cq1')) {
+          throw new Error('poison callback')
+        }
+        return { ok: true, status: 200, text: async () => '{}' }
+      },
+    }
+    const errors: unknown[] = []
+    const updates: TelegramUpdate[] = [
+      { update_id: 1, callback_query: { id: 'cq1', data: 'fb:u:d1:0' } },
+      { update_id: 2, callback_query: { id: 'cq2', data: 'vb:d9' } },
+    ]
+    await applyUpdates(deps, updates, { onError: (e) => errors.push(e), retryDelayMs: 1 })
+
+    expect(errors.length).toBeGreaterThanOrEqual(3) // 毒 update 重试 3 次，每次都报错
+    expect(loadOffset(dir)).toBe(3) // 两条都推进到位（毒的跳过但 offset 前移，不卡队）
+    // update 1：反馈在抛错前已落盘，重试经 C′10 去重不重复入账
+    expect(JSON.parse(readFileSync(join(dir, 'feedback.json'), 'utf8'))).toHaveLength(1)
+    // update 2（👀）正常处理
+    expect(JSON.parse(readFileSync(join(dir, 'views.json'), 'utf8'))).toHaveLength(1)
   })
 })
 

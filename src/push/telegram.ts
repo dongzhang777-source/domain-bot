@@ -12,10 +12,16 @@ export interface TelegramOptions {
   fetchFn?: FetchFn
 }
 
-// Telegram legacy Markdown 保留字。用户文本原样插值会让 sendMessage 返回 400（Can't parse entities），
-// 而 index.ts 的推送 catch 只打日志不回滚——归档/观测/outbox 全记「已推送」，用户一条没收到（诊断报告 §3.4）。
+// Telegram legacy「Markdown」官方转义规则（Bot API §Formatting options，2026-09-02 抓原文核对）：
+//   "To escape characters '_', '*', '`', '[' outside of an entity, prepend the character '\'
+//    before them." / "Escaping inside entities is not allowed, so entity must be closed first
+//    and reopened again."
+// 即：可转义集仅 4 字符 _ * ` [（']' 无前置 '[' 不构成实体边界，'\' 不可转义故直接剔除——
+// arXiv 标题的反斜杠几乎都来自 LaTeX 命令）；转义只允许发生在实体外部，因此粗体只包代码
+// 常量（序号/标签），用户文本一律在实体外（小巴 impl 审查 D1：此前「转义文本放进 *…* 内部」
+// 违反实体内禁转义规则，且尾部 \ 会吞掉闭合星号）。
 function escMd(s: string): string {
-  return s.replace(/[_*[\]`\\]/g, '\\$&')
+  return s.replace(/\\/g, '').replace(/([_*[`])/g, '\\$1')
 }
 
 /** 链接 URL 里的 `)` 会提前闭合 Markdown 链接，用百分号编码消解；`\` 同理。 */
@@ -24,16 +30,23 @@ function escUrl(u: string): string {
 }
 
 export function renderDigestText(digest: Digest): string {
-  const head = `📡 *${escMd(digest.domain)}* 情报（${digest.clusters.length} 条趋势）\n\n`
-  const body = digest.clusters
-    .map((c, i) => {
-      const src = c.items[0]!
-      const tag = src.isNew ? '🆕' : '♻️'
-      return `*${i + 1}. ${tag} ${escMd(c.title.slice(0, 120))}*\n${escMd(c.summary.slice(0, 300))}\n[src](${escUrl(src.url)}) · ${escMd(c.why)}`
-    })
-    .join('\n\n')
-  const text = head + body
-  return text.length > 3900 ? text.slice(0, 3900) + '\n…（已截断）' : text
+  const head = `📡 *情报* · ${escMd(digest.domain)}（${digest.clusters.length} 条趋势）\n\n`
+  // D1：why 限长 200 后单簇必然短于预算，装填只在簇边界截断——截断永不落进实体/转义对内部。
+  const blocks = digest.clusters.map((c, i) => {
+    const src = c.items[0]!
+    const tag = src.isNew ? '🆕' : '♻️'
+    return `*${i + 1}. ${tag}* ${escMd(c.title.slice(0, 120))}\n${escMd(c.summary.slice(0, 300))}\n[src](${escUrl(src.url)}) · ${escMd(c.why.slice(0, 200))}`
+  })
+  let text = head
+  for (const b of blocks) {
+    const candidate = text.length === head.length ? head + b : `${text}\n\n${b}`
+    if (candidate.length > 3880) {
+      text += '\n…（已截断）'
+      break
+    }
+    text = candidate
+  }
+  return text
 }
 
 function inlineKeyboard(digest: Digest) {

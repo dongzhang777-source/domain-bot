@@ -18,6 +18,8 @@ export interface RoundInput {
   enabledSourceIds?: string[]
   /** 各源本轮实际采集到的条数（B′2） */
   sourceFetched?: Record<string, number>
+  /** 各源去重后剩余条数（D3：区分「纯重复——全部已归档」与「有新内容」，前者是健康状态） */
+  sourceAfterDedupe?: Record<string, number>
   /** 各源通过相关性过滤后的条数（B′2） */
   sourceRelevant?: Record<string, number>
 }
@@ -32,10 +34,11 @@ export interface RoundObservation {
   /** 本轮采集失败的源 id——源挂掉与内容池枯竭靠它区分 */
   skippedSources: string[]
   feedbackCount: number
-  /** 按源产出（B′2）：fetched=采集条数，afterFilter=过相关性过滤条数。区分「源挂了」（skippedSources）/
-   *  「活着但零相关」（zeroYieldSources）/「活着且有产出」——I-3 盲区 v2ex/bili 类隐形死源靠它显形 */
-  sourceYield: Record<string, { fetched: number; afterFilter: number }>
-  /** 采集成功（未抛错）但过滤后零产出的源 id（B′2）——I-3 新口径（B′1）的分子之一 */
+  /** 按源产出（B′2+D3 三元组）：fetched=采集条数，afterDedupe=去重后（有新内容），afterFilter=新内容中过
+   *  相关性过滤。区分「源挂了」（skippedSources）/「活着但全是已归档重复」（afterDedupe=0，健康）/
+   *  「活着有新内容但零相关」（zeroYieldSources，I-3 新口径分子） */
+  sourceYield: Record<string, { fetched: number; afterDedupe: number; afterFilter: number }>
+  /** 采集成功且有新内容（afterDedupe>0）但过滤后零产出的源 id（D3 收窄后的判据口径） */
   zeroYieldSources: string[]
   candidateP50: number
   candidateP90: number
@@ -58,6 +61,9 @@ function round3(n: number): number {
   return Math.round(n * 1000) / 1000
 }
 
+/** 离散分位数约定（D7 写死）：sortedAsc[min(n-1, floor(q·n))]——P50 取上中位、小样本 P90 取最大。
+ *  I-4 案 B（P90 型）标定直接消费该值，约定不得静默更换（对 2 元素 [a,b]：P50=b、P90=b，测试锁定）。 */
+
 function quantile(sortedAsc: number[], q: number): number {
   if (sortedAsc.length === 0) return 0
   return sortedAsc[Math.min(sortedAsc.length - 1, Math.floor(q * sortedAsc.length))]!
@@ -69,15 +75,18 @@ export function observeRound(input: RoundInput): RoundObservation {
   const rs = [...rawScores].sort((a, b) => a - b)
   const bySource: Record<string, number> = {}
   for (const p of pushed) bySource[p.source] = (bySource[p.source] ?? 0) + 1
-  // B′2：按源产出与零产出源。源挂了在 skippedSources 里，不重复计入 zeroYieldSources。
-  const sourceYield: Record<string, { fetched: number; afterFilter: number }> = {}
+  // B′2+D3：按源三元组与零产出源。源挂了在 skippedSources 里，不重复计入 zeroYieldSources；
+  // zeroYield 判据 = fetched>0 && afterDedupe>0 && afterFilter==0（纯重复 afterDedupe=0 是健康状态）。
+  // fetched=0（返回空）与纯重复同属「无新内容」，暂不计 zeroYield——是否单列待 M6 标定数据说话。
+  const sourceYield: Record<string, { fetched: number; afterDedupe: number; afterFilter: number }> = {}
   const zeroYieldSources: string[] = []
   for (const id of input.enabledSourceIds ?? []) {
     if (input.skippedSources.includes(id)) continue
     const fetched = input.sourceFetched?.[id] ?? 0
+    const afterDedupe = input.sourceAfterDedupe?.[id] ?? 0
     const afterFilter = input.sourceRelevant?.[id] ?? 0
-    sourceYield[id] = { fetched, afterFilter }
-    if (afterFilter === 0) zeroYieldSources.push(id)
+    sourceYield[id] = { fetched, afterDedupe, afterFilter }
+    if (fetched > 0 && afterDedupe > 0 && afterFilter === 0) zeroYieldSources.push(id)
   }
   return {
     at,

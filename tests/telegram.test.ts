@@ -73,20 +73,42 @@ describe('Telegram Markdown 转义（C′9，§3.4 静默失败防护）', () =>
   const mk = (id: string, title: string): ScoredItem =>
     ({ id, source: 's', title, body: '', url: 'u', publishedAt: 0, valueScore: 0.8, isNew: true, reason: '' })
 
-  it('用户文本中的 Telegram 保留字被转义；结构标记（粗体/链接）不被破坏', () => {
+  it('用户文本中的 Telegram 保留字被转义（官方 4 字符集）；结构标记不被破坏；反斜杠剔除', () => {
     const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters: [
-      { ref: 'd:0', title: 'BERT_base vs [CLS]', summary: 'a_b [c] `d`', why: 'x_y', items: [mk('1', 'BERT_base vs [CLS]')] },
+      { ref: 'd:0', title: 'path\\end BERT_base [CLS]', summary: 'a_b [c] `d`', why: 'x_y', items: [mk('1', 'BERT_base vs [CLS]')] },
     ] }
     const text = renderDigestText(d)
-    // arXiv 标题的下划线/方括号极常见；不转义则 sendMessage 400（Can't parse entities）→ 整轮推送静默丢失
-    expect(text).toContain('BERT\\_base')
-    expect(text).toContain('\\[CLS\\]')
-    expect(text).toContain('a\\_b \\[c\\]')
+    // 官方 legacy 规则：可转义集仅 _ * ` [（实体外）；']' 与 '\' 不转义——'\' 直接剔除（D1）
+    expect(text).toContain('pathend BERT\\_base \\[CLS]')
+    expect(text).toContain('a\\_b \\[c] \\`d\\`')
     expect(text).toContain('x\\_y')
-    // 结构标记是代码自己的插值，不在用户文本里，必须原样保留
-    expect(text).toContain('*1. 🆕')
+    // 粗体只包代码常量（实体内禁转义，D1）；用户文本在实体外
+    expect(text).toContain('*1. 🆕*')
+    expect(text).toContain('📡 *情报* · ai（')
     expect(text).toContain('[src](u)')
-    expect(text).toContain('*ai*')
+    // 剔除后不得残留孤立反斜杠
+    expect(text).not.toContain('\\\\')
+  })
+
+  it('why 限长 200（D1：截断根因），超长不进入消息', () => {
+    const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters: [
+      { ref: 'd:0', title: 't', summary: 's', why: 'x'.repeat(500), items: [mk('1', 't')] },
+    ] }
+    const text = renderDigestText(d)
+    expect(text.includes('x'.repeat(201))).toBe(false)
+  })
+
+  it('多簇超预算时在簇边界截断，标记落在末尾（D1：截断永不切进实体/转义对）', () => {
+    const clusters = Array.from({ length: 8 }, (_, i) => ({
+      ref: `d:${i}`, title: `簇${i} ${'长'.repeat(80)}`, summary: 's'.repeat(300), why: 'w'.repeat(200),
+      items: [mk(String(i), `簇${i}`)],
+    }))
+    const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters }
+    const text = renderDigestText(d)
+    expect(text.endsWith('…（已截断）')).toBe(true)
+    expect(text.length).toBeLessThanOrEqual(3900)
+    // 装填进来的簇必须完整（结尾是最后一个完整簇的 why，而非切断的转义对/实体）
+    expect(text).toContain('*1. 🆕*')
   })
 
   it('URL 中的右括号被百分号编码，不提前闭合链接', () => {

@@ -25,6 +25,13 @@ try { weights = JSON.parse(read('memory/weights.json')) } catch { /* 无权重 *
 const sources = (() => { try { return JSON.parse(read('config/sources.json')) ?? [] } catch { return [] } })()
 const changelog = read('docs/probe-changelog.md') ?? ''
 const probeEnd = process.argv.includes('--probe-end')
+// D4（小巴 impl 审查）：探针期口径——传 --probe-start <epoch-ms|ISO> 后，I-2 的分子分母只统计探针期内
+// 数据，修复期推送不再永久稀释反馈率。不传则保持全史口径（签字稿定稿时同批切换，X6 纪律）。
+const probeStartIdx = process.argv.indexOf('--probe-start')
+const probeStartRaw = probeStartIdx > -1 ? process.argv[probeStartIdx + 1] : undefined
+const probeStart = probeStartRaw ? (Number(probeStartRaw) || Date.parse(probeStartRaw) || null) : null
+const obsForI2 = probeStart ? observations.filter((o) => (o.at ?? 0) >= probeStart) : observations
+const fbForI2 = probeStart ? feedback.filter((f) => (f.at ?? 0) >= probeStart) : feedback
 
 const bySourceArchive = {}
 for (const e of archive.entries) bySourceArchive[e.source] = (bySourceArchive[e.source] ?? 0) + 1
@@ -37,13 +44,17 @@ const trailingZeroRounds = (() => {
   for (let i = observations.length - 1; i >= 0 && observations[i].candidates === 0; i--) n++
   return n
 })()
-const totalPushed = observations.reduce((s, o) => s + (o.pushed ?? 0), 0)
-const ups = feedback.filter((f) => f.signal === 'up').length
-const downs = feedback.filter((f) => f.signal === 'down').length
+const totalPushed = obsForI2.reduce((s, o) => s + (o.pushed ?? 0), 0)
+const ups = fbForI2.filter((f) => f.signal === 'up').length
+const downs = fbForI2.filter((f) => f.signal === 'down').length
 const validFeedback = ups + downs
 const thumbsUpRate = validFeedback > 0 ? ups / validFeedback : null
 const enabledCount = sources.filter((s) => s.enabled).length
-const p4Artifact = /\|\s*P-4\s*\|/.test(changelog)
+// D5（小巴 impl 审查）：P-4 artifact 行必须可核验——日期 + digestId= + itemId= + decision= 四要素齐备
+// 才算有效；裸「| P-4 |」片段不再假触发。行格式：`| P-4 | 2026-09-15 | digestId=<id> | itemId=<id> | decision=<一句话> |`
+const p4Rows = changelog.split('\n').filter((l) => /^\|\s*P-4\s*\|/.test(l))
+const p4Valid = p4Rows.filter((l) =>
+  /\d{4}-\d{2}-\d{2}/.test(l) && /digestId\s*[=:]\s*\S+/i.test(l) && /itemId\s*[=:]\s*\S+/i.test(l) && /decision\s*[=:]/i.test(l))
 const roundBadSources = (o) => (o?.skippedSources?.length ?? 0) + (o?.zeroYieldSources?.length ?? 0)
 
 /** I-3：采集失败 + 零产出源占比，连续 3 轮 > 1/3（B′1 新口径：zeroYieldSources 缺失的旧观测只按 skippedSources 算） */
@@ -60,7 +71,7 @@ const criteriaRows = [
   {
     id: 'I-1', name: '连续 3 轮 candidates=0（候选池枯竭）', threshold: '3 轮',
     value: `${trailingZeroRounds}/3 轮`,
-    status: trailingZeroRounds >= 3 ? 'fail' : 'pass',
+    status: observations.length < 3 ? 'nodata' : (trailingZeroRounds >= 3 ? 'fail' : 'pass'),
     note: 'M6 标定中：拟加「且全源零新增」限定（arXiv 周五/周六无公告属排班，非仪器故障）',
   },
   {
@@ -69,13 +80,13 @@ const criteriaRows = [
       : totalPushed === 0 ? `0 条反馈 / 0 条推送（n/a）`
       : `${validFeedback}/${totalPushed} = ${(100 * validFeedback / totalPushed).toFixed(1)}%`,
     status: !feedbackExists || totalPushed === 0 ? 'nodata' : (validFeedback / totalPushed < 0.05 ? 'fail' : 'pass'),
-    note: '无 Telegram key 时无输入通道，nodata 属预期',
+    note: probeStart ? `探针期口径（--probe-start 已生效）` : '无 Telegram key 时无输入通道，nodata 属预期；全史口径（修复期推送计入分母）——签字稿定稿时同批切换',
   },
   { id: 'I-3', name: '采集失败+零产出源占比 连续 3 轮 > 1/3（B′1 新口径）', threshold: '1/3', value: i3.value, status: i3.status, note: '旧观测无 zeroYieldSources 字段，按 skippedSources 单口径回看' },
   {
     id: 'I-4', name: 'saturationRate 持续 > 0.5（原始分口径）', threshold: '0.5',
     value: `${observations.at(-1)?.saturationRate ?? 'nodata'}`,
-    status: last3.length >= 3 && last3.every((o) => (o.saturationRate ?? 0) > 0.5) ? 'fail' : 'pass',
+    status: observations.length < 3 ? 'nodata' : (last3.every((o) => (o.saturationRate ?? 0) > 0.5) ? 'fail' : 'pass'),
     note: '决策点 7 已拍板案 B（P90 型），criteria 签字稿改文后本行同步更新',
   },
   {
@@ -106,14 +117,15 @@ const criteriaRows = [
   { id: 'P-3', name: '戒断测试通过：停 3 天内有主动打开', threshold: '停 3 天', value: '需探针期末人工判读', status: 'nodata', note: '依赖探针结束后的戒断窗口观测' },
   {
     id: 'P-4', name: '定性证据 ≥1 条（probe-changelog.md 的 P-4 artifact 行）', threshold: '≥1 条',
-    value: p4Artifact ? '已见 P-4 artifact 行' : '0 条',
-    status: p4Artifact ? 'pass' : 'nodata',
-    note: 'artifact 行格式：表格行以「| P-4 |」开头，含 {date, digestId, itemId, decision}',
+    value: `${p4Valid.length} 条有效 / ${p4Rows.length} 行 P-4 记录`,
+    status: probeEnd ? (p4Valid.length >= 1 ? 'pass' : 'fail') : 'nodata',
+    note: 'artifact 行格式：`| P-4 | <date> | digestId=<id> | itemId=<id> | decision=<一句话> |`——四要素齐备才计有效（D5）',
   },
 ]
 
 const summary = {
   generatedAt: new Date().toISOString(),
+  probeStart: probeStart ?? null,
   rounds: observations.length,
   lastRound: observations.at(-1) ?? null,
   archive: { total: archive.entries.length, pushed: pushedCount, bySource: bySourceArchive },

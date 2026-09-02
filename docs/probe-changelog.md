@@ -1,6 +1,6 @@
 # 探针配置变更记录
 
-> 依据 `docs/probe-verdict-criteria.md` §4（`:69` 附近）：探针期内 `domain.json` / `sources.json` 的判定相关改动（阈值、关键词、源增删）必须在本文记录日期与动机；P-4 定性证据亦落成此文件的 artifact 行（§2d）。改配置不改判据。
+> 依据 `docs/probe-verdict-criteria.md` §4（`:72`，小巴复核更正：配置变更记录要求在该行）：探针期内 `domain.json` / `sources.json` 的判定相关改动（阈值、关键词、源增删）必须在本文记录日期与动机；P-4 定性证据亦落成此文件的 artifact 行（§2d），行格式：`| P-4 | <date> | digestId=<id> | itemId=<id> | decision=<一句话> |`（四要素齐备才被 gen-evidence 计为有效，D5）。改配置不改判据。
 >
 > 本文件由 A′/B′ 编码批次（2026-09-02）创建——创建前三笔已发生但未记录的变更按下表回填（诊断报告 §五 第 7 条：P-4 曾因本文件不存在而不可判定）。
 

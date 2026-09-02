@@ -2,7 +2,8 @@
 
 ```json
 {
-  "generatedAt": "2026-09-02T22:40:11.880Z",
+  "generatedAt": "2026-09-02T23:37:19.151Z",
+  "probeStart": null,
   "rounds": 4,
   "lastRound": {
     "at": 1788311788421,
@@ -70,7 +71,7 @@
       "threshold": "5%",
       "value": "feedback.json 不存在",
       "status": "nodata",
-      "note": "无 Telegram key 时无输入通道，nodata 属预期"
+      "note": "无 Telegram key 时无输入通道，nodata 属预期；全史口径（修复期推送计入分母）——签字稿定稿时同批切换"
     },
     {
       "id": "I-3",
@@ -140,9 +141,9 @@
       "id": "P-4",
       "name": "定性证据 ≥1 条（probe-changelog.md 的 P-4 artifact 行）",
       "threshold": "≥1 条",
-      "value": "0 条",
+      "value": "0 条有效 / 0 行 P-4 记录",
       "status": "nodata",
-      "note": "artifact 行格式：表格行以「| P-4 |」开头，含 {date, digestId, itemId, decision}"
+      "note": "artifact 行格式：`| P-4 | <date> | digestId=<id> | itemId=<id> | decision=<一句话> |`——四要素齐备才计有效（D5）"
     }
   ]
 }
@@ -153,7 +154,7 @@
 | 判据 | 内容 | 阈值 | 当前值 | 状态 | 备注 |
 |---|---|---|---|---|---|
 | I-1 | 连续 3 轮 candidates=0（候选池枯竭） | 3 轮 | 1/3 轮 | **pass** | M6 标定中：拟加「且全源零新增」限定（arXiv 周五/周六无公告属排班，非仪器故障） |
-| I-2 | 反馈率 < 5%（👍+👎 数 / 推送条数） | 5% | feedback.json 不存在 | **nodata** | 无 Telegram key 时无输入通道，nodata 属预期 |
+| I-2 | 反馈率 < 5%（👍+👎 数 / 推送条数） | 5% | feedback.json 不存在 | **nodata** | 无 Telegram key 时无输入通道，nodata 属预期；全史口径（修复期推送计入分母）——签字稿定稿时同批切换 |
 | I-3 | 采集失败+零产出源占比 连续 3 轮 > 1/3（B′1 新口径） | 1/3 | 1/18 = 6% | **pass** | 旧观测无 zeroYieldSources 字段，按 skippedSources 单口径回看 |
 | I-4 | saturationRate 持续 > 0.5（原始分口径） | 0.5 | 0 | **pass** | 决策点 7 已拍板案 B（P90 型），criteria 签字稿改文后本行同步更新 |
 | G-1 | 主动消费性查看 < 10 次（两周累计） | 10 次 | views.json 不存在 | **nodata** | views.json 是 viewed 唯一定义（criteria §2c） |
@@ -162,7 +163,7 @@
 | P-1 | 主动查看 ≥ 10 次 | 10 次 | views.json 不存在 | **nodata** |  |
 | P-2 | 👍率 ≥ 30% 且有效反馈 ≥ 20 条 | 30% 且 20 条 | nodata | **nodata** | 有效反馈已按 C′10 同条同信号去重，不可被重放虚增 |
 | P-3 | 戒断测试通过：停 3 天内有主动打开 | 停 3 天 | 需探针期末人工判读 | **nodata** | 依赖探针结束后的戒断窗口观测 |
-| P-4 | 定性证据 ≥1 条（probe-changelog.md 的 P-4 artifact 行） | ≥1 条 | 0 条 | **nodata** | artifact 行格式：表格行以「| P-4 |」开头，含 {date, digestId, itemId, decision} |
+| P-4 | 定性证据 ≥1 条（probe-changelog.md 的 P-4 artifact 行） | ≥1 条 | 0 条有效 / 0 行 P-4 记录 | **nodata** | artifact 行格式：`| P-4 | <date> | digestId=<id> | itemId=<id> | decision=<一句话> |`——四要素齐备才计有效（D5） |
 
 > G/P 组为两周累计/期末项，中途一律 nodata；探针结束后加 --probe-end 评估。
 
