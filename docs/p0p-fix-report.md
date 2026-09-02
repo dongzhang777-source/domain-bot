@@ -1,7 +1,23 @@
 # P0' 修复交付报告（Phase A）
 
 > 执行：ZCode/小智 · 2026-09-02 · 依据：`docs/workplan-2026-09-02.md` Phase A
-> 二审：hy3（工单 `docs/reviews/2026-09-02-p0p-review-workorder-hy3.md`，产物契约 `docs/reviews/2026-09-02-p0p-review-hy3.md`）
+> 二审：hy3 **带条件通过**（报告 `docs/reviews/2026-09-02-p0p-review-hy3.md`；工单 `2026-09-02-p0p-review-workorder-hy3.md`，含落盘契约）
+> **条件闭环状态**：条件 1（可达性测试）✅ 696885d；条件 2（单实例锁）✅ 696885d；条件 3（判定线定稿）→ 草稿已按 hy3 意见补漏洞，**待老张签字**；条件 4（真实反馈流过）→ 待 Telegram key。
+> hy3 六条必做验证全部复现自述（75/75、V1 探针 recorded、变异 1 failed|10 passed、哈希闸门响应编辑、观测字段全命中、自述抽查零虚报）。
+
+## hy3 条件处置明细
+
+1. **条件 1（V2 文本守卫天花板）**：`main` 拆出可测的 `startBot`（`tests/startup.test.ts`）：注入 `pollFeedbackFn` 替身，断言常驻+token 时轮询**真被调用**、`--once` 不被调用——从"文本存在"升级为"运行时可达"。
+2. **条件 2（多实例竞态）**：`src/runtime/lock.ts` PID 锁（memory/.lock），stale 锁自动接管；同目录第二进程启动即抛错。防 `npm run loop` 重复启动 + cron `--once` 叠加导致 feedback/weights last-writer-wins 丢数据。
+3. **条件 3（判定线漏洞，hy3 Q3 五条全部采纳）**：`probe-verdict-criteria.md` 已补 ①中间地带处置（§2b 判据分数表）②I-/G-/P- 冲突优先级（I > G > P）③I-2 阈值 10%→5% 并补"被动消费者"说明 ④主动查看的测量机制（digest 文件含 tracking pixel 式阅读确认链接，点击即记 viewed）⑤P-4 定性证据改为可核查 artifact（决策引用链接 + 日期落 changelog）。**仍待老张签字，签字前不开跑。**
+4. **条件 4（真实反馈）**：代码侧就绪，等 Telegram token。
+
+## hy3 遗留登记（不阻断，探针期观察）
+
+- 盲区4（源活但结构性零产出）无独立仪器——`relevant/isNewRate` 间接辅助，v2ex/bili 两源本就低产出，两周后按源产出表评估。
+- 每回调 new MemoryStore 全量读盘——人类反馈频率下可忽略，扩展性债。
+- `candidateP50` 仍记加权分（与 raw 并存作对照）——判定线 §4 已写死"混淆即作废"。
+
 
 ## A1 修 V1（长驻拓扑）
 
