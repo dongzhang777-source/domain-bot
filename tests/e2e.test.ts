@@ -154,3 +154,17 @@ describe('e2e: 采集 → 提炼 → 记忆 → 推送 → 反馈 → 进化', (
     expect(bySource.get('gh-1')).toBeGreaterThanOrEqual(1)
   })
 })
+
+describe('观测与降级', () => {
+  it('采集失败的源必须出现在 skippedSources（否则该观测字段恒为空）', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-skip-'))
+    // rss 返回 ok:false → fetchRss 抛 `rss rss-1: HTTP 503`；github 正常。
+    const fetchFn = async (url: string) =>
+      String(url).includes('api.github.com')
+        ? { ok: true, status: 200, text: async () => GH_JSON }
+        : { ok: false, status: 503, text: async () => '' }
+    const r = await runOnce({ domain, sources, memoryDir: join(dir, 'memory'), outDir: join(dir, 'out'), fetchFn, now: 1000 })
+    expect(r.stats.skippedSources).toEqual(['rss-1'])
+    expect(r.stats.collected).toBe(1)   // 只剩 github 一条
+  })
+})

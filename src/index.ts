@@ -10,6 +10,7 @@ import { makeScorerFromEnv } from './refinery/scorer.js'
 import { buildClusters } from './refinery/cluster.js'
 import { MemoryStore } from './memory/store.js'
 import { applyNovelty, applySourceWeight } from './memory/evolve.js'
+import { appendObservation, observeRound, type RoundObservation } from './memory/observe.js'
 import { refreshWeights } from './memory/weights.js'
 import { pollFeedback } from './feedback/receiver.js'
 import { pushFile } from './push/file.js'
@@ -29,6 +30,7 @@ export interface RunOptions {
 export interface RunResult {
   digest?: Digest
   pushedPaths: string[]
+  observation: RoundObservation
   stats: {
     collected: number
     deduped: number
@@ -54,6 +56,8 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
       collectedCount += items.length
       collected.push(...items.map((i) => ({ ...i, valueScore: 0, isNew: false, reason: '' })))
     } catch (err) {
+      // 必须记入 skipped：否则 skippedSources 恒为空，源挂掉与内容池枯竭在观测上无法区分。
+      skipped.push(source)
       console.error(`[collector] ${source.id} 失败:`, err instanceof Error ? err.message : err)
     }
   }
@@ -65,7 +69,8 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
   const scorer = makeScorerFromEnv()
   const scores = await scorer.score(relevant, opts.domain)
   // 权重优先级：memory/weights.json（已学到）> config/sources.json（首次先验）
-  const weightOf = new Map(Object.entries(refreshWeights(store, opts.sources)))
+  const weights = refreshWeights(store, opts.sources)
+  const weightOf = new Map(Object.entries(weights))
 
   // 过滤用原始分：源权重只应影响排序，不该把低权源整体挡在候选池外，
   // 否则低权源永远进不了推送 → 永远拿不到反馈 → 权重再也回不来（反馈死锁）。
@@ -114,11 +119,15 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
     store.registerDigestRef(cluster.ref, digestId, cluster.items[0].id, cluster.items[0].source)
   }
 
+  const observation = observeRound(candidates, diversified, weights, now)
+  appendObservation(opts.memoryDir, observation)
+
   const pushedPaths: string[] = []
   if (digest.clusters.length === 0) {
     return {
       digest,
       pushedPaths,
+      observation,
       stats: { collected: collectedCount, deduped: collectedCount - kept.length, relevant: relevant.length, pushed: 0, skippedSources: skipped.map((s) => s.id) },
     }
   }
@@ -136,6 +145,7 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
   return {
     digest,
     pushedPaths,
+    observation,
     stats: {
       collected: collectedCount,
       deduped: collectedCount - kept.length,
