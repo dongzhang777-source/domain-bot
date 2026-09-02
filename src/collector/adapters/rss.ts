@@ -2,6 +2,8 @@ import { XMLParser } from 'fast-xml-parser'
 import { contentHash } from '../dedupe.js'
 import type { FetchFn, RawItem, SourceConfig } from '../../types.js'
 
+import { withSizeLimit } from './fetchUtil.js'
+
 export const defaultFetch: FetchFn = (url, init) => fetch(url, init)
 
 function text(v: unknown): string {
@@ -33,7 +35,7 @@ function linkOf(e: Record<string, unknown>): string {
 
 /** 通用 RSS/Atom 适配器：RSS 2.0、Atom（含 arXiv）、GitHub releases.atom 都走这里。 */
 export async function fetchRss(source: SourceConfig, fetchFn: FetchFn = defaultFetch): Promise<RawItem[]> {
-  const res = await fetchFn(source.url, { headers: { 'user-agent': 'domain-bot/0.1' } })
+  const res = await withSizeLimit(fetchFn, source.url, { headers: { 'user-agent': 'domain-bot/0.1' } })
   if (!res.ok) throw new Error(`rss ${source.id}: HTTP ${res.status}`)
   const xml = await res.text()
   const parsed = new XMLParser({ ignoreAttributes: false }).parse(xml)

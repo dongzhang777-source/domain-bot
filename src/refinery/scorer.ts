@@ -68,12 +68,13 @@ export class LlmScorer implements Scorer {
   /** 单批调用：LLM 已答的用 LLM 分，漏答的降级启发式（常数 0.5 会在观测序列里造假平台）。 */
   private async scoreBatch(items: RawItem[], domain: DomainConfig): Promise<ScoreResult[]> {
     if (items.length === 0) return []
+    const esc = (v: string) => v.replace(/\\/g, '\\\\').replace(/\n/g, ' ').replace(/\[/g, '\\[').replace(/\]/g, '\\]')
     const prompt = [
       `领域：${domain.domain}。对下列每条信息打价值分（0~1），判断依据：`,
       `1) 对该领域内的人做决策是否有用；2) 是否新信息（而非旧闻复读）；3) 是否反常识或高杠杆。`,
       `只输出 JSON 数组：[{"index":0,"score":0.8,"reason":"一句话理由"}, ...]`,
       ``,
-      ...items.map((it, i) => `[${i}] ${it.title}\n${it.body.slice(0, 600)}`),
+      ...items.map((it, i) => `[${i}] ${esc(it.title)}\n${esc(it.body.slice(0, 600))}`),
     ].join('\n')
 
     const url = this.opts.baseUrl.replace(/\/$/, '') + '/chat/completions'

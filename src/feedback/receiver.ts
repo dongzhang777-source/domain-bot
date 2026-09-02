@@ -1,4 +1,5 @@
 import { defaultFetch } from '../collector/adapters/rss.js'
+import { telegramUrl } from '../push/telegram.js'
 import { refreshWeights } from '../memory/weights.js'
 import { MemoryStore } from '../memory/store.js'
 import { answerCallbackQuery, parseCallbackData, parseViewCallbackData } from '../push/telegram.js'
@@ -61,7 +62,7 @@ export async function fetchUpdates(
   offset: number,
   fetchFn: FetchFn = defaultFetch,
 ): Promise<TelegramUpdate[]> {
-  const res = await fetchFn(`https://api.telegram.org/bot${token}/getUpdates`, {
+  const res = await fetchFn(telegramUrl(token, 'getUpdates'), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ offset, timeout: 30, allowed_updates: ['callback_query'] }),

@@ -236,30 +236,35 @@ export async function startBot(opts: StartBotOptions): Promise<void> {
 
   // 单实例锁（hy3 条件 2）：loop + --once 并发写同一 memoryDir 会 last-writer-wins 丢反馈
   acquireLock(memoryDir)
+  // 2026-09-02 审查修复（B3）：此前 acquireLock 与 releaseLock 之间横跨整个长驻循环，
+  // 且没有 try/finally——runOnce 一旦抛错，锁文件就会残留，只能等下次启动靠 PID 判活
+  // 自愈，期间还会撞上 PID 复用误判（锁模块注释自认的残余风险）。异常路径必须释放。
+  try {
+    // 常驻反馈接收：Telegram 👍/👎 → feedback.json → weights.json。--once 模式不起。
+    // 只传 memoryDir：接收端每次回调从盘重建 store，不持有长驻快照（V1 事故教训）。
+    if (telegram && !once) {
+      startFeedback(
+        { token: telegram.token, memoryDir, sources },
+        { onError: (e) => console.error('[feedback] 轮询异常（5s 后重试）:', e instanceof Error ? e.message : e) },
+      ).catch((e) => console.error('[feedback] 循环意外退出:', e))
+    } else if (telegram) {
+      console.log('[feedback] --once 模式未启动回调接收；本轮的 👍/👎 将在下次常驻运行时入账')
+    }
 
-  // 常驻反馈接收：Telegram 👍/👎 → feedback.json → weights.json。--once 模式不起。
-  // 只传 memoryDir：接收端每次回调从盘重建 store，不持有长驻快照（V1 事故教训）。
-  if (telegram && !once) {
-    startFeedback(
-      { token: telegram.token, memoryDir, sources },
-      { onError: (e) => console.error('[feedback] 轮询异常（5s 后重试）:', e instanceof Error ? e.message : e) },
-    ).catch((e) => console.error('[feedback] 循环意外退出:', e))
-  } else if (telegram) {
-    console.log('[feedback] --once 模式未启动回调接收；本轮的 👍/👎 将在下次常驻运行时入账')
+    let rounds = 0
+    do {
+      const result = await runOnce({ domain, sources, memoryDir, outDir, telegram, fetchFn: opts.fetchFn, spawnFn: opts.spawnFn })
+      console.log(
+        `[run] 采集 ${result.stats.collected} → 去重删 ${result.stats.deduped} → 相关 ${result.stats.relevant} → 推送 ${result.stats.pushed} 条`,
+        result.pushedPaths,
+      )
+      rounds++
+      if (once || (opts.maxRounds !== undefined && rounds >= opts.maxRounds)) break
+      await new Promise((r) => setTimeout(r, pollMs))
+    } while (true)
+  } finally {
+    releaseLock(memoryDir)
   }
-
-  let rounds = 0
-  do {
-    const result = await runOnce({ domain, sources, memoryDir, outDir, telegram, fetchFn: opts.fetchFn, spawnFn: opts.spawnFn })
-    console.log(
-      `[run] 采集 ${result.stats.collected} → 去重删 ${result.stats.deduped} → 相关 ${result.stats.relevant} → 推送 ${result.stats.pushed} 条`,
-      result.pushedPaths,
-    )
-    rounds++
-    if (once || (opts.maxRounds !== undefined && rounds >= opts.maxRounds)) break
-    await new Promise((r) => setTimeout(r, pollMs))
-  } while (true)
-  releaseLock(memoryDir)
 }
 
 // CLI 入口：被测试导入时不执行 main

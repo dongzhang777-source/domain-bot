@@ -1,6 +1,7 @@
 import { contentHash } from '../dedupe.js'
 import type { FetchFn, RawItem, SourceConfig, SpawnFn } from '../../types.js'
 import { defaultFetch } from './rss.js'
+import { isPublicHttpsUrl, withSizeLimit } from './fetchUtil.js'
 
 /**
  * Agent-Reach（https://github.com/Panniantong/Agent-Reach）免登录通道适配器集合。
@@ -69,7 +70,7 @@ interface V2exTopic {
 }
 
 export async function fetchV2ex(source: SourceConfig, fetchFn: FetchFn = defaultFetch): Promise<RawItem[]> {
-  const res = await fetchFn('https://www.v2ex.com/api/topics/hot.json', {
+  const res = await withSizeLimit(fetchFn, 'https://www.v2ex.com/api/topics/hot.json', {
     headers: { 'user-agent': 'domain-bot/0.1' },
   })
   if (!res.ok) throw new Error(`v2ex ${source.id}: HTTP ${res.status}`)
@@ -85,24 +86,46 @@ export async function fetchV2ex(source: SourceConfig, fetchFn: FetchFn = default
   }))
 }
 
+/** 组装一条 bili 条目；play 为空/非数字时显示 0。 */
+function finalize(cur: { bvid: string; title: string; author: string; play: string }, sourceId: string): RawItem {
+  const playNum = Number(cur.play)
+  return {
+    id: contentHash({ title: cur.title, body: cur.bvid }),
+    source: sourceId,
+    title: cur.title.trim(),
+    body: `${cur.author.trim()} · ${Number.isNaN(playNum) ? '0' : playNum.toLocaleString()} 播放`,
+    url: `https://www.bilibili.com/video/${cur.bvid}`,
+    publishedAt: 0,
+    raw: cur,
+  }
+}
+
 // ---------- bili（bili-cli 搜索，YAML 输出） ----------
 
 export async function fetchBili(source: SourceConfig, spawnFn: SpawnFn = exaSpawn): Promise<RawItem[]> {
   const { stdout } = await spawnFn('bili', ['search', source.url, '--type', 'video', '-n', '8'])
   const items: RawItem[] = []
-  const entryRe = /- id: (\S+)[\s\S]*?bvid: (BV\S+)[\s\S]*?title: (.+)[\s\S]*?author: (.+)[\s\S]*?play: (\d+)/g
-  for (const m of stdout.matchAll(entryRe)) {
-    const [, , bvid, title, author, play] = m
-    items.push({
-      id: contentHash({ title, body: bvid }),
-      source: source.id,
-      title: title.trim(),
-      body: `${author.trim()} · ${Number(play).toLocaleString()} 播放`,
-      url: `https://www.bilibili.com/video/${bvid}`,
-      publishedAt: 0,
-      raw: m[0],
-    })
+  // Line-based parser avoids ReDoS (the previous single mega-regex was vulnerable to
+  // catastrophic backtracking on large/malformed bili-cli output).
+  let cur: { bvid: string; title: string; author: string; play: string } | null = null
+  for (const line of stdout.split('\n')) {
+    const m = line.match(/^(\s*)- id: (\S+)/)
+    if (m) {
+      if (cur) items.push(finalize(cur, source.id))
+      cur = { bvid: '', title: '', author: '', play: '' }
+      continue
+    }
+    if (!cur) continue
+    const kv = line.match(/^(\s+)(\w+):\s*(.*)$/)
+    if (!kv) continue
+    const key = kv[2]
+    const val = kv[3]
+    if (key === 'bvid') cur.bvid = val
+    else if (key === 'title') cur.title = val
+    else if (key === 'author') cur.author = val
+    else if (key === 'play') cur.play = val
   }
+  if (cur) items.push(finalize(cur, source.id))
   return items
 }
 
@@ -111,9 +134,13 @@ export async function fetchBili(source: SourceConfig, spawnFn: SpawnFn = exaSpaw
 // 无 key 时该源优雅失败，不影响其他通道。
 
 export async function fetchJina(source: SourceConfig, fetchFn: FetchFn = defaultFetch, apiKey?: string): Promise<RawItem[]> {
+  // SSRF 防护：source.url 必须是公开 HTTPS URL，否则拒绝，防止探测内网/元数据端点。
+  if (!isPublicHttpsUrl(source.url)) {
+    throw new Error(`jina ${source.id}: url 不是公开 HTTPS URL，已拒绝（SSRF 防护）`)
+  }
   const headers: Record<string, string> = { 'user-agent': 'domain-bot/0.1' }
   if (apiKey) headers.authorization = `Bearer ${apiKey}`
-  const res = await fetchFn(`https://r.jina.ai/${source.url}`, { headers })
+  const res = await withSizeLimit(fetchFn, `https://r.jina.ai/${source.url}`, { headers })
   if (!res.ok) throw new Error(`jina ${source.id}: HTTP ${res.status}`)
   const text = await res.text()
   const title = text.match(/^Title: (.*)$/m)?.[1]?.trim() ?? source.url

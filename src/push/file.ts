@@ -21,9 +21,16 @@ export function renderDigestMarkdown(digest: Digest): string {
   return lines.join('\n')
 }
 
+function sanitizeDigestId(id: string): string {
+  if (!/^[a-z0-9]{1,64}$/.test(id)) throw new Error(`digest id 非法: ${id}`)
+  return id
+}
+
 export function pushFile(digest: Digest, outDir: string): string {
+  if (outDir.includes('\0')) throw new Error('outDir 含非法字符')
   mkdirSync(outDir, { recursive: true })
-  const path = join(outDir, `digest-${digest.id}.md`)
+  const safeId = sanitizeDigestId(digest.id)
+  const path = join(outDir, `digest-${safeId}.md`)
   writeFileSync(path, renderDigestMarkdown(digest))
   return path
 }

@@ -42,6 +42,7 @@ export class MemoryStore {
   private readonly maxEntries: number
 
   constructor(private dir: string, opts: { maxEntries?: number } = {}) {
+    if (dir.includes('\0')) throw new Error('memory dir 含非法字符')
     this.maxEntries = opts.maxEntries ?? DEFAULT_MAX_ENTRIES
     mkdirSync(dir, { recursive: true })
     this.load()
@@ -172,6 +173,7 @@ export class MemoryStore {
   }
 
   registerDigestRef(ref: string, digestId: string, itemId: string, source: string): void {
+    if (!/^[a-z0-9]+:\d+$/.test(ref)) throw new Error(`ref 非法: ${ref}`)
     this.archive.digestRefs[ref] = { digestId, itemId, source }
     // 无界增长防护：只保留最近 MAX_DIGEST_REFS 条（插入序即时间序）
     const keys = Object.keys(this.archive.digestRefs)

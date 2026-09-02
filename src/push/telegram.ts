@@ -1,6 +1,11 @@
 import type { Digest, FetchFn } from '../types.js'
 import { defaultFetch } from '../collector/adapters/rss.js'
 
+/** 构建 Telegram API URL。token 仅出现在 URL 路径中（Telegram 要求），但禁止被任何日志/错误路径捕获到。 */
+export function telegramUrl(token: string, method: string): string {
+  return `https://api.telegram.org/bot${token}/${method}`
+}
+
 export interface TelegramOptions {
   token: string
   chatId: string
@@ -34,21 +39,21 @@ function inlineKeyboard(digest: Digest) {
 }
 
 export function parseCallbackData(data: string): { signal: 'up' | 'down'; ref: string } | undefined {
-  const m = data.match(/^fb:(u|d):(.+)$/)
+  const m = data.match(/^fb:(u|d):([a-z0-9]+:\d+)$/)
   if (!m) return undefined
-  return { signal: m[1] === 'u' ? 'up' : 'down', ref: m[2] }
+  return { signal: m[1] === 'u' ? 'up' : 'down', ref: m[2]! }
 }
 
 /** 👀 已读回执回调：`vb:<digestId>`。 */
 export function parseViewCallbackData(data: string): { digestId: string } | undefined {
-  const m = data.match(/^vb:(.+)$/)
+  const m = data.match(/^vb:([a-z0-9]+)$/)
   if (!m) return undefined
   return { digestId: m[1]! }
 }
 
 export async function sendDigestTelegram(digest: Digest, opts: TelegramOptions): Promise<void> {
   const fetchFn = opts.fetchFn ?? defaultFetch
-  const url = `https://api.telegram.org/bot${opts.token}/sendMessage`
+  const url = telegramUrl(opts.token, 'sendMessage')
   const res = await fetchFn(url, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -64,7 +69,7 @@ export async function sendDigestTelegram(digest: Digest, opts: TelegramOptions):
 }
 
 export async function answerCallbackQuery(token: string, callbackQueryId: string, fetchFn: FetchFn = defaultFetch): Promise<void> {
-  const res = await fetchFn(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+  const res = await fetchFn(telegramUrl(token, 'answerCallbackQuery'), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ callback_query_id: callbackQueryId }),

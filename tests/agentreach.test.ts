@@ -98,3 +98,14 @@ Top trending papers of the day. LLM agents everywhere.`
     expect(items[0]!.url).toBe('https://huggingface.co/papers')
   })
 })
+
+describe('jina adapter SSRF 防护', () => {
+  it('拒绝非公开 HTTPS URL', async () => {
+    await expect(fetchJina(src('jina', 'http://169.254.169.254/latest/meta-data/'), async () => ({ ok: true, status: 200, text: async () => '' }))).rejects.toThrow('SSRF')
+    await expect(fetchJina(src('jina', 'https://127.0.0.1/x'), async () => ({ ok: true, status: 200, text: async () => '' }))).rejects.toThrow('SSRF')
+    await expect(fetchJina(src('jina', 'ftp://example.com'), async () => ({ ok: true, status: 200, text: async () => '' }))).rejects.toThrow('SSRF')
+    await expect(fetchJina(src('jina', 'https://10.0.0.5/secret'), async () => ({ ok: true, status: 200, text: async () => '' }))).rejects.toThrow('SSRF')
+    await expect(fetchJina(src('jina', 'https://192.168.1.1/admin'), async () => ({ ok: true, status: 200, text: async () => '' }))).rejects.toThrow('SSRF')
+    await expect(fetchJina(src('jina', 'https://user:pass@example.com/'), async () => ({ ok: true, status: 200, text: async () => '' }))).rejects.toThrow('SSRF')
+  })
+})

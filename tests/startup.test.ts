@@ -62,4 +62,47 @@ describe('单实例锁（hy3 条件 2）', () => {
     acquireLock(dir)
     releaseLock(dir)
   })
+
+  // 2026-09-02 审查发现 B7：锁文件损坏时进程会**永久拒绝启动**，只能人工删锁。
+  // 触发场景真实存在——进程在 openSync('wx') 之后、writePid 之前被 SIGKILL
+  //（此时信号清理钩子不会执行），就会留下一个空锁文件。
+  it('B7 回归护栏：空 / 非数字 / 非正整数的锁文件必须能被接管', async () => {
+    const { acquireLock, releaseLock } = await import('../src/runtime/lock.js')
+    const { writeFileSync } = await import('node:fs')
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-lock-corrupt-'))
+    for (const bad of ['', 'not-a-pid', '0', '-1']) {
+      // 修复前：Number('') === 0 → process.kill(0, 0) 语义是"检查整个进程组"，
+      // 必然判定存活 → 抛"不允许并发运行"，且没有任何自动恢复路径。
+      writeFileSync(join(dir, '.lock'), bad)
+      expect(() => acquireLock(dir), `锁内容 ${JSON.stringify(bad)} 应可接管`).not.toThrow()
+      releaseLock(dir)
+    }
+  })
+
+  // 2026-09-02 审查发现 B3：acquireLock 与 releaseLock 之间横跨整个长驻循环，
+  // 此前没有 try/finally，runOnce 抛错就会残留锁文件。
+  //
+  // ⚠️ 注入点选择（踩坑记录）：**不能用采集失败来验证异常路径**——
+  // collector 对单源失败是**有意容错**的（只打印 `[collector] xxx 失败` 后继续，
+  // 一个源挂掉不该拖垮整轮），异常根本不会传播到 startBot，用例会假失败。
+  // 必须走启动链上的非采集类故障（磁盘满 / 权限 / 配置解析失败等同型场景）。
+  it('B3 回归护栏：startBot 异常退出后不得残留锁文件', async () => {
+    const { existsSync } = await import('node:fs')
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-lock-err-'))
+    const memoryDir = join(dir, 'memory')
+    let threw = false
+    try {
+      await startBot({
+        domain, sources, memoryDir, outDir: join(dir, 'out'),
+        once: false, maxRounds: 1, fetchFn: mockFetch,
+        telegram: { token: 't', chatId: 'c' },
+        // 同步抛错：模拟启动链故障
+        pollFeedbackFn: (() => { throw new Error('启动链故意炸掉') }) as never,
+      })
+    } catch {
+      threw = true
+    }
+    expect(threw, '注入的启动异常应向上暴露，否则该用例验证不到异常路径').toBe(true)
+    expect(existsSync(join(memoryDir, '.lock')), '锁文件残留').toBe(false)
+  })
 })
