@@ -1,7 +1,7 @@
 import { defaultFetch } from '../collector/adapters/rss.js'
 import { refreshWeights } from '../memory/weights.js'
 import { MemoryStore } from '../memory/store.js'
-import { answerCallbackQuery, parseCallbackData } from '../push/telegram.js'
+import { answerCallbackQuery, parseCallbackData, parseViewCallbackData } from '../push/telegram.js'
 import type { FetchFn, SourceConfig } from '../types.js'
 
 export interface TelegramCallbackQuery {
@@ -29,6 +29,14 @@ export type ProcessResult = 'recorded' | 'ignored'
 export async function processTelegramUpdate(update: TelegramUpdate, deps: ReceiverDeps): Promise<ProcessResult> {
   const cq = update.callback_query
   if (!cq?.data) return 'ignored'
+  // 👀 已读回执：不记反馈、不动权重，只记 viewed（判定线 G-1/P-1 的 viewed 唯一来源）
+  const viewed = parseViewCallbackData(cq.data)
+  if (viewed) {
+    const store = new MemoryStore(deps.memoryDir)
+    store.recordView(viewed.digestId, (deps.now ?? Date.now)())
+    await answerCallbackQuery(deps.token, cq.id, deps.fetchFn)
+    return 'recorded'
+  }
   const parsed = parseCallbackData(cq.data)
   if (!parsed) return 'ignored'
   const store = new MemoryStore(deps.memoryDir)

@@ -22,10 +22,14 @@ function renderDigestText(digest: Digest): string {
 
 function inlineKeyboard(digest: Digest) {
   return {
-    inline_keyboard: digest.clusters.map((c) => [
-      { text: '👍 有价值', callback_data: `fb:u:${c.ref}` },
-      { text: '👎 噪音', callback_data: `fb:d:${c.ref}` },
-    ]),
+    inline_keyboard: [
+      ...digest.clusters.map((c) => [
+        { text: '👍 有价值', callback_data: `fb:u:${c.ref}` },
+        { text: '👎 噪音', callback_data: `fb:d:${c.ref}` },
+      ]),
+      // agy 三审：已读回执走 Telegram callback，跨端可用（原 127.0.0.1 方案手机端必失效）
+      [{ text: '👀 已读', callback_data: `vb:${digest.id}` }],
+    ],
   }
 }
 
@@ -33,6 +37,13 @@ export function parseCallbackData(data: string): { signal: 'up' | 'down'; ref: s
   const m = data.match(/^fb:(u|d):(.+)$/)
   if (!m) return undefined
   return { signal: m[1] === 'u' ? 'up' : 'down', ref: m[2] }
+}
+
+/** 👀 已读回执回调：`vb:<digestId>`。 */
+export function parseViewCallbackData(data: string): { digestId: string } | undefined {
+  const m = data.match(/^vb:(.+)$/)
+  if (!m) return undefined
+  return { digestId: m[1]! }
 }
 
 export async function sendDigestTelegram(digest: Digest, opts: TelegramOptions): Promise<void> {

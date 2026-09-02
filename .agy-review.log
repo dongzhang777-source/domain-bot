@@ -1,0 +1,45 @@
+# 三审评审简报（agy）
+
+已完成对 `domain-bot` P0' 修复与 hy3 二审结论的全面交叉复核。评审报告已按契约落盘至 [`docs/reviews/2026-09-02-p0p-review-agy.md`](file:///Users/aiatwork/Projects/domain-bot/docs/reviews/2026-09-02-p0p-review-agy.md)（全篇 146 行，无 git commit/push，工作区干净）。
+
+---
+
+## 核心核验与发现汇总
+
+### 1. 必做验证结果
+- **全量测试**：`npm run build && npx vitest run` 构建通过，**14 个测试文件 / 78 个测试全绿**（含新增的 `startup.test.ts` 3 个测试）。
+- **hy3 条件 1 复核（运行时可达性）**：实测对 `src/index.ts` 进行变异（注释掉 `startFeedback(...)`），`tests/startup.test.ts`（`expected false to be true`）与 `tests/wiring.test.ts` 均**准确变红**，成功消除文本守卫天花板。
+- **hy3 条件 2 复核（`lock.ts` 攻防评估）**：
+  - **防得住**：同用户顺序重开、正常崩溃后陈旧锁接管、单进程重入。
+  - **防不住**：启动并发竞态（TOCTOU：`existsSync` + `writeFileSync` 非原子操作，缺 `wx`/`flock`）、OS PID 回收复用导致假死锁（需人工删锁）、EPERM 异常误判接管、缺乏异常退出信号钩子。
+- **执行者自述核实**：抽查 A6（URL 模板/裁剪/删死字段）、A4（反馈内容 sha256 哈希闸门）、A5（日志文案与独立红灯）、A7（证据脚本）全部属实。
+- **判定线草稿审读**：识别出 **§2c（已读回执）严重脱节**——文档规定回环链接 `http://127.0.0.1:8873/read/<digestId>`，但代码中**零行 HTTP 服务实现**，且手机端 Telegram 点击 `127.0.0.1` 访问手机本地网络，产生跨端断网。
+
+---
+
+## 定向问题精要
+
+1. **hy3 裁决复核与"为过审而修"痕迹**：
+   - 同意"带条件通过"的大方向，但指出 2 处过审痕迹：`lock.ts` 仅做简陋 PID 读写，未用原子 `wx` 锁；判定线 §2c 写入了 `127.0.0.1` 回环但代码未实现，属于"文档过审、系统未通"。
+2. **第三类系统性偏倚（前两轮共同盲区）**：
+   - **新鲜感与疲劳混淆（Novelty Decay）**：首周极高交互掩盖次周断崖式弃用；
+   - **排版顺序偏倚（Position Bias）**：读者注意力集中在 Top 1-2 条，强化该源权重，形成排版正反馈锁定；
+   - **单用户样本归因偏差（Effort Justification）**：设计者主观合理化工作决策影响（P-4）。
+3. **新设计失灵概率**：
+   - **已读回执 > PID 锁 > new MemoryStore**。已读回执目前必然失败（未起服务 + 手机端断网）；PID 锁在异常终止 PID 复用时卡死；`new MemoryStore` 最稳固。
+4. **已读回执替代方案**：
+   - 现方案无法存活 2 周。推荐**方案 A（Telegram Inline Keyboard）**：在推送下方加 `👀 标为已读` 按钮，走 Telegram Callback Query 由 `pollFeedback` 直接记入 `memory/views.jsonl`，原生零跨端阻碍。
+5. **无限定区（核心要点）**：
+   - **缺乏与原始 RSS Top-6 的对照组**：arXiv 占 86%，需证明 AI 筛选进化相比直接订阅 RSS 的增量价值；
+   - **中文源与英文关键词死锁**：`v2ex-hot` / `bili-llm` 持续 0 产出，当前实际为纯英文 Bot。
+
+---
+
+## 总判断
+
+**带条件通过。**（P0' 代码修复与二审复核在工程层面通过；但必须完成 3 项开跑前置硬性修正。）
+
+### 开跑前置条件清单（Phase C 门禁）
+1. **【P0】修复已读回执机制**：在代码中实现 Telegram `👀 标为已读` Callback 交互或轻量 HTTP 回执服务，确保移动端与桌面端均可真实记入 `memory/views.jsonl`。
+2. **【P0】获取 Telegram Key 并走通首条真实反馈**：必须产生真实的 `feedback.json` 与 `weights.json` 落盘记录（维持生产级验收铁律）。
+3. **【P1】`lock.ts` 加固**：使用 `openSync(lockPath, 'wx')` 消除并发启动竞态，并注册 `process.on('SIGINT' | 'SIGTERM')` 清理钩子。

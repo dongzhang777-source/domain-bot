@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { jaccard, tokenize } from '../collector/dedupe.js'
-import type { FeedbackRecord, FeedbackSignal, RawItem, ScoredItem } from '../types.js'
+import type { FeedbackRecord, FeedbackSignal, RawItem, ScoredItem, ViewRecord } from '../types.js'
 
 export interface ArchiveEntry {
   id: string
@@ -36,6 +36,7 @@ const MAX_DIGEST_REFS = 500
 export class MemoryStore {
   private archive: Archive = { entries: [], digestRefs: {} }
   private feedback: FeedbackRecord[] = []
+  private views: ViewRecord[] = []
   private tokenCache = new Map<string, Set<string>>()
   private weights: WeightsState = { weights: {}, feedbackHash: '' }
   private readonly maxEntries: number
@@ -62,6 +63,11 @@ export class MemoryStore {
     } catch {
       /* 首次运行无权重 */
     }
+    try {
+      this.views = JSON.parse(readFileSync(join(this.dir, 'views.json'), 'utf8')) as ViewRecord[]
+    } catch {
+      /* 首次运行无已读记录 */
+    }
   }
 
   private saveArchive(): void {
@@ -83,6 +89,18 @@ export class MemoryStore {
 
   feedbackCount(): number {
     return this.feedback.length
+  }
+
+  /** 已读回执落盘（Telegram 👀 按钮）。重复点击去重。 */
+  recordView(digestId: string, at: number): boolean {
+    if (this.views.some((v) => v.digestId === digestId)) return false
+    this.views.push({ digestId, at })
+    writeFileSync(join(this.dir, 'views.json'), JSON.stringify(this.views, null, 2))
+    return true
+  }
+
+  viewCount(): number {
+    return this.views.length
   }
 
   /** 反馈全量内容（闸门哈希与人工审查用）。 */

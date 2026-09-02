@@ -68,3 +68,22 @@ describe('telegram 增量标记', () => {
     expect(body).toContain('♻️')
   })
 })
+
+describe('已读回执（agy 三审 P0）', () => {
+  it('parseViewCallbackData 解析 vb: 回调', async () => {
+    const { parseViewCallbackData } = await import('../src/push/telegram.js')
+    expect(parseViewCallbackData('vb:d1')).toEqual({ digestId: 'd1' })
+    expect(parseViewCallbackData('fb:u:d1:0')).toBeUndefined()
+    expect(parseViewCallbackData('junk')).toBeUndefined()
+  })
+
+  it('Telegram 键盘含 👀 已读按钮', async () => {
+    let body = ''
+    await sendDigestTelegram(digest, {
+      token: 't', chatId: 'c',
+      fetchFn: async (_u, init) => { body = String(init?.body); return { ok: true, status: 200, text: async () => '{}' } },
+    })
+    const kb = JSON.parse(body).reply_markup.inline_keyboard as Array<Array<{ callback_data: string }>>
+    expect(kb.at(-1)![0]!.callback_data).toBe('vb:d1')
+  })
+})

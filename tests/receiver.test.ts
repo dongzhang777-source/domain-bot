@@ -66,3 +66,18 @@ describe('processTelegramUpdate', () => {
     expect(w2).toBeGreaterThan(w1)
   })
 })
+
+describe('👀 已读回执路由（agy 三审 P0）', () => {
+  it('vb 回调记 views.jsonl 不动权重；重复点击去重', async () => {
+    const { readFileSync: rf } = await import('node:fs')
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-view-'))
+    const deps = { token: 't', memoryDir: dir, sources, fetchFn: async () => ({ ok: true, status: 200, text: async () => '{}' }), now: () => 5000 }
+    expect(await processTelegramUpdate({ update_id: 1, callback_query: { id: 'c1', data: 'vb:d9' } }, deps)).toBe('recorded')
+    expect(await processTelegramUpdate({ update_id: 2, callback_query: { id: 'c2', data: 'vb:d9' } }, deps)).toBe('recorded')
+    const views = JSON.parse(rf(join(dir, 'views.json'), 'utf8'))
+    expect(views).toHaveLength(1)
+    expect(views[0]).toEqual({ digestId: 'd9', at: 5000 })
+    expect(existsSync(join(dir, 'weights.json'))).toBe(false) // 不动权重
+    function existsSync(p: string) { try { rf(p) ; return true } catch { return false } }
+  })
+})

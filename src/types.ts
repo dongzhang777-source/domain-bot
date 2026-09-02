@@ -39,6 +39,11 @@ export interface FeedbackRecord {
   at: number
 }
 
+export interface ViewRecord {
+  digestId: string
+  at: number
+}
+
 export interface SourceConfig {
   id: string
   /** exa 的 url 字段放搜索词；bili 同理；jina 放目标网页 URL */
