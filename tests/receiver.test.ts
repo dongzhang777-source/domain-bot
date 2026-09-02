@@ -31,7 +31,7 @@ describe('processTelegramUpdate', () => {
   it('👍 回调 → 反馈落盘 + 权重上升 + 回应 callbackQuery', async () => {
     const { dir, store, called, fetchFn } = setup()
     const update: TelegramUpdate = { update_id: 7, callback_query: { id: 'cq7', data: 'fb:u:d1:0' } }
-    const res = await processTelegramUpdate(update, { token: 'tk', store, sources, fetchFn, now: () => 1100 })
+    const res = await processTelegramUpdate(update, { token: 'tk', memoryDir: dir, sources, fetchFn, now: () => 1100 })
 
     expect(res).toBe('recorded')
     const fb = JSON.parse(readFileSync(join(dir, 'feedback.json'), 'utf8'))
@@ -46,7 +46,8 @@ describe('processTelegramUpdate', () => {
 
   it('无法解析 / 无对应 ref 的回调被忽略，不落盘', async () => {
     const { dir, store, fetchFn } = setup()
-    const deps = { token: 't', store, sources, fetchFn }
+    void store
+    const deps = { token: 't', memoryDir: dir, sources, fetchFn }
     expect(await processTelegramUpdate({ update_id: 1 }, deps)).toBe('ignored')
     expect(await processTelegramUpdate({ update_id: 2, callback_query: { id: 'c', data: 'garbage' } }, deps)).toBe('ignored')
     expect(await processTelegramUpdate({ update_id: 3, callback_query: { id: 'c', data: 'fb:u:nope' } }, deps)).toBe('ignored')
@@ -55,7 +56,7 @@ describe('processTelegramUpdate', () => {
 
   it('第二次 👍 继续累积，权重单调上升', async () => {
     const { dir, store, fetchFn } = setup()
-    const deps = { token: 't', store, sources, fetchFn, now: () => 1200 }
+    const deps = { token: 't', memoryDir: dir, sources, fetchFn, now: () => 1200 }
     const upd = (n: number): TelegramUpdate => ({ update_id: n, callback_query: { id: `c${n}`, data: 'fb:u:d1:0' } })
     await processTelegramUpdate(upd(1), deps)
     const w1 = JSON.parse(readFileSync(join(dir, 'weights.json'), 'utf8')).weights.s1

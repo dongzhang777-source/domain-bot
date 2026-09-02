@@ -194,9 +194,10 @@ async function main(): Promise<void> {
   const pollMs = Number(process.env.DOMAIN_BOT_POLL_MS) || 86_400_000   // 默认每天 1 轮（裁决 R9）
 
   // 常驻反馈接收：Telegram 👍/👎 → feedback.json → weights.json。--once 模式不起。
+  // 只传 memoryDir：接收端每次回调从盘重建 store，不持有长驻快照（V1 事故教训）。
   if (telegram && !once) {
     pollFeedback(
-      { token: telegram.token, store: new MemoryStore(memoryDir), sources },
+      { token: telegram.token, memoryDir, sources },
       { onError: (e) => console.error('[feedback] 轮询异常（5s 后重试）:', e instanceof Error ? e.message : e) },
     ).catch((e) => console.error('[feedback] 循环意外退出:', e))
   } else if (telegram) {

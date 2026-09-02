@@ -1,6 +1,6 @@
 import { defaultFetch } from '../collector/adapters/rss.js'
 import { refreshWeights } from '../memory/weights.js'
-import type { MemoryStore } from '../memory/store.js'
+import { MemoryStore } from '../memory/store.js'
 import { answerCallbackQuery, parseCallbackData } from '../push/telegram.js'
 import type { FetchFn, SourceConfig } from '../types.js'
 
@@ -16,7 +16,8 @@ export interface TelegramUpdate {
 
 export interface ReceiverDeps {
   token: string
-  store: MemoryStore
+  /** 接收端只持有目录，不持有 store——每次回调从盘重建，否则长驻快照看不见 runOnce 后续写入的 ref（V1 事故） */
+  memoryDir: string
   sources: SourceConfig[]
   fetchFn?: FetchFn
   now?: () => number
@@ -30,17 +31,18 @@ export async function processTelegramUpdate(update: TelegramUpdate, deps: Receiv
   if (!cq?.data) return 'ignored'
   const parsed = parseCallbackData(cq.data)
   if (!parsed) return 'ignored'
-  const resolved = deps.store.resolveRef(parsed.ref)
+  const store = new MemoryStore(deps.memoryDir)
+  const resolved = store.resolveRef(parsed.ref)
   if (!resolved) return 'ignored'
 
-  deps.store.recordFeedback({
+  store.recordFeedback({
     itemId: resolved.itemId,
     digestId: resolved.digestId,
     source: resolved.source,
     signal: parsed.signal,
     at: (deps.now ?? Date.now)(),
   })
-  refreshWeights(deps.store, deps.sources)
+  refreshWeights(store, deps.sources)
   await answerCallbackQuery(deps.token, cq.id, deps.fetchFn)
   return 'recorded'
 }

@@ -185,7 +185,7 @@ describe('端到端反测试（只走真实入口）', () => {
       { update_id: 1, callback_query: { id: 'cq', data: `fb:u:${ref}` } },
       {
         token: 't',
-        store: new MemoryStore(memoryDir),
+        memoryDir,
         sources,
         fetchFn: async () => ({ ok: true, status: 200, text: async () => '{}' }),
         now: () => 1500,
