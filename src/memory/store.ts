@@ -11,6 +11,8 @@ export interface ArchiveEntry {
   firstSeenAt: number
   lastSeenAt: number
   hitCount: number
+  /** true = 真的推送过；false = 仅进入过候选池。区分二者才能解传送带并观测候选池分布 */
+  pushed: boolean
 }
 
 interface Archive {
@@ -25,7 +27,9 @@ export interface WeightsState {
   processedFeedback: number
 }
 
-const MAX_ENTRIES = 2000
+// 全量候选入归档后量级从"每轮≤6"升到"每轮数百"；2 万条 ≈ 5MB JSON，两周探针够用。
+// 可注入是为了让裁剪测试不必构造 20001 条（见工作单 Task 9 Step 0）。
+const DEFAULT_MAX_ENTRIES = 20000
 
 /** JSON 文件记忆库：归档（新颖性判定）+ 反馈信号 + digest 引用。可导出、可人工修正（直接改 JSON）。 */
 export class MemoryStore {
@@ -33,8 +37,10 @@ export class MemoryStore {
   private feedback: FeedbackRecord[] = []
   private tokenCache = new Map<string, Set<string>>()
   private weights: WeightsState = { weights: {}, processedFeedback: 0 }
+  private readonly maxEntries: number
 
-  constructor(private dir: string) {
+  constructor(private dir: string, opts: { maxEntries?: number } = {}) {
+    this.maxEntries = opts.maxEntries ?? DEFAULT_MAX_ENTRIES
     mkdirSync(dir, { recursive: true })
     this.load()
   }
@@ -96,7 +102,7 @@ export class MemoryStore {
     return true
   }
 
-  /** 把本轮入库条目写入归档；已存在的只刷新 lastSeenAt/hitCount。 */
+  /** 把本轮全部候选写入归档（不只推送的）；已存在的刷新 lastSeenAt/hitCount。 */
   recordItems(items: ScoredItem[], now: number): void {
     const byId = new Map(this.archive.entries.map((e) => [e.id, e]))
     for (const item of items) {
@@ -113,16 +119,32 @@ export class MemoryStore {
           firstSeenAt: now,
           lastSeenAt: now,
           hitCount: 1,
+          pushed: false,
         }
         byId.set(item.id, entry)
         this.archive.entries.push(entry)
       }
     }
-    if (this.archive.entries.length > MAX_ENTRIES) {
-      this.archive.entries.sort((a, b) => b.lastSeenAt - a.lastSeenAt)
-      this.archive.entries.length = MAX_ENTRIES
+    if (this.archive.entries.length > this.maxEntries) {
+      // 优先保留推送过的；其余按最近出现时间淘汰
+      this.archive.entries.sort((a, b) => Number(b.pushed) - Number(a.pushed) || b.lastSeenAt - a.lastSeenAt)
+      this.archive.entries.length = this.maxEntries
     }
     this.saveArchive()
+  }
+
+  /** 把确实推送出去的条目升级为 pushed=true。 */
+  markPushed(ids: Iterable<string>): void {
+    const byId = new Map(this.archive.entries.map((e) => [e.id, e]))
+    let touched = false
+    for (const id of ids) {
+      const e = byId.get(id)
+      if (e && !e.pushed) {
+        e.pushed = true
+        touched = true
+      }
+    }
+    if (touched) this.saveArchive()
   }
 
   registerDigestRef(ref: string, digestId: string, itemId: string, source: string): void {

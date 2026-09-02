@@ -62,9 +62,22 @@ describe('MemoryStore', () => {
   })
 
   it('归档超过上限时按最近活跃裁剪', () => {
-    const store = tempStore()
+    const store = new MemoryStore(mkdtempSync(join(tmpdir(), 'dbot-')), { maxEntries: 2000 })
     for (let i = 0; i < 2100; i++) store.recordItems([scored(`id-${i}`, `unique title ${i}`)], i)
     expect(store.export().archive.entries.length).toBeLessThanOrEqual(2000)
     expect(store.export().archive.entries.some((e) => e.id === 'id-2099')).toBe(true)
+  })
+
+  it('全量候选入归档：未推送条目 pushed=false，markPushed 后升级，且三条都被去重屏蔽', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-pool-'))
+    const store = new MemoryStore(dir)
+    const mk = (id: string) => ({ id, source: 's1', title: `t-${id}`, body: '', url: '', publishedAt: 0, valueScore: 0.5, isNew: true, reason: '' })
+    store.recordItems([mk('a'), mk('b'), mk('c')], 1000)
+    store.markPushed(['a'])
+    const entries = new MemoryStore(dir).export().archive.entries
+    expect(entries).toHaveLength(3)
+    expect(entries.find((e) => e.id === 'a')!.pushed).toBe(true)
+    expect(entries.find((e) => e.id === 'b')!.pushed).toBe(false)
+    expect(new MemoryStore(dir).knownIds().size).toBe(3)
   })
 })

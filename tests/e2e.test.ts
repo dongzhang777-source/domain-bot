@@ -116,6 +116,28 @@ describe('e2e: 采集 → 提炼 → 记忆 → 推送 → 反馈 → 进化', (
     expect(mem.entries.some((e) => e.source === 'rss-1')).toBe(true)
   })
 
+  it('传送带已解：归档条数 = 全量候选 > 实际推送条数', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-belt-'))
+    // 8 条同构 rss + 1 条 github。必须让候选数(9) > maxPerDigest(6)，配额才会真的截断，
+    // 否则「归档条数 > 推送条数」测不出任何东西（现有 mockFetch 只有 3 条候选，正是这个陷阱）。
+    const rssFlood = `<?xml version="1.0"?><rss><channel>${Array.from({ length: 8 }, (_, i) =>
+      `<item><title>LLM inference benchmark study number ${i} with open source release</title><description>llm inference outperform SOTA benchmark release ${i}</description><link>https://e.com/r${i}</link></item>`).join('')}</channel></rss>`
+    const fetchFn = async (url: string) => ({
+      ok: true,
+      status: 200,
+      text: async () => (String(url).includes('api.github.com') ? GH_JSON : rssFlood),
+    })
+    const r = await runOnce({ domain, sources, memoryDir: join(dir, 'memory'), outDir: join(dir, 'out'), fetchFn, now: 1000 })
+    const mem = JSON.parse(readFileSync(join(dir, 'memory', 'archive.json'), 'utf8')) as {
+      entries: Array<{ id: string; pushed: boolean }>
+    }
+    expect(r.stats.relevant).toBe(9)
+    expect(mem.entries).toHaveLength(9)                                    // 全量候选都进归档
+    expect(mem.entries.filter((e) => e.pushed)).toHaveLength(4)            // perSourceCap=3 → rss 3 条 + gh 1 条
+    expect(r.stats.pushed).toBe(4)
+    expect(r.digest!.clusters).toHaveLength(2)                             // 8 条 rss 标题只差个位数字 → tokenize 丢弃长度 1 的 token → 同一簇
+  })
+
   it('每源配额：单一密集源不得霸占全部推送位', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'dbot-e2e-'))
     const rssFlood = `<?xml version="1.0"?><rss><channel>${Array.from({ length: 8 }, (_, i) =>

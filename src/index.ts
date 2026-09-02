@@ -94,17 +94,21 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
     diversified.push(item)
     if (diversified.length >= opts.domain.maxPerDigest) break
   }
-  scored = diversified
+
+  // 全量候选入归档（配额截断前），再由 markPushed 升级真正推送的那些。
+  // 这样 dedupe 屏蔽的是整批已评估内容，而不是只屏蔽推过的 6 条 —— 解传送带。
+  const candidates = scored
 
   const digestId = now.toString(36)
   const digest: Digest = {
     id: digestId,
     generatedAt: now,
     domain: opts.domain.domain,
-    clusters: buildClusters(scored, opts.domain.clusterThreshold, digestId),
+    clusters: buildClusters(diversified, opts.domain.clusterThreshold, digestId),
   }
 
-  store.recordItems(scored, now)
+  store.recordItems(candidates, now)
+  store.markPushed(diversified.map((s) => s.id))
   for (const cluster of digest.clusters) {
     store.registerDigestRef(cluster.ref, digestId, cluster.items[0].id, cluster.items[0].source)
   }
@@ -135,7 +139,7 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
       collected: collectedCount,
       deduped: collectedCount - kept.length,
       relevant: relevant.length,
-      pushed: digest.clusters.length,
+      pushed: diversified.length,
       skippedSources: skipped.map((s) => s.id),
     },
   }
