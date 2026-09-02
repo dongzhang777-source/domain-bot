@@ -5,6 +5,7 @@ import { dedupe } from './collector/dedupe.js'
 import { fetchRss } from './collector/adapters/rss.js'
 import { fetchGithub } from './collector/adapters/github.js'
 import { fetchBili, fetchExa, fetchJina, fetchV2ex } from './collector/adapters/agentreach.js'
+import { resolveSourceUrl } from './collector/urlTemplate.js'
 import { filterRelevant } from './refinery/filter.js'
 import { makeScorerFromEnv } from './refinery/scorer.js'
 import { buildClusters } from './refinery/cluster.js'
@@ -52,7 +53,7 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
   let collectedCount = 0
   for (const source of enabled) {
     try {
-      const items = await collectSource(source, opts.fetchFn, opts.spawnFn)
+      const items = await collectSource({ ...source, url: resolveSourceUrl(source.url, now) }, opts.fetchFn, opts.spawnFn)
       collectedCount += items.length
       collected.push(...items.map((i) => ({ ...i, valueScore: 0, isNew: false, reason: '' })))
     } catch (err) {
@@ -193,7 +194,7 @@ async function main(): Promise<void> {
   const root = process.cwd()
   const domain = loadJson<DomainConfig>(join(root, 'config/domain.json'))
   const sources = loadJson<SourceConfig[]>(join(root, 'config/sources.json'))
-  const push = loadJson<{ channel: string; outDir: string }>(join(root, 'config/push.json'))
+  const push = loadJson<{ outDir: string }>(join(root, 'config/push.json'))
   const memoryDir = join(root, 'memory')
 
   const once = process.argv.includes('--once')

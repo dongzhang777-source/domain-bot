@@ -16,7 +16,7 @@
   {
     "id": "github-new-llm-tools",
     "type": "github",
-    "url": "https://api.github.com/search/repositories?q=topic:llm+created:%3E2026-08-25&sort=stars&order=desc&per_page=15",
+    "url": "https://api.github.com/search/repositories?q=topic:llm+created:%3E{{since_days:7}}&sort=stars&order=desc&per_page=15",
     "weight": 0.5,
     "enabled": true
   },

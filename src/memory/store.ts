@@ -30,6 +30,7 @@ export interface WeightsState {
 // 全量候选入归档后量级从"每轮≤6"升到"每轮数百"；2 万条 ≈ 5MB JSON，两周探针够用。
 // 可注入是为了让裁剪测试不必构造 20001 条（见工作单 Task 9 Step 0）。
 const DEFAULT_MAX_ENTRIES = 20000
+const MAX_DIGEST_REFS = 500
 
 /** JSON 文件记忆库：归档（新颖性判定）+ 反馈信号 + digest 引用。可导出、可人工修正（直接改 JSON）。 */
 export class MemoryStore {
@@ -154,6 +155,11 @@ export class MemoryStore {
 
   registerDigestRef(ref: string, digestId: string, itemId: string, source: string): void {
     this.archive.digestRefs[ref] = { digestId, itemId, source }
+    // 无界增长防护：只保留最近 MAX_DIGEST_REFS 条（插入序即时间序）
+    const keys = Object.keys(this.archive.digestRefs)
+    if (keys.length > MAX_DIGEST_REFS) {
+      for (const k of keys.slice(0, keys.length - MAX_DIGEST_REFS)) delete this.archive.digestRefs[k]
+    }
     this.saveArchive()
   }
 

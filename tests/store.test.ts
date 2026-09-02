@@ -82,3 +82,12 @@ describe('MemoryStore', () => {
     expect(new MemoryStore(dir).knownIds().size).toBe(3)
   })
 })
+
+describe('digestRefs 裁剪', () => {
+  it('超过上限时淘汰最旧的 ref，最新可解析', () => {
+    const store = new MemoryStore(mkdtempSync(join(tmpdir(), 'dbot-refs-')))
+    for (let i = 0; i < 505; i++) store.registerDigestRef(`d${i}:0`, `d${i}`, `i${i}`, 's1')
+    expect(store.resolveRef('d0:0')).toBeUndefined()
+    expect(store.resolveRef('d504:0')).toBeDefined()
+  })
+})
