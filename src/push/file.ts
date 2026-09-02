@@ -6,7 +6,7 @@ export function renderDigestMarkdown(digest: Digest): string {
   const lines: string[] = [
     `# 领域情报 · ${digest.domain} · ${new Date(digest.generatedAt).toISOString().slice(0, 16).replace('T', ' ')}`,
     '',
-    `> digest: ${digest.id} · 共 ${digest.clusters.length} 个趋势簇。有价值请 👍，噪音请 👎（Telegram 内点按钮，或向 feedback.json 追加记录）。`,
+    `> digest: ${digest.id} · 共 ${digest.clusters.length} 个趋势簇。反馈请在 Telegram 内点 👍/👎 按钮（文件版不计入判定线的 viewed 与反馈统计）。`,
     '',
   ]
   digest.clusters.forEach((c, i) => {

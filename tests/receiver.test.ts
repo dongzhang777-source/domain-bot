@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { processTelegramUpdate, type TelegramUpdate } from '../src/feedback/receiver.js'
+import { processTelegramUpdate, loadOffset, saveOffset, type TelegramUpdate } from '../src/feedback/receiver.js'
 import { MemoryStore } from '../src/memory/store.js'
 import type { SourceConfig } from '../src/types.js'
 
@@ -55,15 +55,28 @@ describe('processTelegramUpdate', () => {
     expect(() => readFileSync(join(dir, 'feedback.json'), 'utf8')).toThrow()
   })
 
-  it('第二次 👍 继续累积，权重单调上升', async () => {
-    const { dir, store, fetchFn } = setup()
+  it('同条同信号的重复 👍 去重不入账（C′10：重启重放/连点不得虚增 P-2 样本），改 👎 仍入账', async () => {
+    const { dir, fetchFn } = setup()
     const deps = { token: 't', memoryDir: dir, sources, fetchFn, now: () => 1200 }
     const upd = (n: number): TelegramUpdate => ({ update_id: n, callback_query: { id: `c${n}`, data: 'fb:u:d1:0' } })
     await processTelegramUpdate(upd(1), deps)
     const w1 = JSON.parse(readFileSync(join(dir, 'weights.json'), 'utf8')).weights.s1
     await processTelegramUpdate(upd(2), deps)
+    expect(JSON.parse(readFileSync(join(dir, 'feedback.json'), 'utf8'))).toHaveLength(1)
     const w2 = JSON.parse(readFileSync(join(dir, 'weights.json'), 'utf8')).weights.s1
-    expect(w2).toBeGreaterThan(w1)
+    expect(w2).toBe(w1) // 重复信号零增量——旧断言「第二次 👍 继续累积」锁定的正是 §3.5① 的重复入账缺陷，随 C′10 一并解锁
+    await processTelegramUpdate({ update_id: 3, callback_query: { id: 'c3', data: 'fb:d:d1:0' } }, deps)
+    expect(JSON.parse(readFileSync(join(dir, 'feedback.json'), 'utf8'))).toHaveLength(2)
+  })
+})
+
+describe('offset 持久化（C′10）', () => {
+  it('空目录 loadOffset=0；saveOffset 后按重启语义读回', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-offset-'))
+    expect(loadOffset(dir)).toBe(0)
+    saveOffset(dir, 42)
+    expect(loadOffset(dir)).toBe(42)
+    expect(JSON.parse(readFileSync(join(dir, 'feedback-offset.json'), 'utf8'))).toEqual({ offset: 42 })
   })
 })
 

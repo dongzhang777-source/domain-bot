@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseCallbackData, sendDigestTelegram } from '../src/push/telegram.js'
+import { parseCallbackData, sendDigestTelegram, renderDigestText } from '../src/push/telegram.js'
 import { renderDigestMarkdown } from '../src/push/file.js'
 import type { Digest, ScoredItem } from '../src/types.js'
 
@@ -66,6 +66,36 @@ describe('telegram 增量标记', () => {
     })
     expect(body).toContain('🆕')
     expect(body).toContain('♻️')
+  })
+})
+
+describe('Telegram Markdown 转义（C′9，§3.4 静默失败防护）', () => {
+  const mk = (id: string, title: string): ScoredItem =>
+    ({ id, source: 's', title, body: '', url: 'u', publishedAt: 0, valueScore: 0.8, isNew: true, reason: '' })
+
+  it('用户文本中的 Telegram 保留字被转义；结构标记（粗体/链接）不被破坏', () => {
+    const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters: [
+      { ref: 'd:0', title: 'BERT_base vs [CLS]', summary: 'a_b [c] `d`', why: 'x_y', items: [mk('1', 'BERT_base vs [CLS]')] },
+    ] }
+    const text = renderDigestText(d)
+    // arXiv 标题的下划线/方括号极常见；不转义则 sendMessage 400（Can't parse entities）→ 整轮推送静默丢失
+    expect(text).toContain('BERT\\_base')
+    expect(text).toContain('\\[CLS\\]')
+    expect(text).toContain('a\\_b \\[c\\]')
+    expect(text).toContain('x\\_y')
+    // 结构标记是代码自己的插值，不在用户文本里，必须原样保留
+    expect(text).toContain('*1. 🆕')
+    expect(text).toContain('[src](u)')
+    expect(text).toContain('*ai*')
+  })
+
+  it('URL 中的右括号被百分号编码，不提前闭合链接', () => {
+    const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters: [
+      { ref: 'd:0', title: 't', summary: 's', why: 'w', items: [mk('1', 't')] },
+    ] }
+    d.clusters[0]!.items[0]!.url = 'https://e.com/a(b)'
+    const text = renderDigestText(d)
+    expect(text).toContain('[src](https://e.com/a(b%29)')
   })
 })
 

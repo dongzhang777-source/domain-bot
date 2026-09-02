@@ -12,13 +12,24 @@ export interface TelegramOptions {
   fetchFn?: FetchFn
 }
 
-function renderDigestText(digest: Digest): string {
-  const head = `📡 *${digest.domain}* 情报（${digest.clusters.length} 条趋势）\n\n`
+// Telegram legacy Markdown 保留字。用户文本原样插值会让 sendMessage 返回 400（Can't parse entities），
+// 而 index.ts 的推送 catch 只打日志不回滚——归档/观测/outbox 全记「已推送」，用户一条没收到（诊断报告 §3.4）。
+function escMd(s: string): string {
+  return s.replace(/[_*[\]`\\]/g, '\\$&')
+}
+
+/** 链接 URL 里的 `)` 会提前闭合 Markdown 链接，用百分号编码消解；`\` 同理。 */
+function escUrl(u: string): string {
+  return u.replace(/\\/g, '%5C').replace(/\)/g, '%29')
+}
+
+export function renderDigestText(digest: Digest): string {
+  const head = `📡 *${escMd(digest.domain)}* 情报（${digest.clusters.length} 条趋势）\n\n`
   const body = digest.clusters
     .map((c, i) => {
       const src = c.items[0]!
       const tag = src.isNew ? '🆕' : '♻️'
-      return `*${i + 1}. ${tag} ${c.title.slice(0, 120)}*\n${c.summary.slice(0, 300)}\n[src](${src.url}) · ${c.why}`
+      return `*${i + 1}. ${tag} ${escMd(c.title.slice(0, 120))}*\n${escMd(c.summary.slice(0, 300))}\n[src](${escUrl(src.url)}) · ${escMd(c.why)}`
     })
     .join('\n\n')
   const text = head + body

@@ -187,9 +187,16 @@ export class MemoryStore {
     return this.archive.digestRefs[ref]
   }
 
-  recordFeedback(fb: FeedbackRecord): void {
+  /** 反馈落盘。同 digestId+itemId+signal 去重（C′10）：重启重放/连点不得虚增「有效反馈 ≥20 条」（P-2）；
+   *  改主意（👍→👎）是不同信号，仍各计一次。与 recordView 按 digestId 去重的口径不同——反馈允许同条目正反两票。 */
+  recordFeedback(fb: FeedbackRecord): boolean {
+    const dup = this.feedback.some(
+      (f) => f.digestId === fb.digestId && f.itemId === fb.itemId && f.signal === fb.signal,
+    )
+    if (dup) return false
     this.feedback.push(fb)
     this.saveFeedback()
+    return true
   }
 
   feedbackBySource(): Record<string, { up: number; down: number }> {

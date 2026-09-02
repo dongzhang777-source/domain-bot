@@ -1,3 +1,5 @@
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { defaultFetch } from '../collector/adapters/rss.js'
 import { telegramUrl } from '../push/telegram.js'
 import { refreshWeights } from '../memory/weights.js'
@@ -72,18 +74,38 @@ export async function fetchUpdates(
   return data.result ?? []
 }
 
-/** 常驻长轮询：单实例，收到回调即落盘。出错退避 5s 后继续，不退出。 */
+const offsetPath = (memoryDir: string) => join(memoryDir, 'feedback-offset.json')
+
+/** 重启续拉位点（C′10）：offset 不持久化则每次重启从 0 重拉，Telegram 重放 24h 内回调 → 反馈重复入账（§3.5①）。 */
+export function loadOffset(memoryDir: string): number {
+  try {
+    const raw = JSON.parse(readFileSync(offsetPath(memoryDir), 'utf8')) as { offset?: number }
+    return typeof raw.offset === 'number' && Number.isFinite(raw.offset) ? Math.max(0, raw.offset) : 0
+  } catch {
+    return 0
+  }
+}
+
+export function saveOffset(memoryDir: string, offset: number): void {
+  mkdirSync(memoryDir, { recursive: true })
+  writeFileSync(offsetPath(memoryDir), JSON.stringify({ offset }, null, 2))
+}
+
+/** 常驻长轮询：单实例，收到回调即落盘。出错退避 5s 后继续，不退出。
+ *  offset 每批落盘一次：崩溃丢失的只是「已处理未落盘」一段，重放部分由 recordFeedback 去重兜底。 */
 export async function pollFeedback(
   deps: ReceiverDeps,
   opts: { onError?: (err: unknown) => void } = {},
 ): Promise<never> {
-  let offset = 0
+  let offset = loadOffset(deps.memoryDir)
   for (;;) {
     try {
-      for (const u of await fetchUpdates(deps.token, offset, deps.fetchFn)) {
+      const updates = await fetchUpdates(deps.token, offset, deps.fetchFn)
+      for (const u of updates) {
         offset = Math.max(offset, u.update_id + 1)
         await processTelegramUpdate(u, deps)
       }
+      if (updates.length > 0) saveOffset(deps.memoryDir, offset)
     } catch (err) {
       opts.onError?.(err)
       await new Promise((r) => setTimeout(r, 5000))
