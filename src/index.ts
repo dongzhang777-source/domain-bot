@@ -218,7 +218,7 @@ async function main(): Promise<void> {
   do {
     const result = await runOnce({ domain, sources, memoryDir, outDir: push.outDir, telegram })
     console.log(
-      `[run] 采集 ${result.stats.collected} → 去重删 ${result.stats.deduped} → 相关 ${result.stats.relevant} → 推送 ${result.stats.pushed} 簇`,
+      `[run] 采集 ${result.stats.collected} → 去重删 ${result.stats.deduped} → 相关 ${result.stats.relevant} → 推送 ${result.stats.pushed} 条`,
       result.pushedPaths,
     )
     if (once) break
