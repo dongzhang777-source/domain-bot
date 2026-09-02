@@ -5,7 +5,8 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { MemoryStore } from '../src/memory/store.js'
-import { refreshWeights } from '../src/memory/weights.js'
+import { feedbackContentHash, refreshWeights } from '../src/memory/weights.js'
+import { readFileSync, writeFileSync } from 'node:fs'
 
 const sources: SourceConfig[] = [
   { id: 'good', type: 'rss', url: '', weight: 0.6, enabled: true },
@@ -36,22 +37,38 @@ describe('evolve', () => {
   })
 })
 
-describe('refreshWeights 闸门', () => {
+describe('refreshWeights 闸门（内容哈希）', () => {
   it('无新反馈时不重算（防止每轮向 0.5 先验漂移冲淡已学信号）', () => {
     const store = new MemoryStore(mkdtempSync(join(tmpdir(), 'dbot-rw-')))
-    store.saveWeights({ good: 0.9, noisy: 0.1 }, 0)
-    // feedbackCount()=0 == processedFeedback=0 → 闸门关闭，原样返回（off 无存档值 → 回落 config 的 0.5）
+    store.saveWeights({ good: 0.9, noisy: 0.1 }, feedbackContentHash([]))
+    // 盘上无反馈文件 → 当前内容哈希 == 空数组哈希 → 闸门关闭（off 无存档值 → 回落 config 的 0.5）
     expect(refreshWeights(store, sources)).toEqual({ good: 0.9, noisy: 0.1, off: 0.5 })
   })
 
-  it('有新反馈时重算并落盘，processedFeedback 前移，再调一次结果不变', () => {
+  it('有新反馈时重算并落盘，再调一次结果不变', () => {
     const dir = mkdtempSync(join(tmpdir(), 'dbot-rw2-'))
     const store = new MemoryStore(dir)
     store.recordFeedback({ itemId: 'i', digestId: 'd', source: 'good', signal: 'up', at: 1 })
     const next = refreshWeights(store, sources)
     expect(next.good).toBeGreaterThan(0.6)
-    expect(store.weightsState().processedFeedback).toBe(1)
     expect(refreshWeights(store, sources)).toEqual(next)
+  })
+
+  it('手工编辑反馈内容（条数不变）必须触发重算——闸门用内容哈希不用计数（A4/V 修复）', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-rw3-'))
+    const store = new MemoryStore(dir)
+    store.recordFeedback({ itemId: 'i', digestId: 'd', source: 'good', signal: 'down', at: 1 })
+    const wDown = refreshWeights(store, sources).good!
+    expect(wDown).toBeLessThan(0.6) // 单条 👎 从 0.6 先验向下移动（Beta+α=0.2 的温和步长，不会一步过 0.5）
+
+    // 用户改错主意，手工把同一条 👎 改成 👍：条数不变，计数闸门会吞掉修正，哈希闸门必须响应
+    writeFileSync(join(dir, 'feedback.json'), JSON.stringify([
+      { itemId: 'i', digestId: 'd', source: 'good', signal: 'up', at: 1 },
+    ]))
+    const store2 = new MemoryStore(dir)
+    const wUp = refreshWeights(store2, sources).good!
+    expect(wUp).toBeGreaterThan(wDown) // 修正被响应：同一条反馈改成 👍 后权重必须高于改前
+    expect(readFileSync(join(dir, 'weights.json'), 'utf8')).toContain('"good"')
   })
 })
 

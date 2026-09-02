@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { MemoryStore } from '../src/memory/store.js'
+import { feedbackContentHash } from '../src/memory/weights.js'
 import type { ScoredItem } from '../src/types.js'
 
 function scored(id: string, title: string): ScoredItem {
@@ -50,8 +51,8 @@ describe('MemoryStore', () => {
 
   it('权重持久化：saveWeights 后新实例能读回', () => {
     const dir = mkdtempSync(join(tmpdir(), 'dbot-w-'))
-    new MemoryStore(dir).saveWeights({ s1: 0.72 }, 3)
-    expect(new MemoryStore(dir).weightsState()).toEqual({ weights: { s1: 0.72 }, processedFeedback: 3 })
+    new MemoryStore(dir).saveWeights({ s1: 0.72 }, feedbackContentHash([{ itemId: 'x' } as never]))
+    expect(new MemoryStore(dir).weightsState()).toEqual({ weights: { s1: 0.72 }, feedbackHash: feedbackContentHash([{ itemId: 'x' } as never]) })
   })
 
   it('digestRef 登记/解析', () => {

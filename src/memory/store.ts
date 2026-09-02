@@ -23,8 +23,8 @@ interface Archive {
 
 export interface WeightsState {
   weights: Record<string, number>
-  /** 已参与权重计算的反馈条数；闸门，防止无新反馈时反复向先验回归 */
-  processedFeedback: number
+  /** 闸门令牌：参与权重计算时的反馈内容哈希（不是计数——计数在手工编辑语义下会静默吞掉修正） */
+  feedbackHash: string
 }
 
 // 全量候选入归档后量级从"每轮≤6"升到"每轮数百"；2 万条 ≈ 5MB JSON，两周探针够用。
@@ -36,7 +36,7 @@ export class MemoryStore {
   private archive: Archive = { entries: [], digestRefs: {} }
   private feedback: FeedbackRecord[] = []
   private tokenCache = new Map<string, Set<string>>()
-  private weights: WeightsState = { weights: {}, processedFeedback: 0 }
+  private weights: WeightsState = { weights: {}, feedbackHash: '' }
   private readonly maxEntries: number
 
   constructor(private dir: string, opts: { maxEntries?: number } = {}) {
@@ -72,16 +72,21 @@ export class MemoryStore {
   }
 
   weightsState(): WeightsState {
-    return { weights: { ...this.weights.weights }, processedFeedback: this.weights.processedFeedback }
+    return { weights: { ...this.weights.weights }, feedbackHash: this.weights.feedbackHash }
   }
 
-  saveWeights(weights: Record<string, number>, processedFeedback: number): void {
-    this.weights = { weights: { ...weights }, processedFeedback }
+  saveWeights(weights: Record<string, number>, feedbackHash: string): void {
+    this.weights = { weights: { ...weights }, feedbackHash }
     writeFileSync(join(this.dir, 'weights.json'), JSON.stringify(this.weights, null, 2))
   }
 
   feedbackCount(): number {
     return this.feedback.length
+  }
+
+  /** 反馈全量内容（闸门哈希与人工审查用）。 */
+  feedbackAll(): FeedbackRecord[] {
+    return [...this.feedback]
   }
 
   knownIds(): Set<string> {

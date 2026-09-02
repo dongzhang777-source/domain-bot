@@ -40,7 +40,8 @@ describe('processTelegramUpdate', () => {
 
     const w = JSON.parse(readFileSync(join(dir, 'weights.json'), 'utf8'))
     expect(w.weights.s1).toBeGreaterThan(0.5)
-    expect(w.processedFeedback).toBe(1)
+    expect(typeof w.feedbackHash).toBe('string')
+    expect(w.feedbackHash).not.toBe('')
     expect(called.some((u) => u.includes('answerCallbackQuery'))).toBe(true)
   })
 
