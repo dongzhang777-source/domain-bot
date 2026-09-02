@@ -38,4 +38,18 @@ describe('dedupe', () => {
     expect(jaccard(new Set(), new Set())).toBe(0)
     expect(normalizeText('Hello, World! 123')).toBe('hello world 123')
   })
+
+  it('中文标题经 CJK 2-gram 获得有效 jaccard（P2-2，agy-R1）', () => {
+    // 同事件跨源报道：共享长词组，2-gram 交集大
+    const a = tokenize('机器之心：大模型推理优化实战发布')
+    const b = tokenize('量子位 大模型推理优化实战 开源')
+    expect(jaccard(a, b)).toBeGreaterThan(0.3)
+    // 不相关中文标题交集应接近 0
+    const c = tokenize('美联储宣布加息 25 个基点')
+    expect(jaccard(tokenize('大模型推理优化'), c)).toBeLessThan(0.1)
+    // 英文/混排行为不回归：纯英文标题不含 bigram 噪声
+    expect(jaccard(tokenize('hello world'), tokenize('hello world'))).toBe(1)
+    // 单字 CJK 段不产生 token
+    expect(tokenize('这是一 AI 测试').has('这')).toBe(false)
+  })
 })

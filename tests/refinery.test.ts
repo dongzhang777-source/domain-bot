@@ -171,4 +171,14 @@ describe('cluster', () => {
     expect(clusters[0].ref).toBe('abc:0')
     expect(clusters[0].title).toBe('llm guide')
   })
+
+  it('中文同事件跨源报道经 CJK 2-gram 聚成一簇（P2-2，agy-R1）', () => {
+    const groups = clusterItems(
+      [scored('机器之心：大模型推理优化实战发布', 0.9), scored('量子位 大模型推理优化实战 开源', 0.7), scored('美联储宣布加息 25 个基点', 0.5)],
+      0.35,
+    )
+    expect(groups).toHaveLength(2)
+    expect(groups[0]).toHaveLength(2)
+    expect(groups[0][0].title).toContain('机器之心')
+  })
 })

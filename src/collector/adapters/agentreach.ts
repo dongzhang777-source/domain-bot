@@ -162,7 +162,10 @@ export async function fetchYtSearch(source: SourceConfig, spawnFn: SpawnFn = exa
     if (!title || !url) continue
     const channel = entry.channel ?? entry.uploader ?? '未知频道'
     const views = typeof entry.view_count === 'number' ? entry.view_count.toLocaleString() : '0'
-    const publishedAt = entry.upload_date ? Date.parse(`${entry.upload_date.slice(0, 4)}-${entry.upload_date.slice(4, 6)}-${entry.upload_date.slice(6, 8)}`) || 0 : 0
+    // P2-1（agy-R1）：upload_date 只信 8 位字符串，防异常输出把 .slice 打穿
+    const publishedAt = typeof entry.upload_date === 'string' && entry.upload_date.length === 8
+      ? Date.parse(`${entry.upload_date.slice(0, 4)}-${entry.upload_date.slice(4, 6)}-${entry.upload_date.slice(6, 8)}`) || 0
+      : 0
     items.push({
       id: contentHash({ title, body: url }),
       source: source.id,
@@ -197,6 +200,10 @@ export function parseFetchedPage(markdown: string, sourceId: string, url: string
 }
 
 export async function fetchJinaViaExa(source: SourceConfig, spawnFn: SpawnFn = exaSpawn): Promise<RawItem> {
+  // P2-3（agy-R1）：独立导出的入口自守 SSRF，防未来被绕过 fetchJina 直接引用
+  if (!isPublicHttpsUrl(source.url)) {
+    throw new Error(`jina-via-exa ${source.id}: url 不是公开 HTTPS URL，已拒绝（SSRF 防护）`)
+  }
   const { stdout } = await spawnFn('mcporter', [
     'call', 'exa.web_fetch_exa', '--args',
     JSON.stringify({ urls: [source.url] }),

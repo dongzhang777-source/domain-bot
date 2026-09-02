@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fetchBili, fetchExa, fetchJina, fetchV2ex, fetchYtSearch, parseExaOutput, parseFetchedPage } from '../src/collector/adapters/agentreach.js'
+import { fetchBili, fetchExa, fetchJina, fetchJinaViaExa, fetchV2ex, fetchYtSearch, parseExaOutput, parseFetchedPage } from '../src/collector/adapters/agentreach.js'
 import type { SourceConfig } from '../src/types.js'
 
 const src = (type: SourceConfig['type'], url = 'x'): SourceConfig => ({ id: `t-${type}`, type, url, weight: 0.5, enabled: true })
@@ -195,6 +195,31 @@ describe('parseFetchedPage', () => {
   it('无标题行时回落到 url', () => {
     const item = parseFetchedPage('plain text no heading', 's1', 'https://example.com')
     expect(item.title).toBe('https://example.com')
+  })
+})
+
+describe('P2 修复回归（agy-R1）', () => {
+  it('P2-1：upload_date 为数字等异常类型时不抛错，publishedAt 落 0', async () => {
+    const items = await fetchYtSearch(src('ytsearch'), async () => ({
+      stdout: '{"id":"x1","title":"异常日期类型","upload_date":20260902}',
+      stderr: '',
+    }))
+    expect(items[0]!.publishedAt).toBe(0)
+    expect(items[0]!.title).toBe('异常日期类型')
+  })
+
+  it('P2-1：合法 8 位 upload_date 正常解析', async () => {
+    const items = await fetchYtSearch(src('ytsearch'), async () => ({
+      stdout: '{"id":"x2","title":"正常日期","upload_date":"20260902"}',
+      stderr: '',
+    }))
+    expect(items[0]!.publishedAt).toBe(Date.parse('2026-09-02'))
+  })
+
+  it('P2-3：fetchJinaViaExa 独立调用时自守 SSRF', async () => {
+    await expect(
+      fetchJinaViaExa(src('jina', 'https://192.168.1.1/admin'), async () => ({ stdout: '# pwned', stderr: '' })),
+    ).rejects.toThrow('SSRF')
   })
 })
 

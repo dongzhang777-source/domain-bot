@@ -56,3 +56,9 @@
    - `rss.ts` fast-xml-parser processEntities 改对象配置，仅 maxTotalExpansions 1000 → 20000，其余防护（maxExpansionDepth=10 等）保持布尔默认档（Simon Willison feed 实测 1012 次展开被拒）。
 6. **验收**：101/101 测试绿（新增 ytsearch 解析/字段兜底、jina 兜底链/SSRF 不绕过等 20 条）；真实全源烟测 18 源 17 通（hn-frontpage 单轮瞬时失败，hnrss 偶发抖动，单源跳过为既定设计），1432 采集 → 727 相关 → 6 推送，skippedSources 观测正常。
 
+## 外派审查与 P2 修复（2026-09-02 同日收口）
+
+- **agy-R1 代码审查**（独立 worktree，只读）：通过 95/100，0 P0 / 0 P1 / 3 P2；**cbc-R1 独立验机**（hy3）：PASS——101/101 独立复测、外网烟测 18/18 通 1438/733/6 与自报一致、防作弊审查通过。报告与勘误见 `.verify-logs/2026-09-02-sourceexp/`。勘误：commit `437365c` 标题"8 新源"应为**净增 11 源**（7→18）。
+- **老张拍板修/推/清**，三项 P2 已修：P2-1 `upload_date` 只信 8 位字符串；P2-2 `tokenize` 对 CJK 连续段补 2-gram（中文同事件跨源报道可聚类/判旧闻，英文分词不变）；P2-3 `fetchJinaViaExa` 独立入口自守 SSRF。回归测试 101→106 绿；修复后真实烟测 18/18 通、1438→732→6 无回归。
+
+

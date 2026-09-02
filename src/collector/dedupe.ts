@@ -9,8 +9,19 @@ export function normalizeText(s: string): string {
     .trim()
 }
 
+const CJK_RUN = /[\u3400-\u4dbf\u4e00-\u9fff]+/g
+
 export function tokenize(s: string): Set<string> {
-  return new Set(normalizeText(s).split(' ').filter((t) => t.length > 1))
+  const norm = normalizeText(s)
+  const tokens = new Set(norm.split(' ').filter((t) => t.length > 1))
+  // P2-2（agy-R1）：中文标题字间无空格，纯 split(' ') 只能得到整串 token，
+  // 同事件跨源报道（机器之心 vs 量子位）jaccard 恒为 0 聚不拢。
+  // 对 CJK 连续段补 2-gram，其余文本的分词行为不变。
+  for (const run of norm.match(CJK_RUN) ?? []) {
+    if (run.length < 2) continue
+    for (let i = 0; i < run.length - 1; i++) tokens.add(run.slice(i, i + 2))
+  }
+  return tokens
 }
 
 export function contentHash(item: { title: string; body: string }): string {

@@ -1,0 +1,26 @@
+已完成对 `domain-bot` 仓库 commit [`437365c`](file:///Users/aiatwork/.review-worktrees/domainbot-agy-437365c)（基线父提交 [`dd95df4`](file:///Users/aiatwork/.review-worktrees/domainbot-agy-437365c)）的代码审查。
+
+审查报告已落盘至工作区：
+👉 [`/Users/aiatwork/Projects/domain-bot/.verify-logs/2026-09-02-sourceexp/2026-09-02-domainbot-sourceexp-review-agy.md`](file:///Users/aiatwork/Projects/domain-bot/.verify-logs/2026-09-02-sourceexp/2026-09-02-domainbot-sourceexp-review-agy.md)
+
+---
+
+### 审查概要
+
+- **总体结论**：**通过（Approved）**
+- **综合评分**：**95 / 100**
+- **缺陷统计**：P0 级 0 条 / P1 级 0 条 / P2 级 3 条（含针对中文 Tokenizer 颗粒度、`upload_date` 防御性类型断言及独立导出函数边界的优化建议）
+
+#### 核心维度验证结论
+1. **P0 安全性与正确性（98分）**：
+   - Jina 失败重试链中，[`isPublicHttpsUrl`](file:///Users/aiatwork/.review-worktrees/domainbot-agy-437365c/src/collector/adapters/agentreach.ts#L210) 严格前置于任何抓取尝试（包含 `r.jina.ai` 和 `exa.web_fetch_exa` 兜底），彻底杜绝内网探测与云元数据探测绕过。
+   - `ytsearch` 适配器使用 `execFile` 参数数组调用，杜绝 Shell 注入风险；多行 JSON 流式解析与缺失字段（`webpage_url` / `channel` / `view_count`）降级逻辑完备。
+   - 双链失败时聚合错误抛出，准确保留第一跳与第二跳原因，无吞异常或假成功逻辑。
+2. **安全闸门放宽论证（95分）**：
+   - `MAX_BODY_BYTES` 从 256 KiB 放宽至 2 MiB 彻底解决了 arXiv CS.AI 等合法大 feed（实测 0.8~1.8 MB）被误杀的问题；基于 `AbortController` 的流式累加保证超限立即中止，单次读取内存与 CPU 消耗严格有界。
+   - `fast-xml-parser` 将 `maxTotalExpansions` 从 1,000 放宽至 20,000 成功兼容 Simon Willison 等实体密集 feed（实测 1,012 次实体展开）；保持 `maxExpansionDepth=10` 与 `maxExpandedLength=100,000` 维持不变，Billion Laughs 等 XML 炸弹仍被彻底防御。
+3. **测试质量与防作弊（96分）**：
+   - 15 个测试套件 **101 / 101 测试用例全部绿灯**（耗时 1.96s）。
+   - Mock 严格限定在 `FetchFn` 与 `SpawnFn` 边界，被测逻辑真实执行，覆盖了正常、降级、网络报错、双失败、SSRF 拦截全部关键分支。
+4. **配置规范与管线交互（94分）**：
+   - `sources.json` 18 个源 ID 唯一、类型契约明确，新增源均遵守 `0.3~0.4` 低权重灰度纪律；`domain.json` 补齐 6 个中文关键词，使中文源可正常通过子串相关性过滤与启发式打分。
