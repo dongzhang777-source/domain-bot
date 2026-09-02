@@ -79,7 +79,7 @@ describe('HeuristicScorer', () => {
 })
 
 describe('LlmScorer', () => {
-  it('解析 JSON 输出并夹紧分数；缺失项取默认 0.5', async () => {
+  it('解析 JSON 输出并夹紧分数；缺失项降级启发式（见下条测试）', async () => {
     const scorer = new LlmScorer({
       baseUrl: 'http://mock/v1',
       apiKey: 'k',
@@ -96,6 +96,60 @@ describe('LlmScorer', () => {
     const results = await scorer.score([item('a llm'), item('b llm')], domain)
     expect(results[0]).toEqual({ valueScore: 0, reason: '' })
     expect(results[1].valueScore).toBe(1)
+  })
+
+  it('LlmScorer 分批调用：25 条按 batchSize=10 切成 3 批', async () => {
+    let calls = 0
+    const scorer = new LlmScorer({
+      baseUrl: 'http://mock/v1', apiKey: 'k', model: 'm', batchSize: 10,
+      fetchFn: async () => {
+        calls++
+        return { ok: true, status: 200, text: async () => JSON.stringify({ choices: [{ message: { content: '[]' } }] }) }
+      },
+    })
+    const items = Array.from({ length: 25 }, (_, i) => item(`t${i} llm`))
+    const res = await scorer.score(items, domain)
+    expect(calls).toBe(3)
+    expect(res).toHaveLength(25)          // 长度必须与输入严格对齐
+  })
+
+  it('某一批失败时降级到启发式，不影响其他批，不抛异常', async () => {
+    let n = 0
+    const scorer = new LlmScorer({
+      baseUrl: 'http://mock/v1', apiKey: 'k', model: 'm', batchSize: 2,
+      fetchFn: async () => {
+        n++
+        if (n === 2) return { ok: false, status: 500, text: async () => 'boom' }
+        return { ok: true, status: 200, text: async () => JSON.stringify({ choices: [{ message: { content: '[{"index":0,"score":0.9,"reason":"llm"},{"index":1,"score":0.9,"reason":"llm"}]' } }] }) }
+      },
+    })
+    // ⚠️ 必须 6 条：batchSize=2 → 3 批，第 2 批失败，第 3 批必须仍正常。
+    const res = await scorer.score(
+      [item('a llm'), item('b llm'), item('c llm'), item('d llm'), item('e llm'), item('f llm')],
+      domain,
+    )
+    expect(res).toHaveLength(6)
+    expect(res[0]!.reason).toBe('llm')                    // 批 1 走 LLM
+    expect(res[2]!.reason).toContain('关键词命中')         // 批 2 降级到启发式
+    expect(res[3]!.reason).toContain('关键词命中')         // 同批也降级（整批失败，不是单条）
+    expect(res[4]!.reason).toBe('llm')                    // 批 3 仍正常 —— 这才是本测试的重点
+  })
+
+  it('LLM 返回 200 但漏答的条目降级到启发式，不再是常数 0.5（矩阵 P0-6）', async () => {
+    const scorer = new LlmScorer({
+      baseUrl: 'http://mock/v1', apiKey: 'k', model: 'm',
+      // 只答 index 0，故意漏掉 index 1（真实 LLM 很常见的行为）
+      fetchFn: async () => ({ ok: true, status: 200, text: async () =>
+        JSON.stringify({ choices: [{ message: { content: '[{"index":0,"score":0.9,"reason":"llm"}]' } }] }) }),
+    })
+    const res = await scorer.score([item('a llm'), item('b inference benchmark release sota')], domain)
+    expect(res).toHaveLength(2)
+    expect(res[0]).toEqual({ valueScore: 0.9, reason: 'llm' })
+    // 旧行为是 { valueScore: 0.5, reason: 'llm 输出缺失，取默认分' }。
+    expect(res[1]!.valueScore).not.toBe(0.5)
+    expect(res[1]!.valueScore).toBeCloseTo(0.6036, 3)   // 实跑值：kw=1, sig=3
+    expect(res[1]!.reason).toContain('关键词命中')
+    expect(res[1]!.reason).toContain('llm 漏答')
   })
 })
 

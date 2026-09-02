@@ -45,10 +45,28 @@ export class LlmScorer implements Scorer {
   readonly name = 'llm'
 
   constructor(
-    private opts: { baseUrl: string; apiKey: string; model: string; fetchFn?: FetchFn },
+    private opts: { baseUrl: string; apiKey: string; model: string; batchSize?: number; fetchFn?: FetchFn },
   ) {}
 
   async score(items: RawItem[], domain: DomainConfig): Promise<ScoreResult[]> {
+    const batchSize = this.opts.batchSize ?? 20
+    const fallback = new HeuristicScorer()
+    const out: ScoreResult[] = []
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize)
+      try {
+        out.push(...(await this.scoreBatch(batch, domain)))
+      } catch (err) {
+        // 矩阵 P0-6：单批失败不得拖垮整轮（arXiv 单轮 ~100 条，一旦抛异常探针就断档）。
+        console.error(`[scorer] llm 第 ${i / batchSize + 1} 批失败，降级启发式:`, err instanceof Error ? err.message : err)
+        out.push(...(await fallback.score(batch, domain)))
+      }
+    }
+    return out
+  }
+
+  /** 单批调用：LLM 已答的用 LLM 分，漏答的降级启发式（常数 0.5 会在观测序列里造假平台）。 */
+  private async scoreBatch(items: RawItem[], domain: DomainConfig): Promise<ScoreResult[]> {
     if (items.length === 0) return []
     const prompt = [
       `领域：${domain.domain}。对下列每条信息打价值分（0~1），判断依据：`,
@@ -74,7 +92,11 @@ export class LlmScorer implements Scorer {
     const match = content.match(/\[[\s\S]*\]/)
     const parsed = match ? (JSON.parse(match[0]) as Array<{ index: number; score: number; reason?: string }>) : []
 
-    const results: ScoreResult[] = items.map(() => ({ valueScore: 0.5, reason: 'llm 输出缺失，取默认分' }))
+    const heuristic = await new HeuristicScorer().score(items, domain)
+    const results: ScoreResult[] = heuristic.map((h) => ({
+      valueScore: h.valueScore,
+      reason: `${h.reason}（llm 漏答，已降级启发式）`,
+    }))
     for (const p of parsed) {
       if (typeof p.index === 'number' && p.index >= 0 && p.index < results.length) {
         results[p.index] = {
@@ -93,6 +115,7 @@ export function makeScorerFromEnv(env: NodeJS.ProcessEnv = process.env): Scorer 
       baseUrl: env.DOMAIN_BOT_LLM_BASE_URL,
       apiKey: env.DOMAIN_BOT_LLM_API_KEY,
       model: env.DOMAIN_BOT_LLM_MODEL,
+      batchSize: Number(env.DOMAIN_BOT_LLM_BATCH_SIZE) || 20,
     })
   }
   return new HeuristicScorer()
