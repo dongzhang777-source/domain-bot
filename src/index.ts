@@ -80,46 +80,57 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
     if (s.valueScore >= opts.domain.scoreThreshold) passed.push({ item: relevant[i]!, raw: s.valueScore, reason: s.reason })
   }
 
-  // 排序用加权分 + 新颖性因子。
-  // 注意：applyNovelty 只作用于**排序用的加权分**，不影响 passed（过滤用原始分）。
-  // 若把它误接到过滤上，旧闻会被整体挡在候选池外，重犯反馈死锁。
-  let scored: ScoredItem[] = passed.map(({ item, raw, reason }) => {
+  // 排序用加权分 + 新颖性因子；原始分并行携带，供观测（rawP50/rawTop1/saturation）使用。
+  // applyNovelty 只作用于排序用的加权分，不影响过滤（原始分），防旧闻被整体挡出候选池（反馈死锁）。
+  const ranked = passed.map(({ item, raw, reason }) => {
     const novel = store.isNovel(item)
     const weighted = applySourceWeight(raw, weightOf.get(item.source) ?? 0.5)
-    return { ...item, valueScore: applyNovelty(weighted, novel), isNew: novel, reason }
+    return { entry: { ...item, valueScore: applyNovelty(weighted, novel), isNew: novel, reason } as ScoredItem, raw }
   })
-  scored.sort((a, b) => b.valueScore - a.valueScore)
+  ranked.sort((a, b) => b.entry.valueScore - a.entry.valueScore)
   // 每源配额：arXiv 类关键词密集源不得霸占全部推送位，保证渠道多样性
   const perSourceCap = Math.max(2, Math.ceil(opts.domain.maxPerDigest / 2))
   const perSourceCount = new Map<string, number>()
-  const diversified: ScoredItem[] = []
-  for (const item of scored) {
-    const used = perSourceCount.get(item.source) ?? 0
+  const pushedRanked: typeof ranked = []
+  for (const r of ranked) {
+    const used = perSourceCount.get(r.entry.source) ?? 0
     if (used >= perSourceCap) continue
-    perSourceCount.set(item.source, used + 1)
-    diversified.push(item)
-    if (diversified.length >= opts.domain.maxPerDigest) break
+    perSourceCount.set(r.entry.source, used + 1)
+    pushedRanked.push(r)
+    if (pushedRanked.length >= opts.domain.maxPerDigest) break
   }
+  // 全量候选（阈值过滤后、配额截断前）= candidates；配额截断后 = pushed。
+  const candidates = ranked.map((r) => r.entry)
+  const rawScores = ranked.map((r) => r.raw)
+  const pushed = pushedRanked.map((r) => r.entry)
 
   // 全量候选入归档（配额截断前），再由 markPushed 升级真正推送的那些。
   // 这样 dedupe 屏蔽的是整批已评估内容，而不是只屏蔽推过的 6 条 —— 解传送带。
-  const candidates = scored
-
   const digestId = now.toString(36)
   const digest: Digest = {
     id: digestId,
     generatedAt: now,
     domain: opts.domain.domain,
-    clusters: buildClusters(diversified, opts.domain.clusterThreshold, digestId),
+    clusters: buildClusters(pushed, opts.domain.clusterThreshold, digestId),
   }
 
   store.recordItems(candidates, now)
-  store.markPushed(diversified.map((s) => s.id))
+  store.markPushed(pushed.map((s) => s.id))
   for (const cluster of digest.clusters) {
     store.registerDigestRef(cluster.ref, digestId, cluster.items[0].id, cluster.items[0].source)
   }
 
-  const observation = observeRound(candidates, diversified, weights, now)
+  const observation = observeRound({
+    candidates,
+    rawScores,
+    pushed,
+    weights,
+    at: now,
+    collected: collectedCount,
+    relevant: relevant.length,
+    skippedSources: skipped.map((s) => s.id),
+    feedbackCount: store.feedbackCount(),
+  })
   appendObservation(opts.memoryDir, observation)
 
   const pushedPaths: string[] = []
@@ -150,7 +161,7 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
       collected: collectedCount,
       deduped: collectedCount - kept.length,
       relevant: relevant.length,
-      pushed: diversified.length,
+      pushed: pushed.length,
       skippedSources: skipped.map((s) => s.id),
     },
   }
