@@ -11,8 +11,9 @@ function renderDigestText(digest: Digest): string {
   const head = `📡 *${digest.domain}* 情报（${digest.clusters.length} 条趋势）\n\n`
   const body = digest.clusters
     .map((c, i) => {
-      const src = c.items[0]
-      return `*${i + 1}. ${c.title.slice(0, 120)}*\n${c.summary.slice(0, 300)}\n[src](${src.url}) · ${c.why}`
+      const src = c.items[0]!
+      const tag = src.isNew ? '🆕' : '♻️'
+      return `*${i + 1}. ${tag} ${c.title.slice(0, 120)}*\n${c.summary.slice(0, 300)}\n[src](${src.url}) · ${c.why}`
     })
     .join('\n\n')
   const text = head + body

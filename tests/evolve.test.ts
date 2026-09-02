@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applySourceWeight, sourceValue, updateWeights } from '../src/memory/evolve.js'
+import { applyNovelty, applySourceWeight, sourceValue, updateWeights } from '../src/memory/evolve.js'
 import type { SourceConfig } from '../src/types.js'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -52,5 +52,13 @@ describe('refreshWeights 闸门', () => {
     expect(next.good).toBeGreaterThan(0.6)
     expect(store.weightsState().processedFeedback).toBe(1)
     expect(refreshWeights(store, sources)).toEqual(next)
+  })
+})
+
+describe('applyNovelty', () => {
+  it('旧闻降权 0.75，增量信息不变；且 applySourceWeight 语义未被动过', () => {
+    expect(applyNovelty(0.8, true)).toBeCloseTo(0.8, 10)
+    expect(applyNovelty(0.8, false)).toBeCloseTo(0.6, 10)
+    expect(applySourceWeight(0.8, 1)).toBeCloseTo(1.2, 10)
   })
 })

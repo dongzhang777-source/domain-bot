@@ -49,3 +49,22 @@ describe('telegram push', () => {
     expect(body.reply_markup.inline_keyboard[0][1].callback_data).toBe('fb:d:d1:0')
   })
 })
+
+describe('telegram 增量标记', () => {
+  it('Telegram 文案标注增量/旧闻，与 file 通道对齐', async () => {
+    let body = ''
+    // 模块级已有名为 item / digest 的常量，这里用 mk / d 避免遮蔽。
+    const mk = (id: string, title: string, isNew: boolean): ScoredItem =>
+      ({ id, source: 's', title, body: '', url: 'u', publishedAt: 0, valueScore: 0.8, isNew, reason: '' })
+    const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters: [
+      { ref: 'd:0', title: 'new thing', summary: 's', why: 'w', items: [mk('1', 'new thing', true)] },
+      { ref: 'd:1', title: 'old thing', summary: 's', why: 'w', items: [mk('2', 'old thing', false)] },
+    ] }
+    await sendDigestTelegram(d, {
+      token: 't', chatId: 'c',
+      fetchFn: async (_u, init) => { body = String(init?.body); return { ok: true, status: 200, text: async () => '{}' } },
+    })
+    expect(body).toContain('🆕')
+    expect(body).toContain('♻️')
+  })
+})

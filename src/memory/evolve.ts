@@ -32,3 +32,12 @@ export function updateWeights(
 export function applySourceWeight(valueScore: number, weight: number): number {
   return valueScore * (0.5 + weight)
 }
+
+/**
+ * 旧闻降权：isNovel=false（与归档某条标题 jaccard >= 0.7）的条目乘 0.75，
+ * 让首发排在跟进报道之前，而不是二者同分靠插入顺序决定。
+ * 独立于 applySourceWeight —— 后者语义被 evolve.test.ts 锁定，不可混入。
+ */
+export function applyNovelty(valueScore: number, isNew: boolean): number {
+  return isNew ? valueScore : valueScore * 0.75
+}

@@ -9,7 +9,7 @@ import { filterRelevant } from './refinery/filter.js'
 import { makeScorerFromEnv } from './refinery/scorer.js'
 import { buildClusters } from './refinery/cluster.js'
 import { MemoryStore } from './memory/store.js'
-import { applySourceWeight } from './memory/evolve.js'
+import { applyNovelty, applySourceWeight } from './memory/evolve.js'
 import { refreshWeights } from './memory/weights.js'
 import { pollFeedback } from './feedback/receiver.js'
 import { pushFile } from './push/file.js'
@@ -75,13 +75,14 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
     if (s.valueScore >= opts.domain.scoreThreshold) passed.push({ item: relevant[i]!, raw: s.valueScore, reason: s.reason })
   }
 
-  // 排序用加权分（Task 8 会把 weightOf 换成持久化权重，Task 10 会在这里插入新颖性因子）
-  let scored: ScoredItem[] = passed.map(({ item, raw, reason }) => ({
-    ...item,
-    valueScore: applySourceWeight(raw, weightOf.get(item.source) ?? 0.5),
-    isNew: store.isNovel(item),
-    reason,
-  }))
+  // 排序用加权分 + 新颖性因子。
+  // 注意：applyNovelty 只作用于**排序用的加权分**，不影响 passed（过滤用原始分）。
+  // 若把它误接到过滤上，旧闻会被整体挡在候选池外，重犯反馈死锁。
+  let scored: ScoredItem[] = passed.map(({ item, raw, reason }) => {
+    const novel = store.isNovel(item)
+    const weighted = applySourceWeight(raw, weightOf.get(item.source) ?? 0.5)
+    return { ...item, valueScore: applyNovelty(weighted, novel), isNew: novel, reason }
+  })
   scored.sort((a, b) => b.valueScore - a.valueScore)
   // 每源配额：arXiv 类关键词密集源不得霸占全部推送位，保证渠道多样性
   const perSourceCap = Math.max(2, Math.ceil(opts.domain.maxPerDigest / 2))
