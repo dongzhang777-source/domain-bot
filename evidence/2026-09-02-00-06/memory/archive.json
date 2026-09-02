@@ -1,0 +1,412 @@
+{
+  "entries": [
+    {
+      "id": "82154b8ce4f9bd5340b4e533ce86c4f1d328090f",
+      "title": "A collective capability boundary in frontier large language models on guideline-conformant and case-specific oncology decision-making",
+      "url": "https://arxiv.org/abs/2608.28592",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301273580,
+      "lastSeenAt": 1788301273580,
+      "hitCount": 1
+    },
+    {
+      "id": "c3465493b6f36175ce1a75c65fe21c528cec4ce6",
+      "title": "Paper Pilot: A Human-in-the-Loop Expert System for Evidence-Traceable Scientific Manuscript Generation in Applied Sciences",
+      "url": "https://arxiv.org/abs/2608.28596",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301273580,
+      "lastSeenAt": 1788301273580,
+      "hitCount": 1
+    },
+    {
+      "id": "c8e3ea0792ac7208e4ab5b85e43a949095c417a9",
+      "title": "BiasMix-Finance: Post-Generation KYC Guardrails for LLM Portfolio Advice",
+      "url": "https://arxiv.org/abs/2608.28646",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301273580,
+      "lastSeenAt": 1788301273580,
+      "hitCount": 1
+    },
+    {
+      "id": "dee6515551f60002299dead99614feaecd6099d2",
+      "title": "Beyond the Answer Key: Robustness Evaluation of Large Language Models for Step-Level Mathematical Verification",
+      "url": "https://arxiv.org/abs/2608.28725",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301273580,
+      "lastSeenAt": 1788301273580,
+      "hitCount": 1
+    },
+    {
+      "id": "342b0c6a08dc4d4019a6aa677c5e510163f36f1b",
+      "title": "Pro-Router: Token-Aware Progressive Model Routing with Adaptive Edge-Cloud Collaboration for Efficient Multimodal LLM Inference",
+      "url": "https://arxiv.org/abs/2608.28726",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301273580,
+      "lastSeenAt": 1788301273580,
+      "hitCount": 1
+    },
+    {
+      "id": "850e22df0a2a2d5359ad12db6a4ef21262ceff5a",
+      "title": "Capability-Stratified Degradation in Ternary Language Models",
+      "url": "https://arxiv.org/abs/2608.28809",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301273580,
+      "lastSeenAt": 1788301273580,
+      "hitCount": 1
+    },
+    {
+      "id": "dd0cddaef68be6467d24a0ceb536d66ba3196509",
+      "title": "Google Says Antigravity With Gemini 3.7 Flash Solved 7 Open Problems Including Knuth's Cycles Conjecture",
+      "url": "https://officechai.com/ai/google-says-antigravity-with-gemini-3-7-flash-solved-7-open-problems-including-knuths-cycles-conjecture/",
+      "source": "exa-llm-news",
+      "firstSeenAt": 1788301869567,
+      "lastSeenAt": 1788301869567,
+      "hitCount": 1
+    },
+    {
+      "id": "d96a74e3461695cfb4e8b144b26ebd1900cfe421",
+      "title": "Anthropic releases Claude Fable 5.1 and Mythos 5.1, cutting cache read prices by 75%",
+      "url": "https://thenextweb.com/news/claude-fable-mythos-5-1-eu-ai-act-watermark-detection-api-private-preview",
+      "source": "exa-llm-news",
+      "firstSeenAt": 1788301869567,
+      "lastSeenAt": 1788301869567,
+      "hitCount": 1
+    },
+    {
+      "id": "3fe6be12cdef42fa3c262a646327c0c3423edee6",
+      "title": "1,200 AI agents went rogue inside OpenAI | Information Age | ACS",
+      "url": "https://ia.acs.org.au/article/2026/1-200-ai-agents-went-rogue-inside-openai.html",
+      "source": "exa-llm-news",
+      "firstSeenAt": 1788301869567,
+      "lastSeenAt": 1788301869567,
+      "hitCount": 1
+    },
+    {
+      "id": "7487175e7014e1d5aeca539f9816f7a7d029b008",
+      "title": "OpenAI Confirms Rogue Agent Swarm Hijacked Internal Systems Before Hugging Face Breach",
+      "url": "https://www.kobaran.com/openai-confirms-rogue-agent-swarm-hijacked-internal-systems-before-hugging-face-breach/",
+      "source": "exa-llm-news",
+      "firstSeenAt": 1788301869567,
+      "lastSeenAt": 1788301869567,
+      "hitCount": 1
+    },
+    {
+      "id": "e3ba04d225decf8e66941de93898075fa277a15a",
+      "title": "A researcher hijacked Claude Code by asking it to summarise a web page",
+      "url": "https://thenextweb.com/news/claude-code-prompt-injection-summarise-website-auto-mode",
+      "source": "exa-llm-news",
+      "firstSeenAt": 1788301869567,
+      "lastSeenAt": 1788301869567,
+      "hitCount": 1
+    },
+    {
+      "id": "9395192cafec486e0e2d781055bf48f7bf4d95f2",
+      "title": "Frequency Selective Neural Networks as a Foundation Architecture for Time Series Learning",
+      "url": "https://arxiv.org/abs/2608.29012",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301888274,
+      "lastSeenAt": 1788301888274,
+      "hitCount": 1
+    },
+    {
+      "id": "beccb6060b80078fb10786e5af9fc50984f70e99",
+      "title": "EmoLASP: Emotion Recognition with Language Models and Answer Set Programming",
+      "url": "https://arxiv.org/abs/2608.29035",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301888274,
+      "lastSeenAt": 1788301888274,
+      "hitCount": 1
+    },
+    {
+      "id": "150893d3535b11c6219b3f38c565d2a3c02e3472",
+      "title": "SafeAtlas-VL: Beyond Binary Multimodal Safety with Large-Scale Data and Guard Models",
+      "url": "https://arxiv.org/abs/2608.29098",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301888274,
+      "lastSeenAt": 1788301888274,
+      "hitCount": 1
+    },
+    {
+      "id": "5f573af10fdc7aed439deae7a15cc834990fbb15",
+      "title": "How Identity and Opinion Shape Political Sycophancy in LLMs",
+      "url": "https://arxiv.org/abs/2608.29198",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301888274,
+      "lastSeenAt": 1788301888274,
+      "hitCount": 1
+    },
+    {
+      "id": "167aeb5f9b15ffc13f29a7f33a5920007b8771f1",
+      "title": "MMPCBench: Benchmarking Multimodal Large Language Models on Proactive Critique of Flawed Inputs",
+      "url": "https://arxiv.org/abs/2608.29286",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301888274,
+      "lastSeenAt": 1788301888274,
+      "hitCount": 1
+    },
+    {
+      "id": "cad9ee5951ad5fb9c5a94d069796bd3dceb46faa",
+      "title": "BIRD-History: A Benchmark for History-Driven Text-to-SQL with Fine-Grained Knowledge Annotations",
+      "url": "https://arxiv.org/abs/2608.29345",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301888274,
+      "lastSeenAt": 1788301888274,
+      "hitCount": 1
+    },
+    {
+      "id": "8c3a5de505b1c2cf3e3e2ef6b28eb4489275c0f0",
+      "title": "Call Neighbours Yourself: Graph Walks with Destination-Conditioned On-Policy Self-Distillation",
+      "url": "https://arxiv.org/abs/2608.29588",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301901604,
+      "lastSeenAt": 1788301901604,
+      "hitCount": 1
+    },
+    {
+      "id": "795fb9be1a3b32680255df637076c6f4b610e252",
+      "title": "Towards a Systems Foundation for Agentic Skills: Architecture, Lifecycle, and Security",
+      "url": "https://arxiv.org/abs/2608.29596",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301901604,
+      "lastSeenAt": 1788301901604,
+      "hitCount": 1
+    },
+    {
+      "id": "a4c32ee8baaf4f388f3bc502196d580f6da8eb16",
+      "title": "FRAMEWORKERS: A Dynamic Multi-Agent Framework for AI-Generated Video Production",
+      "url": "https://arxiv.org/abs/2608.29814",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301901604,
+      "lastSeenAt": 1788301901604,
+      "hitCount": 1
+    },
+    {
+      "id": "92201b96639cd8fe0770c0067da44fac9072b359",
+      "title": "AutoCRAT: Within-trajectory Joint Control of Stochasticity and Compute for LLM Reasoning",
+      "url": "https://arxiv.org/abs/2608.29988",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301901604,
+      "lastSeenAt": 1788301901604,
+      "hitCount": 1
+    },
+    {
+      "id": "8ab555d84017f5776e8a15064c23a6d015de1d77",
+      "title": "Interpreting and Steering for Safe and Correct Code Generation",
+      "url": "https://arxiv.org/abs/2608.30025",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301901604,
+      "lastSeenAt": 1788301901604,
+      "hitCount": 1
+    },
+    {
+      "id": "b84fa2f842a318910144fc2c2333389736b6b33f",
+      "title": "Generating Workflow DAGs from Natural Language with Non-Reasoning LLMs",
+      "url": "https://arxiv.org/abs/2608.30250",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788301901604,
+      "lastSeenAt": 1788301901604,
+      "hitCount": 1
+    },
+    {
+      "id": "14fe1fc6ed2428e42da1550731fe498612e6861c",
+      "title": "DERELAB: Probing Defeasible Reasoning and Confirmation Bias in LLMs with a Generative Benchmark",
+      "url": "https://arxiv.org/abs/2608.30413",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788302131280,
+      "lastSeenAt": 1788302131280,
+      "hitCount": 1
+    },
+    {
+      "id": "2697e5c73f5c16be11a45231a3fd203ed4456c97",
+      "title": "HSRM: Hidden-State Reward Models for Test-Time Verification",
+      "url": "https://arxiv.org/abs/2608.30841",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788302131280,
+      "lastSeenAt": 1788302131280,
+      "hitCount": 1
+    },
+    {
+      "id": "670416861062a43f1d1a492b6d27a0389bfc31e8",
+      "title": "MNIST-PRO: MNIST is Back as a Partially Observable World for AI Agents",
+      "url": "https://arxiv.org/abs/2608.31022",
+      "source": "arxiv-cs-ai",
+      "firstSeenAt": 1788302131280,
+      "lastSeenAt": 1788302131280,
+      "hitCount": 1
+    },
+    {
+      "id": "412dec709a55b32a3c94b9b57bfa29a67d07c1c4",
+      "title": "Rethinking LLM Evaluation with 3C3H: AraGen Benchmark and Leaderboard",
+      "url": "https://huggingface.co/blog/leaderboard-3c3h-aragen",
+      "source": "huggingface-blog",
+      "firstSeenAt": 1788302131280,
+      "lastSeenAt": 1788302131280,
+      "hitCount": 1
+    },
+    {
+      "id": "9fd4ce1e2976adc3989bf7beb135590806957cfb",
+      "title": "The Open Medical-LLM Leaderboard: Benchmarking Large Language Models in Healthcare",
+      "url": "https://huggingface.co/blog/leaderboard-medicalllm",
+      "source": "huggingface-blog",
+      "firstSeenAt": 1788302131280,
+      "lastSeenAt": 1788302131280,
+      "hitCount": 1
+    },
+    {
+      "id": "gh-1347130943",
+      "title": "UditAkhourii/cdaf",
+      "url": "https://github.com/UditAkhourii/cdaf",
+      "source": "github-new-llm-tools",
+      "firstSeenAt": 1788302131280,
+      "lastSeenAt": 1788302131280,
+      "hitCount": 1
+    }
+  ],
+  "digestRefs": {
+    "mtj8elt8:0": {
+      "digestId": "mtj8elt8",
+      "itemId": "82154b8ce4f9bd5340b4e533ce86c4f1d328090f",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8elt8:1": {
+      "digestId": "mtj8elt8",
+      "itemId": "c3465493b6f36175ce1a75c65fe21c528cec4ce6",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8elt8:2": {
+      "digestId": "mtj8elt8",
+      "itemId": "c8e3ea0792ac7208e4ab5b85e43a949095c417a9",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8elt8:3": {
+      "digestId": "mtj8elt8",
+      "itemId": "dee6515551f60002299dead99614feaecd6099d2",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8elt8:4": {
+      "digestId": "mtj8elt8",
+      "itemId": "342b0c6a08dc4d4019a6aa677c5e510163f36f1b",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8elt8:5": {
+      "digestId": "mtj8elt8",
+      "itemId": "850e22df0a2a2d5359ad12db6a4ef21262ceff5a",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8rdof:0": {
+      "digestId": "mtj8rdof",
+      "itemId": "dd0cddaef68be6467d24a0ceb536d66ba3196509",
+      "source": "exa-llm-news"
+    },
+    "mtj8rdof:1": {
+      "digestId": "mtj8rdof",
+      "itemId": "d96a74e3461695cfb4e8b144b26ebd1900cfe421",
+      "source": "exa-llm-news"
+    },
+    "mtj8rdof:2": {
+      "digestId": "mtj8rdof",
+      "itemId": "3fe6be12cdef42fa3c262a646327c0c3423edee6",
+      "source": "exa-llm-news"
+    },
+    "mtj8rdof:3": {
+      "digestId": "mtj8rdof",
+      "itemId": "7487175e7014e1d5aeca539f9816f7a7d029b008",
+      "source": "exa-llm-news"
+    },
+    "mtj8rdof:4": {
+      "digestId": "mtj8rdof",
+      "itemId": "e3ba04d225decf8e66941de93898075fa277a15a",
+      "source": "exa-llm-news"
+    },
+    "mtj8rs42:0": {
+      "digestId": "mtj8rs42",
+      "itemId": "9395192cafec486e0e2d781055bf48f7bf4d95f2",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8rs42:1": {
+      "digestId": "mtj8rs42",
+      "itemId": "beccb6060b80078fb10786e5af9fc50984f70e99",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8rs42:2": {
+      "digestId": "mtj8rs42",
+      "itemId": "150893d3535b11c6219b3f38c565d2a3c02e3472",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8rs42:3": {
+      "digestId": "mtj8rs42",
+      "itemId": "5f573af10fdc7aed439deae7a15cc834990fbb15",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8rs42:4": {
+      "digestId": "mtj8rs42",
+      "itemId": "167aeb5f9b15ffc13f29a7f33a5920007b8771f1",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8rs42:5": {
+      "digestId": "mtj8rs42",
+      "itemId": "cad9ee5951ad5fb9c5a94d069796bd3dceb46faa",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8s2ec:0": {
+      "digestId": "mtj8s2ec",
+      "itemId": "8c3a5de505b1c2cf3e3e2ef6b28eb4489275c0f0",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8s2ec:1": {
+      "digestId": "mtj8s2ec",
+      "itemId": "795fb9be1a3b32680255df637076c6f4b610e252",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8s2ec:2": {
+      "digestId": "mtj8s2ec",
+      "itemId": "a4c32ee8baaf4f388f3bc502196d580f6da8eb16",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8s2ec:3": {
+      "digestId": "mtj8s2ec",
+      "itemId": "92201b96639cd8fe0770c0067da44fac9072b359",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8s2ec:4": {
+      "digestId": "mtj8s2ec",
+      "itemId": "8ab555d84017f5776e8a15064c23a6d015de1d77",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8s2ec:5": {
+      "digestId": "mtj8s2ec",
+      "itemId": "b84fa2f842a318910144fc2c2333389736b6b33f",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8wzm8:0": {
+      "digestId": "mtj8wzm8",
+      "itemId": "14fe1fc6ed2428e42da1550731fe498612e6861c",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8wzm8:1": {
+      "digestId": "mtj8wzm8",
+      "itemId": "2697e5c73f5c16be11a45231a3fd203ed4456c97",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8wzm8:2": {
+      "digestId": "mtj8wzm8",
+      "itemId": "670416861062a43f1d1a492b6d27a0389bfc31e8",
+      "source": "arxiv-cs-ai"
+    },
+    "mtj8wzm8:3": {
+      "digestId": "mtj8wzm8",
+      "itemId": "412dec709a55b32a3c94b9b57bfa29a67d07c1c4",
+      "source": "huggingface-blog"
+    },
+    "mtj8wzm8:4": {
+      "digestId": "mtj8wzm8",
+      "itemId": "9fd4ce1e2976adc3989bf7beb135590806957cfb",
+      "source": "huggingface-blog"
+    },
+    "mtj8wzm8:5": {
+      "digestId": "mtj8wzm8",
+      "itemId": "gh-1347130943",
+      "source": "github-new-llm-tools"
+    }
+  }
+}
