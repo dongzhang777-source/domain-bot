@@ -52,10 +52,12 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
 
   const collected: ScoredItem[] = []
   let collectedCount = 0
+  const sourceFetched: Record<string, number> = {}
   for (const source of enabled) {
     try {
       const items = await collectSource({ ...source, url: resolveSourceUrl(source.url, now) }, opts.fetchFn, opts.spawnFn)
       collectedCount += items.length
+      sourceFetched[source.id] = items.length
       collected.push(...items.map((i) => ({ ...i, valueScore: 0, isNew: false, reason: '' })))
     } catch (err) {
       // 必须记入 skipped：否则 skippedSources 恒为空，源挂掉与内容池枯竭在观测上无法区分。
@@ -67,6 +69,9 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
   const known = store.knownIds()
   const { kept } = dedupe(collected, known)
   const { kept: relevant } = filterRelevant(kept, opts.domain)
+  // B′2：按源记录过滤后产出——「采集成功但零相关」的源（v2ex/bili 类）在 skippedSources 口径下不可见（I-3 盲区）。
+  const sourceRelevant: Record<string, number> = {}
+  for (const it of relevant) sourceRelevant[it.source] = (sourceRelevant[it.source] ?? 0) + 1
 
   const scorer = makeScorerFromEnv()
   const scores = await scorer.score(relevant, opts.domain)
@@ -132,6 +137,9 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
     relevant: relevant.length,
     skippedSources: skipped.map((s) => s.id),
     feedbackCount: store.feedbackCount(),
+    enabledSourceIds: enabled.map((s) => s.id),
+    sourceFetched,
+    sourceRelevant,
   })
   appendObservation(opts.memoryDir, observation)
 

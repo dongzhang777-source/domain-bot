@@ -27,12 +27,34 @@ describe('observeRound', () => {
     expect(obs.candidateTop1).toBe(1.0)
     // 原始分通道（判定进化看这里，不是加权分）
     expect(obs.rawP50).toBe(0.72)
+    expect(obs.rawP90).toBe(0.8)
     expect(obs.rawTop1).toBe(0.8)
     // 饱和度必须按原始分算（加权分会被学到的权重自己推高，误报饱和）
     expect(obs.saturationRate).toBe(0)
     expect(obs.isNewRate).toBe(0.75)
     expect(obs.pushedMean).toBe(0.75)
     expect(obs.bySource).toEqual({ s1: 1, s2: 1 })
+    // B′2 未传按源数据时为空集（向后兼容）
+    expect(obs.sourceYield).toEqual({})
+    expect(obs.zeroYieldSources).toEqual([])
+  })
+
+  it('按源产出与零产出源（B′2）：区分源挂/活着但零相关/活着有产出', () => {
+    const obs = observeRound({
+      candidates: [], rawScores: [], pushed: [], weights: {}, at: 1000, collected: 10, relevant: 3,
+      skippedSources: ['dead-src'],
+      enabledSourceIds: ['arxiv', 'v2ex', 'bili', 'dead-src', 'empty'],
+      sourceFetched: { arxiv: 8, v2ex: 2, bili: 0, empty: 0 },
+      sourceRelevant: { arxiv: 3 },
+    })
+    expect(obs.sourceYield).toEqual({
+      arxiv: { fetched: 8, afterFilter: 3 },
+      v2ex: { fetched: 2, afterFilter: 0 },
+      bili: { fetched: 0, afterFilter: 0 },
+      empty: { fetched: 0, afterFilter: 0 },
+    })
+    // dead-src 属于 skippedSources（源挂了），不进 zeroYieldSources
+    expect(obs.zeroYieldSources).toEqual(['v2ex', 'bili', 'empty'])
   })
 
   it('空候选不炸（除零）', () => {
