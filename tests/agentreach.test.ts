@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fetchBili, fetchExa, fetchJina, fetchV2ex, parseExaOutput } from '../src/collector/adapters/agentreach.js'
+import { fetchBili, fetchExa, fetchJina, fetchV2ex, fetchYtSearch, parseExaOutput, parseFetchedPage } from '../src/collector/adapters/agentreach.js'
 import type { SourceConfig } from '../src/types.js'
 
 const src = (type: SourceConfig['type'], url = 'x'): SourceConfig => ({ id: `t-${type}`, type, url, weight: 0.5, enabled: true })
@@ -96,6 +96,105 @@ Top trending papers of the day. LLM agents everywhere.`
     expect(items[0]!.title).toBe('Daily Papers')
     expect(items[0]!.body).toContain('trending papers')
     expect(items[0]!.url).toBe('https://huggingface.co/papers')
+  })
+})
+
+describe('ytsearch adapter（Agent-Reach YouTube 通道，yt-dlp 零登录）', () => {
+  const YT_LINES = [
+    '{"id":"dQw4w9WgXcQ","title":"LLM Inference Explained","url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ","channel":"AI Channel","view_count":123456,"duration":600}',
+    '{"id":"abc123","title":"RAG 从零搭建","webpage_url":"https://www.youtube.com/watch?v=abc123","uploader":"某up主"}',
+    'not json at all',
+    '{"title":"没有 url 的条目应被丢弃"}',
+  ].join('\n')
+
+  it('解析 yt-dlp --dump-json 行并做字段兜底', async () => {
+    const items = await fetchYtSearch(src('ytsearch', 'llm inference'), async (cmd, args) => {
+      expect(cmd).toBe('yt-dlp')
+      expect(args.join(' ')).toContain('ytsearch5:llm inference')
+      expect(args).toContain('--flat-playlist')
+      return { stdout: YT_LINES, stderr: '' }
+    })
+    expect(items).toHaveLength(2)
+    expect(items[0]!.title).toBe('LLM Inference Explained')
+    expect(items[0]!.url).toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+    expect(items[0]!.body).toContain('AI Channel')
+    expect(items[0]!.body).toContain('123,456')
+    expect(items[1]!.body).toContain('某up主')
+    expect(items[1]!.body).toContain('0 次观看')
+  })
+
+  it('id 存在但 url 缺失时用 watch URL 兜底', async () => {
+    const items = await fetchYtSearch(src('ytsearch'), async () => ({
+      stdout: '{"id":"xyz","title":"只有 id"}',
+      stderr: '',
+    }))
+    expect(items[0]!.url).toBe('https://www.youtube.com/watch?v=xyz')
+  })
+})
+
+describe('jina adapter 失败重试链（exa.web_fetch_exa 兜底）', () => {
+  const EXA_FETCH_OUTPUT = `# Anthropic Research
+URL: https://www.anthropic.com/research
+
+Interpretability research updates. New scaling law findings.`
+
+  it('r.jina.ai 非 2xx 时走 exa 兜底并解析 Markdown', async () => {
+    let spawned: { cmd: string; args: string[] } | undefined
+    const items = await fetchJina(
+      src('jina', 'https://www.anthropic.com/research'),
+      async () => ({ ok: false, status: 401, text: async () => '' }),
+      undefined,
+      async (cmd, args) => {
+        spawned = { cmd, args }
+        return { stdout: EXA_FETCH_OUTPUT, stderr: '' }
+      },
+    )
+    expect(spawned!.cmd).toBe('mcporter')
+    expect(spawned!.args.join(' ')).toContain('exa.web_fetch_exa')
+    expect(spawned!.args.join(' ')).toContain('anthropic.com')
+    expect(items).toHaveLength(1)
+    expect(items[0]!.title).toBe('Anthropic Research')
+    expect(items[0]!.url).toBe('https://www.anthropic.com/research')
+    expect(items[0]!.body).toContain('Interpretability')
+  })
+
+  it('r.jina.ai 网络异常时同样走兜底', async () => {
+    const items = await fetchJina(
+      src('jina', 'https://example.com/page'),
+      async () => { throw new Error('network down') },
+      undefined,
+      async () => ({ stdout: '# Example Page\n\nBody here.', stderr: '' }),
+    )
+    expect(items[0]!.title).toBe('Example Page')
+  })
+
+  it('两条链都失败时报聚合错误', async () => {
+    await expect(
+      fetchJina(
+        src('jina', 'https://example.com/page'),
+        async () => ({ ok: false, status: 401, text: async () => '' }),
+        undefined,
+        async () => { throw new Error('spawn failed') },
+      ),
+    ).rejects.toThrow('exa 兜底也失败')
+  })
+
+  it('兜底不绕过 SSRF 防护', async () => {
+    await expect(
+      fetchJina(
+        src('jina', 'https://169.254.169.254/meta'),
+        async () => ({ ok: false, status: 401, text: async () => '' }),
+        undefined,
+        async () => ({ stdout: '# pwned', stderr: '' }),
+      ),
+    ).rejects.toThrow('SSRF')
+  })
+})
+
+describe('parseFetchedPage', () => {
+  it('无标题行时回落到 url', () => {
+    const item = parseFetchedPage('plain text no heading', 's1', 'https://example.com')
+    expect(item.title).toBe('https://example.com')
   })
 })
 

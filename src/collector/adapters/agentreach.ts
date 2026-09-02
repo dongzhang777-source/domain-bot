@@ -129,31 +129,118 @@ export async function fetchBili(source: SourceConfig, spawnFn: SpawnFn = exaSpaw
   return items
 }
 
+// ---------- ytsearch（yt-dlp YouTube 搜索，零登录） ----------
+// --flat-playlist 只解析搜索结果页，不做逐视频抽取：更快、更少触发 bot 校验。
+// 字段按 flat 条目尽力取（不同 yt-dlp 版本字段有差异），拿不到就留空/为 0。
+
+interface YtFlatEntry {
+  id?: string
+  title?: string
+  url?: string
+  webpage_url?: string
+  channel?: string
+  uploader?: string
+  view_count?: number
+  duration?: number
+  upload_date?: string // YYYYMMDD，flat 条目可能缺
+}
+
+export async function fetchYtSearch(source: SourceConfig, spawnFn: SpawnFn = exaSpawn): Promise<RawItem[]> {
+  const { stdout } = await spawnFn('yt-dlp', ['--dump-json', '--flat-playlist', `ytsearch5:${source.url}`])
+  const items: RawItem[] = []
+  for (const line of stdout.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed.startsWith('{')) continue
+    let entry: YtFlatEntry
+    try {
+      entry = JSON.parse(trimmed) as YtFlatEntry
+    } catch {
+      continue
+    }
+    const title = entry.title?.trim() ?? ''
+    const url = entry.webpage_url ?? entry.url ?? (entry.id ? `https://www.youtube.com/watch?v=${entry.id}` : '')
+    if (!title || !url) continue
+    const channel = entry.channel ?? entry.uploader ?? '未知频道'
+    const views = typeof entry.view_count === 'number' ? entry.view_count.toLocaleString() : '0'
+    const publishedAt = entry.upload_date ? Date.parse(`${entry.upload_date.slice(0, 4)}-${entry.upload_date.slice(4, 6)}-${entry.upload_date.slice(6, 8)}`) || 0 : 0
+    items.push({
+      id: contentHash({ title, body: url }),
+      source: source.id,
+      title,
+      body: `${channel} · ${views} 次观看`,
+      url,
+      publishedAt,
+      raw: entry,
+    })
+  }
+  return items
+}
+
 // ---------- jina（r.jina.ai 网页阅读，盯无 RSS 的页面） ----------
 // 注意：r.jina.ai 自 2025 起对匿名请求返回 401，需免费 key（DOMAIN_BOT_JINA_API_KEY）；
-// 无 key 时该源优雅失败，不影响其他通道。
+// 无 key/失败时按重试链走兜底：exa.web_fetch_exa（免 key，同一 mcporter 通道），
+// 不再让整源优雅失败。
 
-export async function fetchJina(source: SourceConfig, fetchFn: FetchFn = defaultFetch, apiKey?: string): Promise<RawItem[]> {
+/** 解析 exa.web_fetch_exa 输出的 Markdown，提取首个标题行作为标题。 */
+export function parseFetchedPage(markdown: string, sourceId: string, url: string): RawItem {
+  const title = markdown.match(/^#{1,3} (.+)$/m)?.[1]?.trim() || url
+  const body = markdown.replace(/^#{1,3} .+$/m, '').replace(/^URL:.*$/m, '').trim().slice(0, 2000)
+  return {
+    id: contentHash({ title, body: body.slice(0, 200) }),
+    source: sourceId,
+    title,
+    body,
+    url,
+    publishedAt: 0,
+    raw: undefined,
+  }
+}
+
+export async function fetchJinaViaExa(source: SourceConfig, spawnFn: SpawnFn = exaSpawn): Promise<RawItem> {
+  const { stdout } = await spawnFn('mcporter', [
+    'call', 'exa.web_fetch_exa', '--args',
+    JSON.stringify({ urls: [source.url] }),
+  ])
+  return parseFetchedPage(stdout, source.id, source.url)
+}
+
+export async function fetchJina(source: SourceConfig, fetchFn: FetchFn = defaultFetch, apiKey?: string, spawnFn: SpawnFn = exaSpawn): Promise<RawItem[]> {
   // SSRF 防护：source.url 必须是公开 HTTPS URL，否则拒绝，防止探测内网/元数据端点。
+  // （兜底通道同样只允许公开 URL，因此检查必须先于任何抓取尝试。）
   if (!isPublicHttpsUrl(source.url)) {
     throw new Error(`jina ${source.id}: url 不是公开 HTTPS URL，已拒绝（SSRF 防护）`)
   }
-  const headers: Record<string, string> = { 'user-agent': 'domain-bot/0.1' }
-  if (apiKey) headers.authorization = `Bearer ${apiKey}`
-  const res = await withSizeLimit(fetchFn, `https://r.jina.ai/${source.url}`, { headers })
-  if (!res.ok) throw new Error(`jina ${source.id}: HTTP ${res.status}`)
-  const text = await res.text()
-  const title = text.match(/^Title: (.*)$/m)?.[1]?.trim() ?? source.url
-  const body = text.replace(/^Title:.*$/m, '').replace(/^URL Source:.*$/m, '').trim().slice(0, 2000)
-  return [
-    {
-      id: contentHash({ title, body: body.slice(0, 200) }),
-      source: source.id,
-      title,
-      body,
-      url: source.url,
-      publishedAt: 0,
-      raw: undefined,
-    },
-  ]
+  let lastErr: unknown
+  try {
+    const headers: Record<string, string> = { 'user-agent': 'domain-bot/0.1' }
+    if (apiKey) headers.authorization = `Bearer ${apiKey}`
+    const res = await withSizeLimit(fetchFn, `https://r.jina.ai/${source.url}`, { headers })
+    if (res.ok) {
+      const text = await res.text()
+      const title = text.match(/^Title: (.*)$/m)?.[1]?.trim() ?? source.url
+      const body = text.replace(/^Title:.*$/m, '').replace(/^URL Source:.*$/m, '').trim().slice(0, 2000)
+      return [
+        {
+          id: contentHash({ title, body: body.slice(0, 200) }),
+          source: source.id,
+          title,
+          body,
+          url: source.url,
+          publishedAt: 0,
+          raw: undefined,
+        },
+      ]
+    }
+    lastErr = new Error(`HTTP ${res.status}`)
+  } catch (err) {
+    lastErr = err
+  }
+  // 重试链第二跳：exa.web_fetch_exa（免 key）
+  try {
+    return [await fetchJinaViaExa(source, spawnFn)]
+  } catch (fallbackErr) {
+    throw lastErr instanceof Error
+      ? new Error(`${lastErr.message}；exa 兜底也失败: ${fallbackErr instanceof Error ? fallbackErr.message : fallbackErr}`)
+      : fallbackErr
+  }
 }

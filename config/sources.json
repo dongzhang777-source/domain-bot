@@ -14,10 +14,52 @@
     "enabled": true
   },
   {
+    "id": "hn-frontpage",
+    "type": "rss",
+    "url": "https://hnrss.org/frontpage?points=100",
+    "weight": 0.4,
+    "enabled": true
+  },
+  {
+    "id": "simonwillison",
+    "type": "rss",
+    "url": "https://simonwillison.net/atom/everything/",
+    "weight": 0.4,
+    "enabled": true
+  },
+  {
+    "id": "jiqizhixin",
+    "type": "rss",
+    "url": "https://www.jiqizhixin.com/rss",
+    "weight": 0.3,
+    "enabled": true
+  },
+  {
+    "id": "qbitai",
+    "type": "rss",
+    "url": "https://www.qbitai.com/feed",
+    "weight": 0.3,
+    "enabled": true
+  },
+  {
     "id": "github-new-llm-tools",
     "type": "github",
     "url": "https://api.github.com/search/repositories?q=topic:llm+created:%3E{{since_days:7}}&sort=stars&order=desc&per_page=15",
     "weight": 0.5,
+    "enabled": true
+  },
+  {
+    "id": "github-agents",
+    "type": "github",
+    "url": "https://api.github.com/search/repositories?q=topic:ai-agents+created:%3E{{since_days:7}}&sort=stars&order=desc&per_page=10",
+    "weight": 0.4,
+    "enabled": true
+  },
+  {
+    "id": "github-rag",
+    "type": "github",
+    "url": "https://api.github.com/search/repositories?q=topic:rag+created:%3E{{since_days:7}}&sort=stars&order=desc&per_page=10",
+    "weight": 0.3,
     "enabled": true
   },
   {
@@ -28,10 +70,38 @@
     "enabled": true
   },
   {
+    "id": "exa-agent-releases",
+    "type": "exa",
+    "url": "AI agent framework or LLM tool major release announcement",
+    "weight": 0.4,
+    "enabled": true
+  },
+  {
+    "id": "exa-cn-ai",
+    "type": "exa",
+    "url": "大模型 开源 发布 本周 动态",
+    "weight": 0.3,
+    "enabled": true
+  },
+  {
     "id": "hf-daily-papers",
     "type": "jina",
     "url": "https://huggingface.co/papers",
     "weight": 0.6,
+    "enabled": true
+  },
+  {
+    "id": "openai-news",
+    "type": "jina",
+    "url": "https://openai.com/news/",
+    "weight": 0.4,
+    "enabled": true
+  },
+  {
+    "id": "anthropic-research",
+    "type": "jina",
+    "url": "https://www.anthropic.com/research",
+    "weight": 0.4,
     "enabled": true
   },
   {
@@ -46,6 +116,13 @@
     "type": "bili",
     "url": "大模型 最新",
     "weight": 0.2,
+    "enabled": true
+  },
+  {
+    "id": "yt-llm",
+    "type": "ytsearch",
+    "url": "LLM inference optimization explained",
+    "weight": 0.3,
     "enabled": true
   }
 ]

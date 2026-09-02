@@ -11,10 +11,11 @@ RSS/Atom/arXiv ┐  去重 → 相关性过滤 → 价值打分 → 每源配额
 GitHub        ─┤                    (启发式/LLM)   →  推送 ←── 反馈(👍/👎)
 Agent-Reach   ─┤                    聚类(同事件合一)      ↓        ↓
   Exa 语义搜索  │                                        洞察   ε-greedy 源权重
-  V2EX/B站/Jina┘                                               + Beta 平滑
+  V2EX/B站/YouTube┘                                            + Beta 平滑
+  Jina(盯无RSS页)┘
 ```
 
-- **渠道来自 [Agent-Reach](https://github.com/Panniantong/Agent-Reach) 免登录通道**：Exa 语义搜索（经 mcporter）、V2EX 热门、B站搜索（bili-cli）、Jina 网页阅读（盯无 RSS 页面，需免费 key）。需登录态的 Twitter/Reddit/小红书通道**刻意不进**无人值守管线（封号风险），留待人工决策。
+- **渠道来自 [Agent-Reach](https://github.com/Panniantong/Agent-Reach) 免登录通道**：Exa 语义搜索（经 mcporter）、V2EX 热门、B站搜索（bili-cli）、YouTube 搜索（yt-dlp，`--flat-playlist` 零登录）、Jina 网页阅读（盯无 RSS 页面；无 key 时自动走 exa.web_fetch_exa 兜底，同样免 key）。需登录态的 Twitter/Reddit/小红书通道**刻意不进**无人值守管线（封号风险），留待人工决策。
 - **自进化 = 记忆库 + 反馈回路，不重训模型**。每次推送登记 ref，Telegram 👍/👎 回调写进 `memory/feedback.json`，源权重向 Beta(1,1) 后验均值缓慢移动——每周几十次点击也不会抖动。
 - 记忆库是纯 JSON（`memory/archive.json` / `feedback.json`），可导出、可手工修正，防自我固化。
 
@@ -37,7 +38,7 @@ npm run loop      # 常驻模式，每小时一轮（DOMAIN_BOT_POLL_MS 可调�
 | 文件 | 内容 |
 |---|---|
 | `config/domain.json` | 领域名、关键词、打分阈值、每日限量、聚类阈值 |
-| `config/sources.json` | 源注册表（id/type/url/weight/enabled），type：`rss`（含 Atom/arXiv）、`github`、`exa`（url=搜索词）、`v2ex`、`bili`（url=搜索词）、`jina`（url=目标网页） |
+| `config/sources.json` | 源注册表（id/type/url/weight/enabled），type：`rss`（含 Atom/arXiv）、`github`、`exa`（url=搜索词）、`v2ex`、`bili`（url=搜索词）、`ytsearch`（url=搜索词，需本机装 yt-dlp）、`jina`（url=目标网页） |
 | `config/push.json` | 推送通道与 outbox 目录 |
 
 ## 两周探针的判定标准

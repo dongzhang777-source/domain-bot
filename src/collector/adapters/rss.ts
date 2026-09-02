@@ -38,7 +38,19 @@ export async function fetchRss(source: SourceConfig, fetchFn: FetchFn = defaultF
   const res = await withSizeLimit(fetchFn, source.url, { headers: { 'user-agent': 'domain-bot/0.1' } })
   if (!res.ok) throw new Error(`rss ${source.id}: HTTP ${res.status}`)
   const xml = await res.text()
-  const parsed = new XMLParser({ ignoreAttributes: false }).parse(xml)
+  // 实体防护保持布尔默认档（maxExpansionDepth=10 等），仅调大总展开数：
+  // 默认 1000 会误伤 Simon Willison 这类实体密集的合法大 feed（实测 1012）。
+  const parsed = new XMLParser({
+    ignoreAttributes: false,
+    processEntities: {
+      enabled: true,
+      maxEntitySize: 10_000,
+      maxExpansionDepth: 10,
+      maxTotalExpansions: 20_000,
+      maxExpandedLength: 100_000,
+      maxEntityCount: 1000,
+    },
+  }).parse(xml)
   const rawList: unknown = parsed.rss?.channel?.item ?? parsed.feed?.entry ?? []
   const list: Record<string, unknown>[] = Array.isArray(rawList) ? rawList : rawList ? [rawList] : []
   return list.map((e) => {

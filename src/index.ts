@@ -4,7 +4,7 @@ import type { Digest, DomainConfig, FetchFn, RawItem, ScoredItem, SourceConfig, 
 import { dedupe } from './collector/dedupe.js'
 import { fetchRss } from './collector/adapters/rss.js'
 import { fetchGithub } from './collector/adapters/github.js'
-import { fetchBili, fetchExa, fetchJina, fetchV2ex } from './collector/adapters/agentreach.js'
+import { fetchBili, fetchExa, fetchJina, fetchV2ex, fetchYtSearch } from './collector/adapters/agentreach.js'
 import { resolveSourceUrl } from './collector/urlTemplate.js'
 import { filterRelevant } from './refinery/filter.js'
 import { makeScorerFromEnv } from './refinery/scorer.js'
@@ -182,8 +182,10 @@ async function collectSource(source: SourceConfig, fetchFn?: FetchFn, spawnFn?: 
       return fetchV2ex(source, fetchFn)
     case 'bili':
       return fetchBili(source, spawnFn)
+    case 'ytsearch':
+      return fetchYtSearch(source, spawnFn)
     case 'jina':
-      return fetchJina(source, fetchFn, process.env.DOMAIN_BOT_JINA_API_KEY || undefined)
+      return fetchJina(source, fetchFn, process.env.DOMAIN_BOT_JINA_API_KEY || undefined, spawnFn)
   }
 }
 

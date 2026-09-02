@@ -1,7 +1,8 @@
 import type { FetchFn } from '../../types.js'
 
-/** 统一响应体大小上限（256 KiB）：防御巨响应 DoS，裁剪前就中止。 */
-export const MAX_BODY_BYTES = 256 * 1024
+/** 统一响应体大小上限（2 MiB）：防御巨响应 DoS，裁剪前就中止。
+ * 256 KiB 曾误伤 arXiv cs.AI 这类合法大 feed（单文件 1~2 MB），放宽后仍有界。 */
+export const MAX_BODY_BYTES = 2 * 1024 * 1024
 
 /** 流式读取器类型（兼容 FetchFn 抽象与原生 fetch）。 */
 interface SizedReader {
