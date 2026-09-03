@@ -54,16 +54,19 @@ describe('observeRound', () => {
       bili: { fetched: 0, afterDedupe: 0, afterFilter: 0 },
       empty: { fetched: 0, afterDedupe: 0, afterFilter: 0 },
     })
-    // dead-src 属于 skippedSources（源挂了）；bili/empty 纯重复或返回空（afterDedupe=0）是健康状态，不进 zeroYield
+    // dead-src 属于 skippedSources（源挂了）；bili/empty 返回空——暂不报警、单列 emptyYieldSources 可见
+    // （§2.6.4 收尾 2/3：是否并入 I-3 报警待 M6 标定，届时须同批改本守卫，不得静默）
     expect(obs.zeroYieldSources).toEqual(['v2ex'])
+    expect(obs.emptyYieldSources).toEqual(['bili', 'empty'])
   })
 
-  it('quantile 离散约定锁定（D7）：2 元素 P50=P90=上界', () => {
+  it('quantile 离散约定锁定（D7 修订：n=3 才能区分 floor/ceil）', () => {
     const obs = observeRound({
-      candidates: [mk('a', 's1', 0.2), mk('b', 's1', 0.9)], rawScores: [0.2, 0.9], pushed: [], weights: {},
-      at: 1000, collected: 2, relevant: 2, skippedSources: [], feedbackCount: 0,
+      candidates: [mk('a', 's1', 0.1), mk('b', 's1', 0.5), mk('c', 's1', 0.9)], rawScores: [0.1, 0.5, 0.9], pushed: [], weights: {},
+      at: 1000, collected: 3, relevant: 3, skippedSources: [], feedbackCount: 0,
     })
-    expect(obs.rawP50).toBe(0.9)
+    // floor 约定：floor(0.5·3)=1 → 取第 2 小 0.5；若有人改成 ceil（min(2, ceil(1.5))=2）会取 0.9，本断言即红
+    expect(obs.rawP50).toBe(0.5)
     expect(obs.rawP90).toBe(0.9)
   })
 

@@ -80,4 +80,23 @@ describe('gen-evidence.mjs 判据覆盖守卫（A′3 红灯补齐，D9）', () 
     const vWin = windowed.criteria.find((c) => c.id === 'I-2')!.value
     expect(vAll).not.toBe(vWin)
   })
+
+  it('§2.6.4 收尾 1：I-3 分母按轮取（观测 enabledSourceIds=7 源）而非当前 config（18 源）', () => {
+    const dir = makeFixture(false)
+    const seven = Array.from({ length: 7 }, (_, i) => `src${i}`)
+    writeFileSync(join(dir, 'config', 'sources.json'), JSON.stringify(
+      Array.from({ length: 18 }, (_, i) => ({ id: `cfg${i}`, enabled: true })),
+    ))
+    const mkRound = (at: number) => JSON.stringify({
+      at, candidates: 2, pushed: 1, collected: 10, relevant: 3,
+      skippedSources: ['src6'], zeroYieldSources: [], emptyYieldSources: [],
+      enabledSourceIds: seven, saturationRate: 0,
+    })
+    writeFileSync(join(dir, 'memory', 'observations.jsonl'), [mkRound(1), mkRound(2), mkRound(3)].join('\n') + '\n')
+    const out = runScript(dir)
+    const i3 = out.criteria.find((c) => c.id === 'I-3')!
+    expect(i3.value).toContain('/7')
+    expect(i3.value).toContain('14%')
+    expect(i3.status).toBe('pass')
+  })
 })

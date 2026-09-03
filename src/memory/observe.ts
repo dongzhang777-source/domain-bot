@@ -40,6 +40,8 @@ export interface RoundObservation {
   sourceYield: Record<string, { fetched: number; afterDedupe: number; afterFilter: number }>
   /** 采集成功且有新内容（afterDedupe>0）但过滤后零产出的源 id（D3 收窄后的判据口径） */
   zeroYieldSources: string[]
+  /** 返回空的源 id（fetched=0，§2.6.4 单列）：可见但不进 I-3 分子——是否并入报警待 M6 标定数据说话 */
+  emptyYieldSources: string[]
   candidateP50: number
   candidateP90: number
   candidateTop1: number
@@ -75,11 +77,13 @@ export function observeRound(input: RoundInput): RoundObservation {
   const rs = [...rawScores].sort((a, b) => a - b)
   const bySource: Record<string, number> = {}
   for (const p of pushed) bySource[p.source] = (bySource[p.source] ?? 0) + 1
-  // B′2+D3：按源三元组与零产出源。源挂了在 skippedSources 里，不重复计入 zeroYieldSources；
+  // B′2+D3+§2.6.4：按源三元组与两个异常桶。源挂了在 skippedSources 里，不重复计入；
   // zeroYield 判据 = fetched>0 && afterDedupe>0 && afterFilter==0（纯重复 afterDedupe=0 是健康状态）。
-  // fetched=0（返回空）与纯重复同属「无新内容」，暂不计 zeroYield——是否单列待 M6 标定数据说话。
+  // fetched=0（返回空）单列 emptyYieldSources——可见但不进 I-3 分子（避免重开平稳期假红通道，
+  // 同时不让「适配器退出码 0 但零结果」的 v2ex/bili 型死源重新隐形；报警与否待 M6 标定）。
   const sourceYield: Record<string, { fetched: number; afterDedupe: number; afterFilter: number }> = {}
   const zeroYieldSources: string[] = []
+  const emptyYieldSources: string[] = []
   for (const id of input.enabledSourceIds ?? []) {
     if (input.skippedSources.includes(id)) continue
     const fetched = input.sourceFetched?.[id] ?? 0
@@ -87,6 +91,7 @@ export function observeRound(input: RoundInput): RoundObservation {
     const afterFilter = input.sourceRelevant?.[id] ?? 0
     sourceYield[id] = { fetched, afterDedupe, afterFilter }
     if (fetched > 0 && afterDedupe > 0 && afterFilter === 0) zeroYieldSources.push(id)
+    if (fetched === 0) emptyYieldSources.push(id)
   }
   return {
     at,
@@ -98,6 +103,7 @@ export function observeRound(input: RoundInput): RoundObservation {
     feedbackCount,
     sourceYield,
     zeroYieldSources,
+    emptyYieldSources,
     candidateP50: round3(quantile(cs, 0.5)),
     candidateP90: round3(quantile(cs, 0.9)),
     candidateTop1: round3(cs.length ? cs[cs.length - 1]! : 0),

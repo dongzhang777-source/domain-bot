@@ -57,13 +57,18 @@ const p4Valid = p4Rows.filter((l) =>
   /\d{4}-\d{2}-\d{2}/.test(l) && /digestId\s*[=:]\s*\S+/i.test(l) && /itemId\s*[=:]\s*\S+/i.test(l) && /decision\s*[=:]/i.test(l))
 const roundBadSources = (o) => (o?.skippedSources?.length ?? 0) + (o?.zeroYieldSources?.length ?? 0)
 
-/** I-3：采集失败 + 零产出源占比，连续 3 轮 > 1/3（B′1 新口径：zeroYieldSources 缺失的旧观测只按 skippedSources 算） */
+/** I-3：采集失败 + 零产出源占比，连续 3 轮 > 1/3。§2.6.4 收尾 1：分母按轮取（该轮 enabledSourceIds.length），
+ *  旧观测缺该字段 → 显式 nodata，不回退当前 config（否则 18 源分母会稀释 7 源时代的分子——假绿通道）。 */
 const i3 = (() => {
-  if (observations.length === 0 || enabledCount === 0) return { value: 'nodata', status: 'nodata' }
+  if (observations.length < 3) return { value: 'nodata', status: 'nodata' }
+  const last3r = observations.slice(-3)
+  if (last3r.some((o) => !Array.isArray(o.enabledSourceIds) || o.enabledSourceIds.length === 0)) {
+    return { value: '旧观测缺 enabledSourceIds——分母无法按轮取', status: 'nodata' }
+  }
   const l = observations.at(-1)
   const bad = roundBadSources(l)
-  const value = `${bad}/${enabledCount} = ${(100 * bad / enabledCount).toFixed(0)}%`
-  const badRounds = last3.filter((o) => roundBadSources(o) / enabledCount > 1 / 3).length
+  const value = `${bad}/${l.enabledSourceIds.length} = ${(100 * bad / l.enabledSourceIds.length).toFixed(0)}%`
+  const badRounds = last3r.filter((o) => roundBadSources(o) / o.enabledSourceIds.length > 1 / 3).length
   return { value, status: badRounds >= 3 ? 'fail' : 'pass' }
 })()
 
@@ -82,7 +87,7 @@ const criteriaRows = [
     status: !feedbackExists || totalPushed === 0 ? 'nodata' : (validFeedback / totalPushed < 0.05 ? 'fail' : 'pass'),
     note: probeStart ? `探针期口径（--probe-start 已生效）` : '无 Telegram key 时无输入通道，nodata 属预期；全史口径（修复期推送计入分母）——签字稿定稿时同批切换',
   },
-  { id: 'I-3', name: '采集失败+零产出源占比 连续 3 轮 > 1/3（B′1 新口径）', threshold: '1/3', value: i3.value, status: i3.status, note: '旧观测无 zeroYieldSources 字段，按 skippedSources 单口径回看' },
+  { id: 'I-3', name: '采集失败+零产出源占比 连续 3 轮 > 1/3（B′1 新口径）', threshold: '1/3', value: i3.value, status: i3.status, note: '分母按轮取（§2.6.4）；返回空的源单列 emptyYieldSources 可见不报警，是否并入分子待 M6 标定' },
   {
     id: 'I-4', name: 'saturationRate 持续 > 0.5（原始分口径）', threshold: '0.5',
     value: `${observations.at(-1)?.saturationRate ?? 'nodata'}`,
