@@ -1,0 +1,17 @@
+独立终审报告已落盘：`.verify-logs/2026-09-03-finalaudit/2026-09-03-domain-bot-finalaudit-cbc-hy3.md`。
+
+## 结论：带条件可开跑（签字前须修 P0）
+
+HEAD 核实 `b0fd280`（= origin/main），全程只读、未改任何文件、未重演变异。`npm test` 实跑 **119/119 绿，exit 0**，与申报一致。
+
+**最关键发现（P0，阻断签字）：**
+- **R1「I-3 分母按轮取」在真实数据上永远失效**。`observeRound` 的 `RoundObservation` 输出（`src/memory/observe.ts:96-120`）**未回写 `enabledSourceIds`**——该字段仅作入参（`observe.ts:18,87`），`src/index.ts:145` 确实传入。于是 `gen-evidence.mjs:65` 的 nodata 守卫对任意真实观测**恒触发**，I-3 全期 `nodata`。判定线「采集失败」假阳性防护变成一条**静默假阴性通道**。修复仅一行（回写 `enabledSourceIds: input.enabledSourceIds ?? []`）。测试未覆盖此缺口（`observe.test.ts` 只断言输出、`evidence-script.test.ts` 手工塞了字段，故绿但真实路径红）。
+
+**其余发现：**
+- **P1-1**：`criteria:19` 分子写「采集失败」、实现为「采集失败+零产出」（`gen-evidence.mjs:58`），签字前行文需同步。
+- **P2**：C9 申报字符集 `$_[]` 与实际官方 4 字符 `_*[\`` 不符（实现对、措辞错）；D2 注释「仅成功后推进 offset」与代码（失败也推进，设计「宁丢一条不丢一队」）字面不符；P-4 artifact 强依赖字面 `decision=` 令牌而 criteria §2d 未给精确行格式；D6 空文件边角。
+- 修复链 D1–D9、R2、R3、C9、C10、B2、D6、D7、D8 均在 HEAD **真实落地**，逐项带 `file:line` 证据（见报告任务一表）。
+
+Phase C 8 项：#2 push、#8 quantile+A′3 **✅**；#1 本审查即二审之一（⏳）；#3/#4/#5/#7 三 key/生产验收/双基线/真机联调 **❌ 待办**；#6 签字 **❌ 被 P0-1/P1-1 阻断**。
+
+交叉比对由总管在验收时统一做（未读同目录其他线报告）。
