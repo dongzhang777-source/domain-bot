@@ -49,5 +49,5 @@ npm run loop      # 常驻模式：每天 1 轮采集 + 持续接收 Telegram �
 
 - 不做 X/微博/Reddit/B站 适配器（反爬维护黑洞，跑通后再说）。
 - 新颖性判定用标题 jaccard，不是向量检索——量级到了再读 tuna 的 embedding 架构升级。
-- 全量候选入档（2026-09-02 起 `recordItems(candidates)`）：已评估内容经 dedupe 精确屏蔽、不再重评；归档处置方案（重置 memoryDir vs TTL 重评）待老张拍板（架构诊断报告决策点 6）。
+- 全量候选入档（2026-09-02 起 `recordItems(candidates)`）：已评估内容经 dedupe 精确屏蔽、不再重评；归档处置已拍板（2026-09-02）——开跑前 `memory/` 改名 `memory-baseline-0901/` 留作系统基线，新起空目录。
 - Telegram 反馈接收已内置（getUpdates 长轮询，常驻模式启动；offset 持久化 + 反馈去重见 C′10）；生产级验收与真机联调待 Telegram key。
