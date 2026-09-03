@@ -57,6 +57,8 @@ export interface RoundObservation {
   isNewRate: number
   weights: Record<string, number>
   bySource: Record<string, number>
+  /** 该轮 enabled 源全量清单（含 skippedSources）——gen-evidence I-3 分母按轮取它的 length（终审 P0-1 回写） */
+  enabledSourceIds: string[]
 }
 
 function round3(n: number): number {
@@ -117,6 +119,9 @@ export function observeRound(input: RoundInput): RoundObservation {
     isNewRate: round3(candidates.length ? candidates.filter((c) => c.isNew).length / candidates.length : 0),
     weights,
     bySource,
+    // 终审 P0-1（cbc 线）：回写该轮 enabled 源全量清单，gen-evidence I-3 分母按轮取它的 length。
+    // 缺它则真实观测恒走 nodata（假阴性通道）——分子含 skippedSources，故分母须是全量而非非 skipped 子集。
+    enabledSourceIds: input.enabledSourceIds ?? [],
   }
 }
 

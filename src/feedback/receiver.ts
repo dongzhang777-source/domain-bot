@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { defaultFetch } from '../collector/adapters/rss.js'
 import { telegramUrl } from '../push/telegram.js'
@@ -78,21 +78,35 @@ const offsetPath = (memoryDir: string) => join(memoryDir, 'feedback-offset.json'
 
 /** 重启续拉位点（C′10）：offset 不持久化则每次重启从 0 重拉，Telegram 重放 24h 内回调 → 反馈重复入账（§3.5①）。 */
 export function loadOffset(memoryDir: string): number {
+  const path = offsetPath(memoryDir)
+  // 终审 P1-1（agy 线）：坏文件不得静默归零（会重放 24h 回调）——改名 .corrupt-* 留存，对齐 store.ts 的 D6 做法。
+  if (!existsSync(path)) return 0
   try {
-    const raw = JSON.parse(readFileSync(offsetPath(memoryDir), 'utf8')) as { offset?: number }
+    const raw = JSON.parse(readFileSync(path, 'utf8')) as { offset?: number }
     return typeof raw.offset === 'number' && Number.isFinite(raw.offset) ? Math.max(0, raw.offset) : 0
   } catch {
+    const bad = `${path}.corrupt-${Date.now()}`
+    try {
+      renameSync(path, bad)
+    } catch {
+      /* 改名失败则保留原文件，下次启动再试 */
+    }
+    console.error(`[feedback] feedback-offset.json 解析失败，坏文件移至 ${bad}（offset 归 0，不静默清零）`)
     return 0
   }
 }
 
+// 终审 P1-1（agy 线）：高频直写（每处理一条 update 一次）在崩溃窗口会产出截断文件——tmp+rename 原子替换。
 export function saveOffset(memoryDir: string, offset: number): void {
   mkdirSync(memoryDir, { recursive: true })
-  writeFileSync(offsetPath(memoryDir), JSON.stringify({ offset }, null, 2))
+  const finalPath = offsetPath(memoryDir)
+  const tmp = `${finalPath}.tmp`
+  writeFileSync(tmp, JSON.stringify({ offset }, null, 2))
+  renameSync(tmp, finalPath)
 }
 
-/** D2（小巴 impl 审查）：逐条确认。offset 只在该条成功后推进——此前「处理前推进」会让 Telegram 把
- *  处理失败的 update 服务端确认删除，该条反馈永久丢失且去重兜底覆盖不到。失败重试 3 次（退避 1x/2x/3x）
+/** D2（小巴 impl 审查）：逐条确认。offset 在该条处理完（成功；或 3 次失败留痕后跳过）才推进——此前「处理前推进」会让
+ *  Telegram 把处理失败的 update 服务端确认删除，该条反馈永久丢失且去重兜底覆盖不到。失败重试 3 次（退避 1x/2x/3x）
  *  仍失败则跳过并留痕：坏 update 不得卡死整条队列，跳过即该条反馈丢失（日志留痕，宁丢一条不丢一队）。 */
 export async function applyUpdates(
   deps: ReceiverDeps,

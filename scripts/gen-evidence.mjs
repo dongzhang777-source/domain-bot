@@ -26,12 +26,14 @@ const sources = (() => { try { return JSON.parse(read('config/sources.json')) ??
 const changelog = read('docs/probe-changelog.md') ?? ''
 const probeEnd = process.argv.includes('--probe-end')
 // D4（小巴 impl 审查）：探针期口径——传 --probe-start <epoch-ms|ISO> 后，I-2 的分子分母只统计探针期内
-// 数据，修复期推送不再永久稀释反馈率。不传则保持全史口径（签字稿定稿时同批切换，X6 纪律）。
+// 数据，修复期推送不再永久稀释反馈率；G-1/P-1 的 viewed 计数同样按窗口过滤（终审 P1-2）。不传则保持全史口径。
 const probeStartIdx = process.argv.indexOf('--probe-start')
 const probeStartRaw = probeStartIdx > -1 ? process.argv[probeStartIdx + 1] : undefined
 const probeStart = probeStartRaw ? (Number(probeStartRaw) || Date.parse(probeStartRaw) || null) : null
 const obsForI2 = probeStart ? observations.filter((o) => (o.at ?? 0) >= probeStart) : observations
 const fbForI2 = probeStart ? feedback.filter((f) => (f.at ?? 0) >= probeStart) : feedback
+// 终审 P1-2（agy 线）：G-1/P-1 的 viewed 计数同样须经 probeStart 窗口过滤，否则修复期/联调期点过的 👀 会虚增两周累计。
+const viewsForProbe = probeStart ? views.filter((v) => (v.at ?? 0) >= probeStart) : views
 
 const bySourceArchive = {}
 for (const e of archive.entries) bySourceArchive[e.source] = (bySourceArchive[e.source] ?? 0) + 1
@@ -96,9 +98,9 @@ const criteriaRows = [
   },
   {
     id: 'G-1', name: '主动消费性查看 < 10 次（两周累计）', threshold: '10 次',
-    value: viewsExists ? `${views.length} 次` : 'views.json 不存在',
-    status: probeEnd && viewsExists ? (views.length < 10 ? 'fail' : 'pass') : 'nodata',
-    note: 'views.json 是 viewed 唯一定义（criteria §2c）',
+    value: viewsExists ? `${viewsForProbe.length} 次` : 'views.json 不存在',
+    status: probeEnd && viewsExists ? (viewsForProbe.length < 10 ? 'fail' : 'pass') : 'nodata',
+    note: probeStart ? `探针期口径（--probe-start 已生效）；views.json 是 viewed 唯一定义（criteria §2c）` : 'views.json 是 viewed 唯一定义（criteria §2c）',
   },
   {
     id: 'G-2', name: '👍率 < 20%（有效反馈中）', threshold: '20%',
@@ -109,9 +111,9 @@ const criteriaRows = [
   { id: 'G-3', name: '戒断测试：停 3 天无主动打开', threshold: '停 3 天', value: '需探针期末人工判读', status: 'nodata', note: '依赖探针结束后的戒断窗口观测' },
   {
     id: 'P-1', name: '主动查看 ≥ 10 次', threshold: '10 次',
-    value: viewsExists ? `${views.length} 次` : 'views.json 不存在',
-    status: probeEnd && viewsExists ? (views.length >= 10 ? 'pass' : 'fail') : 'nodata',
-    note: '',
+    value: viewsExists ? `${viewsForProbe.length} 次` : 'views.json 不存在',
+    status: probeEnd && viewsExists ? (viewsForProbe.length >= 10 ? 'pass' : 'fail') : 'nodata',
+    note: probeStart ? '探针期口径（--probe-start 已生效）' : '',
   },
   {
     id: 'P-2', name: '👍率 ≥ 30% 且有效反馈 ≥ 20 条', threshold: '30% 且 20 条',
@@ -135,7 +137,7 @@ const summary = {
   lastRound: observations.at(-1) ?? null,
   archive: { total: archive.entries.length, pushed: pushedCount, bySource: bySourceArchive },
   feedbackCount: feedback.length,
-  viewsCount: views.length,
+  viewsCount: viewsForProbe.length,
   weights: weights?.weights ?? null,
   weightsFeedbackHash: weights?.feedbackHash?.slice(0, 12) ?? null,
   criteria: criteriaRows,

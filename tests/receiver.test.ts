@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -77,6 +77,25 @@ describe('offset 持久化（C′10）', () => {
     saveOffset(dir, 42)
     expect(loadOffset(dir)).toBe(42)
     expect(JSON.parse(readFileSync(join(dir, 'feedback-offset.json'), 'utf8'))).toEqual({ offset: 42 })
+  })
+
+  // 终审 P1-1 守卫（agy 线）：坏 offset 文件不得静默归零（会重放 24h 回调）——必须改名 .corrupt-* 留存，对齐 store.ts 的 D6 做法。
+  it('坏 offset 文件：loadOffset 返回 0 且原文件被改名 .corrupt-* 留存（不静默清零）', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-offset-corrupt-'))
+    writeFileSync(join(dir, 'feedback-offset.json'), '{not valid json')
+    expect(loadOffset(dir)).toBe(0)
+    expect(existsSync(join(dir, 'feedback-offset.json'))).toBe(false) // 原路径已不存在
+    const remaining = readdirSync(dir)
+    expect(remaining.length).toBe(1)
+    expect(remaining[0]).toMatch(/^feedback-offset\.json\.corrupt-\d+$/)
+  })
+
+  // 终审 P1-1 守卫：saveOffset 经 tmp+rename 原子写，崩溃窗口不产出截断文件（对齐 store.ts writeFileAtomic）。
+  it('saveOffset 写入路径可被 loadOffset 正确读回（roundtrip）', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-offset-atomic-'))
+    saveOffset(dir, 99)
+    expect(loadOffset(dir)).toBe(99)
+    expect(readdirSync(dir)).toEqual(['feedback-offset.json']) // 无残留 .tmp
   })
 })
 

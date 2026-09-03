@@ -99,4 +99,23 @@ describe('gen-evidence.mjs 判据覆盖守卫（A′3 红灯补齐，D9）', () 
     expect(i3.value).toContain('14%')
     expect(i3.status).toBe('pass')
   })
+
+  // 终审 P1-2 守卫（agy 线）：G-1/P-1 的 viewed 计数必须经 --probe-start 窗口过滤，否则修复期/联调期点过的 👀 会虚增两周累计。
+  it('G-1/P-1 的 viewed 计数经 --probe-start 窗口过滤（修复期点击不虚增）', () => {
+    const dir = makeFixture(false)
+    writeFileSync(join(dir, 'memory', 'views.json'), JSON.stringify([
+      { digestId: 'd-early', at: 100 }, // 修复期（probe-start 之前）
+      { digestId: 'd-probe-a', at: 500 }, // 探针期
+      { digestId: 'd-probe-b', at: 600 }, // 探针期
+    ]))
+    const all = runScript(dir, ['--probe-end'])
+    const g1All = all.criteria.find((c) => c.id === 'G-1')!
+    expect(g1All.value).toContain('3 次') // 全史口径：3 次
+    const windowed = runScript(dir, ['--probe-end', '--probe-start', '400'])
+    const g1Win = windowed.criteria.find((c) => c.id === 'G-1')!
+    const p1Win = windowed.criteria.find((c) => c.id === 'P-1')!
+    expect(g1Win.value).toContain('2 次') // 窗口口径：仅探针期 2 次
+    expect(p1Win.value).toContain('2 次')
+    expect(g1All.value).not.toBe(g1Win.value) // 两口径读数不同，证明窗口真生效
+  })
 })

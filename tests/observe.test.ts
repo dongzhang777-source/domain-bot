@@ -58,6 +58,9 @@ describe('observeRound', () => {
     // （§2.6.4 收尾 2/3：是否并入 I-3 报警待 M6 标定，届时须同批改本守卫，不得静默）
     expect(obs.zeroYieldSources).toEqual(['v2ex'])
     expect(obs.emptyYieldSources).toEqual(['bili', 'empty'])
+    // 终审 P0-1 守卫：enabledSourceIds 必须回写到观测落盘，否则 gen-evidence I-3 在真实数据上恒 nodata（假阴性通道）。
+    // 分母 = 该轮 enabled 源全量（含 skippedSources，因为分子把它们计入采集失败），不得只回写非 skipped 子集。
+    expect(obs.enabledSourceIds).toEqual(['arxiv', 'v2ex', 'bili', 'dead-src', 'empty'])
   })
 
   it('quantile 离散约定锁定（D7 修订：n=3 才能区分 floor/ceil）', () => {
