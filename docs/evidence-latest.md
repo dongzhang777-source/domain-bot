@@ -2,7 +2,7 @@
 
 ```json
 {
-  "generatedAt": "2026-09-02T23:37:19.151Z",
+  "generatedAt": "2026-09-03T00:59:58.692Z",
   "probeStart": null,
   "rounds": 4,
   "lastRound": {
@@ -77,9 +77,9 @@
       "id": "I-3",
       "name": "采集失败+零产出源占比 连续 3 轮 > 1/3（B′1 新口径）",
       "threshold": "1/3",
-      "value": "1/18 = 6%",
-      "status": "pass",
-      "note": "旧观测无 zeroYieldSources 字段，按 skippedSources 单口径回看"
+      "value": "旧观测缺 enabledSourceIds——分母无法按轮取",
+      "status": "nodata",
+      "note": "分母按轮取（§2.6.4）；返回空的源单列 emptyYieldSources 可见不报警，是否并入分子待 M6 标定"
     },
     {
       "id": "I-4",
@@ -155,7 +155,7 @@
 |---|---|---|---|---|---|
 | I-1 | 连续 3 轮 candidates=0（候选池枯竭） | 3 轮 | 1/3 轮 | **pass** | M6 标定中：拟加「且全源零新增」限定（arXiv 周五/周六无公告属排班，非仪器故障） |
 | I-2 | 反馈率 < 5%（👍+👎 数 / 推送条数） | 5% | feedback.json 不存在 | **nodata** | 无 Telegram key 时无输入通道，nodata 属预期；全史口径（修复期推送计入分母）——签字稿定稿时同批切换 |
-| I-3 | 采集失败+零产出源占比 连续 3 轮 > 1/3（B′1 新口径） | 1/3 | 1/18 = 6% | **pass** | 旧观测无 zeroYieldSources 字段，按 skippedSources 单口径回看 |
+| I-3 | 采集失败+零产出源占比 连续 3 轮 > 1/3（B′1 新口径） | 1/3 | 旧观测缺 enabledSourceIds——分母无法按轮取 | **nodata** | 分母按轮取（§2.6.4）；返回空的源单列 emptyYieldSources 可见不报警，是否并入分子待 M6 标定 |
 | I-4 | saturationRate 持续 > 0.5（原始分口径） | 0.5 | 0 | **pass** | 决策点 7 已拍板案 B（P90 型），criteria 签字稿改文后本行同步更新 |
 | G-1 | 主动消费性查看 < 10 次（两周累计） | 10 次 | views.json 不存在 | **nodata** | views.json 是 viewed 唯一定义（criteria §2c） |
 | G-2 | 👍率 < 20%（有效反馈中） | 20% | nodata | **nodata** |  |
