@@ -57,6 +57,15 @@ describe('gen-evidence.mjs 判据覆盖守卫（A′3 红灯补齐，D9）', () 
     expect(byId['I-4']).toBe('nodata')
   })
 
+  // 终审 P1-2（opencode 线）：P-4 fail 方向缺锁定——probeEnd 到期 + changelog 零有效 artifact 时 P-4 应为 fail（gen-evidence:128）。
+  it('P-4 fail 方向：probe-end 到期 + 零有效 artifact → P-4=fail', () => {
+    const dir = makeFixture(false) // fixture 自带无 P-4 artifact 的 changelog
+    const out = runScript(dir, ['--probe-end'])
+    const p4 = out.criteria.find((c) => c.id === 'P-4')!
+    expect(p4.status).toBe('fail')
+    expect(p4.value).toContain('0 条有效')
+  })
+
   it('D4：--probe-start 生效时 I-2 分母只统计探针期内推送', () => {
     const dir = makeFixture(false)
     // 修复期推送（at=100，probe-start 之前）+ 探针期推送（at=500）
