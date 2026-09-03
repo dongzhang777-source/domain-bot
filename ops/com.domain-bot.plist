@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.domain-bot</string>
+
+    <!-- 工作目录：保证相对路径与 .env 正常加载（按 CWD 查找） -->
+    <key>WorkingDirectory</key>
+    <string>/Users/aiatwork/Projects/domain-bot</string>
+
+    <!-- 关键：注入完整的 PATH。注意 launchd 不展开 ~，必须写绝对路径 -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/Users/aiatwork/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/aiatwork/.local/bin/node</string>
+        <string>--env-file-if-exists=.env</string>
+        <string>dist/index.js</string>
+    </array>
+
+    <!-- 守护常驻：崩溃自动重启，挂起时需看门狗协助 -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- 日志落盘目录 -->
+    <key>StandardOutPath</key>
+    <string>/Users/aiatwork/Projects/domain-bot/logs/stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/aiatwork/Projects/domain-bot/logs/stderr.log</string>
+</dict>
+</plist>

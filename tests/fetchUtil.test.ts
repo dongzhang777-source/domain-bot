@@ -52,3 +52,21 @@ describe('withSizeLimit (巨响应 DoS 防护)', () => {
     await expect(res.text()).resolves.toBe('hello')
   })
 })
+
+describe('fetchWithTimeout 与 timeoutSignal', () => {
+  it('注入 timeoutSignal 时在挂起超时后抛出异常（安全穿透 withSizeLimit）', async () => {
+    const { withSizeLimit, timeoutSignal } = await import('../src/collector/adapters/fetchUtil.js')
+    const hangingFetch = (_url: string, init?: RequestInit) =>
+      new Promise<Response>((resolve, reject) => {
+        const timer = setTimeout(() => resolve({ ok: true, status: 200, text: async () => 'late' } as any), 500)
+        init?.signal?.addEventListener('abort', () => {
+          clearTimeout(timer)
+          reject(init.signal?.reason ?? new Error('aborted'))
+        })
+      })
+
+    await expect(
+      withSizeLimit(hangingFetch as any, 'https://example.com/', { signal: timeoutSignal(50) }),
+    ).rejects.toThrow()
+  })
+})

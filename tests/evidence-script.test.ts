@@ -127,4 +127,41 @@ describe('gen-evidence.mjs 判据覆盖守卫（A′3 红灯补齐，D9）', () 
     expect(p1Win.value).toContain('2 次')
     expect(g1All.value).not.toBe(g1Win.value) // 两口径读数不同，证明窗口真生效
   })
+
+  it('P2-4 a 守卫：observations.jsonl 出现截断坏行时不崩死脚本，坏行被跳过并暴露 corruptLines', () => {
+    const dir = makeFixture(false)
+    const goodLine = JSON.stringify({ at: 1, candidates: 5, pushed: 1, saturationRate: 0 })
+    const badLine = '{"at": 2, "candidates": 3, "pushed":' // 模拟断电截断
+    writeFileSync(join(dir, 'memory', 'observations.jsonl'), [goodLine, badLine].join('\n') + '\n')
+    const out = runScript(dir) as any
+    expect(out.rounds).toBe(1)
+    expect(out.corruptLines).toBe(1)
+  })
+
+  it('P2-4 b 守卫：feedback.json 损坏时不静默判 fail，而是标为 error 提示人工修复', () => {
+    const dir = makeFixture(false)
+    writeFileSync(join(dir, 'memory', 'feedback.json'), '{ invalid json content')
+    const out = runScript(dir)
+    const i2 = out.criteria.find((c) => c.id === 'I-2')!
+    expect(i2.status).toBe('error')
+    expect(i2.value).toContain('损坏')
+  })
+
+  it('盲区四守卫：Telegram 发送失败轮次（pushedDelivered=0）不计入 I-2 分母', () => {
+    const dir = makeFixture(false)
+    // 轮次 1：推送成功，pushed=2, pushedDelivered=2
+    // 轮次 2：Telegram 故障，pushed=5, pushedDelivered=0, telegram='failed'
+    writeFileSync(join(dir, 'memory', 'observations.jsonl'), [
+      JSON.stringify({ at: 100, candidates: 2, pushed: 2, pushedDelivered: 2, telegram: 'sent', saturationRate: 0 }),
+      JSON.stringify({ at: 200, candidates: 5, pushed: 5, pushedDelivered: 0, telegram: 'failed', saturationRate: 0 }),
+    ].join('\n') + '\n')
+    writeFileSync(join(dir, 'memory', 'feedback.json'), JSON.stringify([
+      { signal: 'up', at: 150 },
+    ]))
+    const out = runScript(dir)
+    const i2 = out.criteria.find((c) => c.id === 'I-2')!
+    // 分母应为 2（仅送达轮），而不是 7（2+5）；1/2 = 50% ≥ 5% → pass！
+    expect(i2.value).toContain('1/2 = 50.0%')
+    expect(i2.status).toBe('pass')
+  })
 })

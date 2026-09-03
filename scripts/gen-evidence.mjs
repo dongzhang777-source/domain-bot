@@ -12,12 +12,32 @@ import { join } from 'node:path'
 const root = process.cwd()
 const read = (p) => (existsSync(join(root, p)) ? readFileSync(join(root, p), 'utf8') : null)
 
-const observations = (read('memory/observations.jsonl') ?? '')
-  .trim().split('\n').filter(Boolean).map((l) => JSON.parse(l))
+let corruptLines = 0
+const rawObsLines = (read('memory/observations.jsonl') ?? '').trim().split('\n').filter(Boolean)
+const observations = []
+for (let i = 0; i < rawObsLines.length; i++) {
+  try {
+    observations.push(JSON.parse(rawObsLines[i]))
+  } catch {
+    corruptLines++
+    console.error(`[evidence] observations.jsonl 第 ${i + 1} 行损坏，跳过`)
+  }
+}
 let archive = { entries: [], digestRefs: {} }
 try { archive = JSON.parse(read('memory/archive.json')) ?? archive } catch { /* 无归档 */ }
 const feedbackExists = existsSync(join(root, 'memory', 'feedback.json'))
-const feedback = (() => { try { return JSON.parse(read('memory/feedback.json')) ?? [] } catch { return [] } })()
+let feedbackCorrupt = false
+const feedback = (() => {
+  if (!feedbackExists) return []
+  try {
+    const raw = JSON.parse(read('memory/feedback.json'))
+    return Array.isArray(raw) ? raw : []
+  } catch {
+    feedbackCorrupt = true
+    console.error('[evidence] memory/feedback.json 损坏，无法解析')
+    return []
+  }
+})()
 const viewsExists = existsSync(join(root, 'memory', 'views.json'))
 const views = (() => { try { return JSON.parse(read('memory/views.json')) ?? [] } catch { return [] } })()
 let weights = null
@@ -46,7 +66,10 @@ const trailingZeroRounds = (() => {
   for (let i = observations.length - 1; i >= 0 && observations[i].candidates === 0; i--) n++
   return n
 })()
-const totalPushed = obsForI2.reduce((s, o) => s + (o.pushed ?? 0), 0)
+const totalPushed = obsForI2.reduce((s, o) => {
+  if (o.telegram === 'disabled') return s
+  return s + (o.pushedDelivered ?? o.pushed ?? 0)
+}, 0)
 const ups = fbForI2.filter((f) => f.signal === 'up').length
 const downs = fbForI2.filter((f) => f.signal === 'down').length
 const validFeedback = ups + downs
@@ -83,11 +106,15 @@ const criteriaRows = [
   },
   {
     id: 'I-2', name: '反馈率 < 5%（👍+👎 数 / 推送条数）', threshold: '5%',
-    value: !feedbackExists ? 'feedback.json 不存在'
+    value: feedbackCorrupt ? 'feedback.json 损坏（数据异常）'
+      : !feedbackExists ? 'feedback.json 不存在'
       : totalPushed === 0 ? `0 条反馈 / 0 条推送（n/a）`
       : `${validFeedback}/${totalPushed} = ${(100 * validFeedback / totalPushed).toFixed(1)}%`,
-    status: !feedbackExists || totalPushed === 0 ? 'nodata' : (validFeedback / totalPushed < 0.05 ? 'fail' : 'pass'),
-    note: probeStart ? `探针期口径（--probe-start 已生效）` : '无 Telegram key 时无输入通道，nodata 属预期；全史口径（修复期推送计入分母）——签字稿定稿时同批切换',
+    status: feedbackCorrupt ? 'error'
+      : !feedbackExists || totalPushed === 0 ? 'nodata'
+      : (validFeedback / totalPushed < 0.05 ? 'fail' : 'pass'),
+    note: feedbackCorrupt ? '文件损坏需人工排查，非需求结论'
+      : probeStart ? `探针期口径（--probe-start 已生效，分母以实际送达数为准）` : '无 Telegram key 时无输入通道，nodata 属预期；全史口径——签字稿定稿时同批切换',
   },
   { id: 'I-3', name: '采集失败+零产出源占比 连续 3 轮 > 1/3（B′1 新口径）', threshold: '1/3', value: i3.value, status: i3.status, note: '分母按轮取（§2.6.4）；返回空的源单列 emptyYieldSources 可见不报警，是否并入分子待 M6 标定' },
   {
@@ -134,6 +161,7 @@ const summary = {
   generatedAt: new Date().toISOString(),
   probeStart: probeStart ?? null,
   rounds: observations.length,
+  corruptLines: corruptLines > 0 ? corruptLines : undefined,
   lastRound: observations.at(-1) ?? null,
   archive: { total: archive.entries.length, pushed: pushedCount, bySource: bySourceArchive },
   feedbackCount: feedback.length,

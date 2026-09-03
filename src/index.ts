@@ -132,6 +132,27 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
     store.registerDigestRef(cluster.ref, digestId, cluster.items[0].id, cluster.items[0].source)
   }
 
+  const pushedPaths: string[] = []
+  if (opts.outDir && digest.clusters.length > 0) {
+    pushedPaths.push(pushFile(digest, opts.outDir))
+  }
+
+  let telegramStatus: 'sent' | 'failed' | 'skipped-empty' | 'disabled' = 'disabled'
+  let pushedDelivered = 0
+
+  if (digest.clusters.length === 0) {
+    telegramStatus = 'skipped-empty'
+  } else if (opts.telegram) {
+    try {
+      await sendDigestTelegram(digest, opts.telegram)
+      telegramStatus = 'sent'
+      pushedDelivered = pushed.length
+    } catch (err) {
+      telegramStatus = 'failed'
+      console.error('[push] telegram 失败:', err instanceof Error ? err.message : err)
+    }
+  }
+
   const observation = observeRound({
     candidates,
     rawScores,
@@ -146,28 +167,10 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
     sourceFetched,
     sourceAfterDedupe,
     sourceRelevant,
+    telegram: telegramStatus,
+    pushedDelivered,
   })
   appendObservation(opts.memoryDir, observation)
-
-  const pushedPaths: string[] = []
-  if (digest.clusters.length === 0) {
-    return {
-      digest,
-      pushedPaths,
-      observation,
-      stats: { collected: collectedCount, deduped: collectedCount - kept.length, relevant: relevant.length, pushed: 0, skippedSources: skipped.map((s) => s.id) },
-    }
-  }
-  if (opts.outDir) {
-    pushedPaths.push(pushFile(digest, opts.outDir))
-  }
-  if (opts.telegram) {
-    try {
-      await sendDigestTelegram(digest, opts.telegram)
-    } catch (err) {
-      console.error('[push] telegram 失败:', err instanceof Error ? err.message : err)
-    }
-  }
 
   return {
     digest,
@@ -207,8 +210,29 @@ function loadJson<T>(path: string): T {
   return JSON.parse(readFileSync(path, 'utf8')) as T
 }
 
+export function printBootBanner(telegram?: { token: string; chatId: string }, once?: boolean): void {
+  const llmKey = process.env.DOMAIN_BOT_LLM_KEY || process.env.OPENAI_API_KEY
+  const llmModel = process.env.DOMAIN_BOT_LLM_MODEL || 'default'
+  const llmStatus = llmKey ? `on (model=${llmModel})` : 'fallback (heuristic)'
+  const tgStatus = telegram ? `on (chatId=${telegram.chatId.slice(0, 3)}***)` : 'off'
+  const jinaKey = process.env.DOMAIN_BOT_JINA_API_KEY
+  const jinaStatus = jinaKey ? 'on' : 'off (anonymous/fallback)'
+  console.log(`[boot] LLM: ${llmStatus} | Telegram: ${tgStatus} | Jina: ${jinaStatus}`)
+  if (!telegram && !once) {
+    console.warn('[boot] 警告: 未配置 Telegram 且非 --once 模式，常驻运行将无法推送与接收用户反馈！')
+  }
+}
+
 async function main(): Promise<void> {
   const root = process.cwd()
+
+  if (process.argv.includes('--doctor')) {
+    const { runDoctor, formatDoctorReport } = await import('./runtime/doctor.js')
+    const result = await runDoctor(root)
+    console.log(formatDoctorReport(result))
+    process.exit(result.ok ? 0 : 1)
+  }
+
   const domain = loadJson<DomainConfig>(join(root, 'config/domain.json'))
   const sources = loadJson<SourceConfig[]>(join(root, 'config/sources.json'))
   const push = loadJson<{ outDir: string }>(join(root, 'config/push.json'))
@@ -249,6 +273,8 @@ export interface StartBotOptions {
 export async function startBot(opts: StartBotOptions): Promise<void> {
   const { domain, sources, memoryDir, outDir, telegram, once = false, pollMs = 86_400_000 } = opts
   const startFeedback = opts.pollFeedbackFn ?? pollFeedback
+
+  printBootBanner(telegram, once)
 
   // 单实例锁（hy3 条件 2）：loop + --once 并发写同一 memoryDir 会 last-writer-wins 丢反馈
   acquireLock(memoryDir)

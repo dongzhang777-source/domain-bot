@@ -1,6 +1,8 @@
 import { normalizeText } from '../collector/dedupe.js'
 import type { DomainConfig, FetchFn, RawItem } from '../types.js'
 import { defaultFetch } from '../collector/adapters/rss.js'
+import { TIMEOUTS, timeoutSignal } from '../collector/adapters/fetchUtil.js'
+import { matchesKeyword } from './filter.js'
 
 export interface ScoreResult {
   valueScore: number
@@ -24,8 +26,8 @@ export class HeuristicScorer implements Scorer {
     const signals = domain.signalWords?.length ? domain.signalWords : this.signals
     return items.map((item) => {
       const hay = ' ' + normalizeText(item.title + ' ' + item.body) + ' '
-      const kwHits = domain.keywords.filter((k) => hay.includes(normalizeText(k))).length
-      const signalHits = signals.filter((s) => hay.includes(normalizeText(s))).length
+      const kwHits = domain.keywords.filter((k) => matchesKeyword(hay, k)).length
+      const signalHits = signals.filter((s) => matchesKeyword(hay, s)).length
       // sqrt 压缩：命中数边际递减，避免关键词密集源（arXiv 摘要长）一律触顶 1.0
       const kwPart = Math.min(1, Math.sqrt(kwHits) / Math.sqrt(8))
       const sigPart = Math.min(1, Math.sqrt(signalHits) / Math.sqrt(6))
@@ -79,6 +81,7 @@ export class LlmScorer implements Scorer {
 
     const url = this.opts.baseUrl.replace(/\/$/, '') + '/chat/completions'
     const res = await (this.opts.fetchFn ?? defaultFetch)(url, {
+      signal: timeoutSignal(TIMEOUTS.scorer),
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${this.opts.apiKey}` },
       body: JSON.stringify({

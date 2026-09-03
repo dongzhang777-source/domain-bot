@@ -43,6 +43,19 @@ describe('rss adapter', () => {
   it('HTTP 失败抛错（不吞异常，由编排层兜底）', async () => {
     await expect(fetchRss(rssSource, mockFetch('gone', 404))).rejects.toThrow('HTTP 404')
   })
+
+  it('Atom 空 description 标签不阻断 summary 与 content:encoded 兜底（P2-2）', async () => {
+    const xml = `<?xml version="1.0"?><feed>
+      <entry>
+        <title>Paper with empty description tag</title>
+        <description></description>
+        <summary>Real summary fallback content.</summary>
+        <link href="http://arxiv.org/abs/2"/>
+      </entry>
+    </feed>`
+    const items = await fetchRss(rssSource, mockFetch(xml))
+    expect(items[0].body).toBe('Real summary fallback content.')
+  })
 })
 
 describe('github adapter', () => {

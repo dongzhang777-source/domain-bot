@@ -2,7 +2,7 @@ import { XMLParser } from 'fast-xml-parser'
 import { contentHash } from '../dedupe.js'
 import type { FetchFn, RawItem, SourceConfig } from '../../types.js'
 
-import { withSizeLimit } from './fetchUtil.js'
+import { TIMEOUTS, timeoutSignal, withSizeLimit } from './fetchUtil.js'
 
 export const defaultFetch: FetchFn = (url, init) => fetch(url, init)
 
@@ -13,6 +13,7 @@ function text(v: unknown): string {
     const o = v as Record<string, unknown>
     if (typeof o['#text'] === 'string') return o['#text']
     if (typeof o['_'] === 'string') return o['_']
+    return ''
   }
   return ''
 }
@@ -22,10 +23,10 @@ function linkOf(e: Record<string, unknown>): string {
   const link = e.link
   if (typeof link === 'string') return link
   if (Array.isArray(link)) {
-    const alt = link.find(
-      (l) => typeof l === 'object' && l !== null && (l as Record<string, unknown>)['@_rel'] === 'alternate',
-    )
-    const anyLink = alt ?? link[0]
+    const alternate = link.find((l) => typeof l === 'object' && l !== null && (l as Record<string, unknown>)['@_rel'] === 'alternate')
+    if (alternate && typeof alternate === 'object') return String((alternate as Record<string, unknown>)['@_href'] ?? '')
+    const anyLink = link.find((l) => typeof l === 'string' || (typeof l === 'object' && l !== null && (l as Record<string, unknown>)['@_href']))
+    if (typeof anyLink === 'string') return anyLink
     if (typeof anyLink === 'object' && anyLink !== null) return String((anyLink as Record<string, unknown>)['@_href'] ?? '')
     return String(anyLink ?? '')
   }
@@ -35,7 +36,10 @@ function linkOf(e: Record<string, unknown>): string {
 
 /** 通用 RSS/Atom 适配器：RSS 2.0、Atom（含 arXiv）、GitHub releases.atom 都走这里。 */
 export async function fetchRss(source: SourceConfig, fetchFn: FetchFn = defaultFetch): Promise<RawItem[]> {
-  const res = await withSizeLimit(fetchFn, source.url, { headers: { 'user-agent': 'domain-bot/0.1' } })
+  const res = await withSizeLimit(fetchFn, source.url, {
+    signal: timeoutSignal(TIMEOUTS.collector),
+    headers: { 'user-agent': 'domain-bot/0.1' },
+  })
   if (!res.ok) throw new Error(`rss ${source.id}: HTTP ${res.status}`)
   const xml = await res.text()
   // 实体防护保持布尔默认档（maxExpansionDepth=10 等），仅调大总展开数：
@@ -55,7 +59,7 @@ export async function fetchRss(source: SourceConfig, fetchFn: FetchFn = defaultF
   const list: Record<string, unknown>[] = Array.isArray(rawList) ? rawList : rawList ? [rawList] : []
   return list.map((e) => {
     const title = text(e.title)
-    const body = text(e.description ?? e.summary ?? e['content:encoded'] ?? '')
+    const body = text(e.description) || text(e.summary) || text(e['content:encoded']) || ''
     const publishedAt = Date.parse(text(e.pubDate ?? e.updated ?? e.published ?? e['dc:date'])) || 0
     return {
       id: contentHash({ title, body }),

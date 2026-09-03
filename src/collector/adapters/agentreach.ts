@@ -1,7 +1,7 @@
 import { contentHash } from '../dedupe.js'
 import type { FetchFn, RawItem, SourceConfig, SpawnFn } from '../../types.js'
 import { defaultFetch } from './rss.js'
-import { isPublicHttpsUrl, withSizeLimit } from './fetchUtil.js'
+import { isPublicHttpsUrl, TIMEOUTS, timeoutSignal, withSizeLimit } from './fetchUtil.js'
 
 /**
  * Agent-Reach（https://github.com/Panniantong/Agent-Reach）免登录通道适配器集合。
@@ -71,6 +71,7 @@ interface V2exTopic {
 
 export async function fetchV2ex(source: SourceConfig, fetchFn: FetchFn = defaultFetch): Promise<RawItem[]> {
   const res = await withSizeLimit(fetchFn, 'https://www.v2ex.com/api/topics/hot.json', {
+    signal: timeoutSignal(TIMEOUTS.collector),
     headers: { 'user-agent': 'domain-bot/0.1' },
   })
   if (!res.ok) throw new Error(`v2ex ${source.id}: HTTP ${res.status}`)
@@ -221,7 +222,10 @@ export async function fetchJina(source: SourceConfig, fetchFn: FetchFn = default
   try {
     const headers: Record<string, string> = { 'user-agent': 'domain-bot/0.1' }
     if (apiKey) headers.authorization = `Bearer ${apiKey}`
-    const res = await withSizeLimit(fetchFn, `https://r.jina.ai/${source.url}`, { headers })
+    const res = await withSizeLimit(fetchFn, `https://r.jina.ai/${source.url}`, {
+      signal: timeoutSignal(TIMEOUTS.jina),
+      headers,
+    })
     if (res.ok) {
       const text = await res.text()
       const title = text.match(/^Title: (.*)$/m)?.[1]?.trim() ?? source.url

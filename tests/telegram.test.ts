@@ -119,6 +119,15 @@ describe('Telegram Markdown 转义（C′9，§3.4 静默失败防护）', () =>
     const text = renderDigestText(d)
     expect(text).toContain('[src](https://e.com/a(b%29)')
   })
+
+  it('URL 中的下划线与左括号原样保留，反斜杠与右括号编码（P2-3 锁定：防止过度转义）', () => {
+    const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters: [
+      { ref: 'd:0', title: 't', summary: 's', why: 'w', items: [mk('1', 't')] },
+    ] }
+    d.clusters[0]!.items[0]!.url = 'https://en.wikipedia.org/wiki/Foo_Bar(baz)\\test'
+    const text = renderDigestText(d)
+    expect(text).toContain('[src](https://en.wikipedia.org/wiki/Foo_Bar(baz%29%5Ctest)')
+  })
 })
 
 describe('已读回执（agy 三审 P0）', () => {

@@ -4,6 +4,20 @@ import type { FetchFn } from '../../types.js'
  * 256 KiB 曾误伤 arXiv cs.AI 这类合法大 feed（单文件 1~2 MB），放宽后仍有界。 */
 export const MAX_BODY_BYTES = 2 * 1024 * 1024
 
+/** 统一网络出口默认超时常量（ms） */
+export const TIMEOUTS = {
+  collector: 25_000,
+  jina: 30_000,
+  scorer: 120_000,
+  telegram: 20_000,
+  receiver: 70_000,
+} as const
+
+/** 创建指定超时的 AbortSignal */
+export function timeoutSignal(ms: number): AbortSignal {
+  return AbortSignal.timeout(ms)
+}
+
 /** 流式读取器类型（兼容 FetchFn 抽象与原生 fetch）。 */
 interface SizedReader {
   read: () => Promise<{ done: boolean; value: Uint8Array }>
@@ -11,14 +25,16 @@ interface SizedReader {
 }
 
 /** 包装 fetchFn，用 AbortController 计数字节并在超过上限时中止，避免把整响应读入内存。
- * 若底层返回无 body 流（如测试 mock），则在 text() 包装层做长度校验，确保上限仍生效。 */
+ * 若底层返回无 body 流（如测试 mock），则在 text() 包装层做长度校验，确保上限仍生效。
+ * 同时与传入的外部 signal（如超时）安全合并，防止覆盖。 */
 export async function withSizeLimit(
   fetchFn: FetchFn,
   url: string,
   init?: RequestInit,
 ): Promise<{ ok: boolean; status?: number; text: () => Promise<string> }> {
   const controller = new AbortController()
-  const res = await fetchFn(url, { ...init, signal: controller.signal })
+  const signal = init?.signal ? AbortSignal.any([controller.signal, init.signal]) : controller.signal
+  const res = await fetchFn(url, { ...init, signal })
   const reader = (res as { body?: { getReader?: () => SizedReader } }).body?.getReader?.()
   if (!reader) {
     const origText = res.text.bind(res)

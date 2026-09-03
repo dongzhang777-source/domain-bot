@@ -1,11 +1,12 @@
 import { contentHash } from '../dedupe.js'
 import type { FetchFn, RawItem, SourceConfig } from '../../types.js'
 import { defaultFetch } from './rss.js'
-import { withSizeLimit } from './fetchUtil.js'
+import { TIMEOUTS, timeoutSignal, withSizeLimit } from './fetchUtil.js'
 
 /** GitHub REST 搜索适配器（search/repositories）。url 直接放完整 API 查询串。 */
 export async function fetchGithub(source: SourceConfig, fetchFn: FetchFn = defaultFetch): Promise<RawItem[]> {
   const res = await withSizeLimit(fetchFn, source.url, {
+    signal: timeoutSignal(TIMEOUTS.collector),
     headers: {
       accept: 'application/vnd.github+json',
       'user-agent': 'domain-bot/0.1',

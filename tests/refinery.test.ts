@@ -25,6 +25,16 @@ describe('filter', () => {
     expect(kept).toHaveLength(1)
     expect(dropped).toBe(1)
   })
+  it('词边界守卫：英文子串不误报（storage/average 不命中 rag，upbeat 不命中 beat）', () => {
+    const ragDomain: DomainConfig = { ...domain, keywords: ['rag', 'beat'] }
+    // 包含 storage、average、upbeat，但不包含单独的 rag、beat
+    expect(isRelevant(item('cloud storage optimization on average is upbeat'), ragDomain)).toBe(false)
+    // 真实包含 rag 独立词时通过
+    expect(isRelevant(item('modular RAG system architecture'), ragDomain)).toBe(true)
+    // 中文关键词子串匹配正常工作
+    const cnDomain: DomainConfig = { ...domain, keywords: ['大模型', '智能体'] }
+    expect(isRelevant(item('新一代大模型与自主智能体发布'), cnDomain)).toBe(true)
+  })
 })
 
 describe('HeuristicScorer', () => {
@@ -36,6 +46,13 @@ describe('HeuristicScorer', () => {
     )
     expect(strong.valueScore).toBeGreaterThan(weak.valueScore)
     expect(strong.valueScore).toBeLessThanOrEqual(1)
+  })
+
+  it('HeuristicScorer 词边界：storage 与 upbeat 不虚增 hits 计数', async () => {
+    const scorer = new HeuristicScorer()
+    const ragDomain: DomainConfig = { ...domain, keywords: ['rag'], signalWords: ['beat'] }
+    const [res] = await scorer.score([item('cloud storage optimization with upbeat team')], ragDomain)
+    expect(res.reason).toBe('关键词命中 0，信号词命中 0')
   })
 
   it('打分不饱和：典型 arXiv 摘要不得触顶，且四个质量档位可区分', async () => {

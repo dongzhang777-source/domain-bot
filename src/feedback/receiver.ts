@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { defaultFetch } from '../collector/adapters/rss.js'
+import { TIMEOUTS, timeoutSignal } from '../collector/adapters/fetchUtil.js'
 import { telegramUrl } from '../push/telegram.js'
 import { refreshWeights } from '../memory/weights.js'
 import { MemoryStore } from '../memory/store.js'
@@ -65,6 +66,7 @@ export async function fetchUpdates(
   fetchFn: FetchFn = defaultFetch,
 ): Promise<TelegramUpdate[]> {
   const res = await fetchFn(telegramUrl(token, 'getUpdates'), {
+    signal: timeoutSignal(TIMEOUTS.receiver),
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ offset, timeout: 30, allowed_updates: ['callback_query'] }),

@@ -45,6 +45,30 @@ describe('运行时可达性（hy3 条件 1）', () => {
     })
     expect(pollCalled).toBe(false)
   })
+
+  it('启动横幅：printBootBanner 打印通道状态并在常驻缺 Telegram 时警告（盲区二守卫）', async () => {
+    const { printBootBanner } = await import('../src/index.js')
+    const logs: string[] = []
+    const warns: string[] = []
+    const origLog = console.log
+    const origWarn = console.warn
+    console.log = (...args) => logs.push(args.join(' '))
+    console.warn = (...args) => warns.push(args.join(' '))
+    try {
+      printBootBanner(undefined, false)
+      expect(logs.some((l) => l.includes('Telegram: off'))).toBe(true)
+      expect(warns.some((w) => w.includes('未配置 Telegram 且非 --once 模式'))).toBe(true)
+
+      logs.length = 0
+      warns.length = 0
+      printBootBanner({ token: '12345:ABC', chatId: '987654321' }, true)
+      expect(logs.some((l) => l.includes('Telegram: on (chatId=987***)'))).toBe(true)
+      expect(warns.length).toBe(0)
+    } finally {
+      console.log = origLog
+      console.warn = origWarn
+    }
+  })
 })
 
 describe('单实例锁（hy3 条件 2）', () => {

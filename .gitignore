@@ -4,3 +4,5 @@ dist/
 /outbox/
 .env
 *.tsbuildinfo
+.DS_Store
+/logs/

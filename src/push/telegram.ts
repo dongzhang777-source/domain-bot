@@ -1,5 +1,6 @@
 import type { Digest, FetchFn } from '../types.js'
 import { defaultFetch } from '../collector/adapters/rss.js'
+import { TIMEOUTS, timeoutSignal } from '../collector/adapters/fetchUtil.js'
 
 /** 构建 Telegram API URL。token 仅出现在 URL 路径中（Telegram 要求），但禁止被任何日志/错误路径捕获到。 */
 export function telegramUrl(token: string, method: string): string {
@@ -79,6 +80,7 @@ export async function sendDigestTelegram(digest: Digest, opts: TelegramOptions):
   const fetchFn = opts.fetchFn ?? defaultFetch
   const url = telegramUrl(opts.token, 'sendMessage')
   const res = await fetchFn(url, {
+    signal: timeoutSignal(TIMEOUTS.telegram),
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
@@ -94,6 +96,7 @@ export async function sendDigestTelegram(digest: Digest, opts: TelegramOptions):
 
 export async function answerCallbackQuery(token: string, callbackQueryId: string, fetchFn: FetchFn = defaultFetch): Promise<void> {
   const res = await fetchFn(telegramUrl(token, 'answerCallbackQuery'), {
+    signal: timeoutSignal(TIMEOUTS.telegram),
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ callback_query_id: callbackQueryId }),
