@@ -16,7 +16,7 @@ import type { Digest } from '../types.js'
  */
 
 const SCHEMA = 'tuna-brief-v1'
-const HOOK_LIMITS: Record<'zh' | 'en', number> = { zh: 35, en: 50 }
+const HOOK_LIMITS: Record<'zh' | 'en', number> = { zh: 70, en: 95 }
 const SUMMARY_MAX: Record<'zh' | 'en', number> = { zh: 300, en: 450 }
 
 /** 语言推断：与 tuna feeds/sanitize.ts detectLang 同族——前 400 码点 CJK 占比 >30% 判 zh。 */
