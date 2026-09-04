@@ -5,12 +5,19 @@ import { TIMEOUTS, timeoutSignal } from '../collector/adapters/fetchUtil.js'
 import { telegramUrl } from '../push/telegram.js'
 import { refreshWeights } from '../memory/weights.js'
 import { MemoryStore } from '../memory/store.js'
-import { answerCallbackQuery, parseCallbackData, parseViewCallbackData } from '../push/telegram.js'
+import { answerCallbackQuery, expandDigestMessage, parseCallbackData, parseExpandCallbackData, parseViewCallbackData } from '../push/telegram.js'
 import type { FetchFn, SourceConfig } from '../types.js'
+
+export interface TelegramCallbackMessage {
+  message_id: number
+  chat: { id: number }
+}
 
 export interface TelegramCallbackQuery {
   id: string
   data?: string
+  /** 展开编辑（ex:）需要定位被点的钩子卡消息；Telegram raw update 天然携带 */
+  message?: TelegramCallbackMessage
 }
 
 export interface TelegramUpdate {
@@ -45,7 +52,23 @@ async function answerQuietly(token: string, callbackQueryId: string, fetchFn?: F
 export async function processTelegramUpdate(update: TelegramUpdate, deps: ReceiverDeps): Promise<ProcessResult> {
   const cq = update.callback_query
   if (!cq?.data) return 'ignored'
-  // 👀 已读回执：不记反馈、不动权重，只记 viewed（判定线 G-1/P-1 的 viewed 唯一来源）
+  // L1→L2 展开回调（行为即信号）：展开 = 已读（recordView）+ 原地编辑为消费层。找不到内容档（过期/假
+  // digest）走 ignored。deps.token 是推送同一个 bot token，editMessageText 用回调自带的 chat/message 定位。
+  const expand = parseExpandCallbackData(cq.data)
+  if (expand) {
+    if (!cq.message) return 'ignored'
+    const store = new MemoryStore(deps.memoryDir)
+    const cluster = store.loadDigest(expand.digestId)?.clusters[expand.index]
+    if (!cluster) return 'ignored'
+    await expandDigestMessage(
+      { token: deps.token, chatId: cq.message.chat.id, messageId: cq.message.message_id, fetchFn: deps.fetchFn },
+      cluster,
+    )
+    store.recordView(expand.digestId, (deps.now ?? Date.now)())
+    await answerQuietly(deps.token, cq.id, deps.fetchFn)
+    return 'recorded'
+  }
+  // 👀 已读回执：不记反馈、不动权重，只记 viewed（保留兼容旧按钮消息；新形态由展开承担 viewed）
   const viewed = parseViewCallbackData(cq.data)
   if (viewed) {
     const store = new MemoryStore(deps.memoryDir)

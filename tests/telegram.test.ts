@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseCallbackData, sendDigestTelegram, renderItemMessage } from '../src/push/telegram.js'
+import { parseCallbackData, sendDigestTelegram, renderHookCard, renderExpandedBody, expandDigestMessage, parseExpandCallbackData } from '../src/push/telegram.js'
 import { renderDigestMarkdown } from '../src/push/file.js'
 import type { Digest, ScoredItem } from '../src/types.js'
 
@@ -30,7 +30,7 @@ describe('telegram push', () => {
     expect(parseCallbackData('other')).toBeUndefined()
   })
 
-  it('每个条目独立一条消息，按钮组紧跟自己的条目（09-04 真机联调：单消息堆尾无法对应条目）', async () => {
+  it('每个条目独立一条 L1 钩子卡，唯一按钮「展开 ▼」绑定 ex: 回调（行为即信号，2026-09-04 决断）', async () => {
     const multi: Digest = {
       id: 'dm', generatedAt: 0, domain: 'ai',
       clusters: [
@@ -45,30 +45,28 @@ describe('telegram push', () => {
         bodies.push(String(init?.body))
         return { ok: true, status: 200, text: async () => '{}' }
       },
-    })
+    }, 1000)
     expect(res).toBe(2)
     const parsed = bodies.map((b) => JSON.parse(b) as {
-      chat_id: string; text: string; reply_markup: { inline_keyboard: Array<Array<{ callback_data: string }>> }
+      chat_id: string; text: string; reply_markup: { inline_keyboard: Array<Array<{ text: string; callback_data: string }>> }
     })
     expect(parsed).toHaveLength(2)
     for (let i = 0; i < parsed.length; i++) {
       expect(parsed[i]!.chat_id).toBe('C')
-      // 每条消息的按钮组首行绑定自己的条目 ref，末行是已读回执
-      expect(parsed[i]!.reply_markup.inline_keyboard[0]![0]!.callback_data).toBe(`fb:u:dm:${i}`)
-      expect(parsed[i]!.reply_markup.inline_keyboard[0]![1]!.callback_data).toBe(`fb:d:dm:${i}`)
-      expect(parsed[i]!.reply_markup.inline_keyboard.at(-1)![0]!.callback_data).toBe('vb:dm')
+      // L1 只有「展开 ▼」一个按钮，回调绑定本条目；不再有 👍/👀 显式按钮
+      const kb = parsed[i]!.reply_markup.inline_keyboard
+      expect(kb).toHaveLength(1)
+      expect(kb[0]![0]!.callback_data).toBe(`ex:dm:${i}`)
+      expect(kb[0]![0]!.text).toContain('展开')
     }
-    // 首条带 digest 头，次条不带；条目编号与消息一一对应
-    expect(parsed[0]!.text).toContain('📡 *情报*')
-    expect(parsed[0]!.text).toContain('*1.')
-    expect(parsed[1]!.text).not.toContain('📡')
-    expect(parsed[1]!.text).toContain('*2.')
+    // 每张卡的钩子行对应自己的条目标题
+    expect(parsed[0]!.text).toContain('first')
+    expect(parsed[1]!.text).toContain('second')
   })
 })
 
 describe('telegram 增量标记', () => {
-  it('Telegram 文案标注增量/旧闻，与 file 通道对齐', async () => {
-    let body = ''
+  it('L1 钩子卡标注增量（🆕）；旧闻无标记', async () => {
     // 模块级已有名为 item / digest 的常量，这里用 mk / d 避免遮蔽。
     const mk = (id: string, title: string, isNew: boolean): ScoredItem =>
       ({ id, source: 's', title, body: '', url: 'u', publishedAt: 0, valueScore: 0.8, isNew, reason: '' })
@@ -80,30 +78,46 @@ describe('telegram 增量标记', () => {
     await sendDigestTelegram(d, {
       token: 't', chatId: 'c',
       fetchFn: async (_u, init) => { bodies.push(String(init?.body)); return { ok: true, status: 200, text: async () => '{}' } },
-    })
-    // 🆕/♻️ 分别落在各自条目的消息里
+    }, 1000)
     expect(bodies[0]).toContain('🆕')
-    expect(bodies[1]).toContain('♻️')
+    expect(bodies[1]).not.toContain('🆕')
   })
 })
 
-describe('Telegram Markdown 转义（C′9，§3.4 静默失败防护）', () => {
+describe('L1 钩子卡 / L2 消费层（tuna 三级瀑布流对齐，2026-09-04 老张决断）', () => {
   const mk = (id: string, title: string): ScoredItem =>
     ({ id, source: 's', title, body: '', url: 'u', publishedAt: 0, valueScore: 0.8, isNew: true, reason: '' })
 
-  it('用户文本中的 Telegram 保留字被转义（官方 4 字符集）；结构标记不被破坏；反斜杠剔除', () => {
+  it('L1 钩子卡：两行结构（钩子 + 元信息），唯一按钮「展开 ▼」绑定 ex: 回调', async () => {
+    const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters: [
+      { ref: 'd:0', title: 'Claude 微调开源 LLM', summary: 's', why: 'w', items: [mk('1', 'Claude 微调开源 LLM')] },
+    ] }
+    const bodies: string[] = []
+    await sendDigestTelegram(d, {
+      token: 't', chatId: 'c',
+      fetchFn: async (_u, init) => { bodies.push(String(init?.body)); return { ok: true, status: 200, text: async () => '{}' } },
+    }, 1000)
+    const body = JSON.parse(bodies[0]!) as {
+      text: string; reply_markup: { inline_keyboard: Array<Array<{ text: string; callback_data: string }>> }
+    }
+    expect(body.text.split('\n')).toHaveLength(2)
+    expect(body.text).toContain('Claude 微调开源 LLM')
+    expect(body.text).toContain('_s_') // 元信息行斜体；publishedAt=0 时时间折叠
+    const kb = body.reply_markup.inline_keyboard
+    expect(kb).toHaveLength(1)
+    expect(kb[0]![0]!.callback_data).toBe('ex:d:0')
+    expect(kb[0]![0]!.text).toContain('展开')
+  })
+
+  it('L2 展开体：标题 + 摘要 + 💡 为什么推给你；用户文本转义（官方 4 字符集）、反斜杠剔除', () => {
     const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters: [
       { ref: 'd:0', title: 'path\\end BERT_base [CLS]', summary: 'a_b [c] `d`', why: 'x_y', items: [mk('1', 'BERT_base vs [CLS]')] },
     ] }
-    const text = renderItemMessage(d, 0)
+    const text = renderExpandedBody(d, 0)
     // 官方 legacy 规则：可转义集仅 _ * ` [（实体外）；']' 与 '\' 不转义——'\' 直接剔除（D1）
     expect(text).toContain('pathend BERT\\_base \\[CLS]')
     expect(text).toContain('a\\_b \\[c] \\`d\\`')
-    expect(text).toContain('x\\_y')
-    // 粗体只包代码常量（实体内禁转义，D1）；用户文本在实体外
-    expect(text).toContain('*1. 🆕*')
-    expect(text).toContain('📡 *情报* · ai（')
-    expect(text).toContain('[src](u)')
+    expect(text).toContain('💡 x\\_y')
     // 剔除后不得残留孤立反斜杠
     expect(text).not.toContain('\\\\')
   })
@@ -112,40 +126,48 @@ describe('Telegram Markdown 转义（C′9，§3.4 静默失败防护）', () =>
     const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters: [
       { ref: 'd:0', title: 't', summary: 's', why: 'x'.repeat(500), items: [mk('1', 't')] },
     ] }
-    const text = renderItemMessage(d, 0)
+    const text = renderExpandedBody(d, 0)
     expect(text.includes('x'.repeat(201))).toBe(false)
   })
 
-  it('每条目独立成消息后单条必短于 Telegram 4096 上限（8 簇极限装填仍各发各的，无截断语义）', () => {
+  it('L1 与 L2 各自必短于 Telegram 4096 上限（8 簇极限装填仍各发各的，无截断语义）', () => {
     const clusters = Array.from({ length: 8 }, (_, i) => ({
       ref: `d:${i}`, title: `簇${i} ${'长'.repeat(80)}`, summary: 's'.repeat(300), why: 'w'.repeat(200),
       items: [mk(String(i), `簇${i}`)],
     }))
     const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters }
     for (let i = 0; i < clusters.length; i++) {
-      const text = renderItemMessage(d, i)
-      expect(text.length).toBeLessThanOrEqual(4096)
-      expect(text).toContain(`*${i + 1}. 🆕*`)
-      expect(text).not.toContain('已截断')
+      expect(renderHookCard(d, i, 1000).length).toBeLessThanOrEqual(4096)
+      expect(renderExpandedBody(d, i).length).toBeLessThanOrEqual(4096)
+      expect(renderExpandedBody(d, i)).not.toContain('已截断')
     }
   })
 
-  it('URL 中的右括号被百分号编码，不提前闭合链接', () => {
-    const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters: [
-      { ref: 'd:0', title: 't', summary: 's', why: 'w', items: [mk('1', 't')] },
-    ] }
-    d.clusters[0]!.items[0]!.url = 'https://e.com/a(b)'
-    const text = renderItemMessage(d, 0)
-    expect(text).toContain('[src](https://e.com/a(b%29)')
+  it('expandDigestMessage：editMessageText 定位钩子卡消息，出口按钮带原文 URL 与「不感兴趣」', async () => {
+    const bodies: string[] = []
+    await expandDigestMessage(
+      { token: 't', chatId: 42, messageId: 77, fetchFn: async (_u, init) => { bodies.push(String(init?.body)); return { ok: true, status: 200, text: async () => '{}' } } },
+      { ref: 'd:0', title: 't', summary: 's', why: 'w', url: 'https://en.wikipedia.org/wiki/Foo_Bar(baz)', isNew: true },
+    )
+    expect(bodies).toHaveLength(1)
+    const body = JSON.parse(bodies[0]!) as {
+      chat_id: number; message_id: number; text: string; reply_markup: { inline_keyboard: Array<Array<{ text?: string; url?: string; callback_data?: string }>> }
+    }
+    expect(body.chat_id).toBe(42)
+    expect(body.message_id).toBe(77)
+    expect(body.text).toContain('💡 w')
+    const kb = body.reply_markup.inline_keyboard
+    expect(kb[0]![0]!.url).toBe('https://en.wikipedia.org/wiki/Foo_Bar(baz)') // 按钮走原生 URL，不再过 Markdown 链接转义
+    expect(kb[1]![0]!.callback_data).toBe('fb:d:d:0')
+    expect(kb[1]![0]!.text).toContain('不感兴趣')
   })
 
-  it('URL 中的下划线与左括号原样保留，反斜杠与右括号编码（P2-3 锁定：防止过度转义）', () => {
-    const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters: [
-      { ref: 'd:0', title: 't', summary: 's', why: 'w', items: [mk('1', 't')] },
-    ] }
-    d.clusters[0]!.items[0]!.url = 'https://en.wikipedia.org/wiki/Foo_Bar(baz)\\test'
-    const text = renderItemMessage(d, 0)
-    expect(text).toContain('[src](https://en.wikipedia.org/wiki/Foo_Bar(baz%29%5Ctest)')
+  it('parseExpandCallbackData 解析 ex: 展开回调', () => {
+    expect(parseExpandCallbackData('ex:d1:0')).toEqual({ digestId: 'd1', index: 0 })
+    expect(parseExpandCallbackData('ex:d1:12')).toEqual({ digestId: 'd1', index: 12 })
+    expect(parseExpandCallbackData('fb:u:d1:0')).toBeUndefined()
+    expect(parseExpandCallbackData('vb:d1')).toBeUndefined()
+    expect(parseExpandCallbackData('junk')).toBeUndefined()
   })
 })
 
@@ -157,13 +179,15 @@ describe('已读回执（agy 三审 P0）', () => {
     expect(parseViewCallbackData('junk')).toBeUndefined()
   })
 
-  it('Telegram 键盘含 👀 已读按钮', async () => {
-    let body = ''
+  it('L1 键盘不再有 👀/👍 显式按钮——展开即已读（vb: 仅保留兼容旧消息）', async () => {
+    const bodies: string[] = []
     await sendDigestTelegram(digest, {
       token: 't', chatId: 'c',
-      fetchFn: async (_u, init) => { body = String(init?.body); return { ok: true, status: 200, text: async () => '{}' } },
-    })
-    const kb = JSON.parse(body).reply_markup.inline_keyboard as Array<Array<{ callback_data: string }>>
-    expect(kb.at(-1)![0]!.callback_data).toBe('vb:d1')
+      fetchFn: async (_u, init) => { bodies.push(String(init?.body)); return { ok: true, status: 200, text: async () => '{}' } },
+    }, 1000)
+    const kb = JSON.parse(bodies[0]!).reply_markup.inline_keyboard as Array<Array<{ callback_data: string }>>
+    const allCallbacks = kb.flat().map((b) => b.callback_data)
+    expect(allCallbacks).not.toContain('vb:d1')
+    expect(allCallbacks.filter((c) => c.startsWith('fb:'))).toHaveLength(0)
   })
 })

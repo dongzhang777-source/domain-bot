@@ -66,7 +66,7 @@ describe('e2e: 采集 → 提炼 → 记忆 → 推送 → 反馈 → 进化', (
     await runOnce({ ...common, outDir: join(dir, 'out'), now: 1000 })
     const r2 = await runOnce({ ...common, outDir: join(dir, 'out'), now: 2000 })
     expect(r2.stats.pushed).toBe(0)
-    expect(readdirSync(join(dir, 'out'))).toHaveLength(1)
+    expect(readdirSync(join(dir, 'out'))).toHaveLength(2) // digest md + tuna/ 内容包目录
   })
 
   it('反馈回路：👍 后源权重上升，进化可复算', async () => {

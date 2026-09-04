@@ -30,26 +30,46 @@ function escUrl(u: string): string {
   return u.replace(/\\/g, '%5C').replace(/\)/g, '%29')
 }
 
-/** 单条目消息文本：首条带 digest 头。单簇必短于 4096（title 120 / summary 300 / why 200 限长），
- *  原「多簇装填 + 3880 截断」随每条目独立成消息废除——09-04 真机联调发现：单消息挂全部按钮时
- *  按钮组堆在消息尾部且无条目标识，用户无法分辨哪组按钮对应哪条条目。 */
-export function renderItemMessage(digest: Digest, index: number): string {
-  const c = digest.clusters[index]!
-  const src = c.items[0]!
-  const tag = src.isNew ? '🆕' : '♻️'
-  const head = index === 0 ? `📡 *情报* · ${escMd(digest.domain)}（${digest.clusters.length} 条趋势）\n\n` : ''
-  return `${head}*${index + 1}. ${tag}* ${escMd(c.title.slice(0, 120))}\n${escMd(c.summary.slice(0, 300))}\n[src](${escUrl(src.url)}) · ${escMd(c.why.slice(0, 200))}`
+/** 相对时间（元信息行用）。publishedAt 缺失/为 0 时返回空串，调用方负责折叠分隔符。 */
+export function timeAgo(publishedAt: number, now: number): string {
+  if (!publishedAt || publishedAt > now) return ''
+  const mins = Math.floor((now - publishedAt) / 60_000)
+  if (mins < 60) return `${Math.max(1, mins)} 分钟前`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours} 小时前`
+  return `${Math.floor(hours / 24)} 天前`
 }
 
-function itemKeyboard(ref: string, digestId: string) {
+/** L1 钩子卡（tuna 三级瀑布流一级·钩子层）：第一行钩子（标题精简），第二行元信息（来源 · 新鲜度）。
+ *  唯一出口是「展开 ▼」——浏览行为即信号，不以显式按钮打扰（2026-09-04 老张决断，workplan Phase C′）。 */
+export function renderHookCard(digest: Digest, index: number, now: number): string {
+  const c = digest.clusters[index]!
+  const src = c.items[0]!
+  const tag = src.isNew ? '🆕 ' : ''
+  const meta = [src.source, timeAgo(src.publishedAt, now)].filter(Boolean).join(' · ')
+  return `*${tag}${escMd(c.title.slice(0, 90))}*\n_${escMd(meta)}_`
+}
+
+/** L2 消费层（点「展开 ▼」后经 expandDigestMessage 原地编辑）：标题 + 一屏摘要 + 为什么推给你。 */
+export function renderExpandedBody(digest: Digest, index: number): string {
+  const c = digest.clusters[index]!
+  const why = c.why && c.why !== c.title ? `\n\n💡 ${escMd(c.why.slice(0, 200))}` : ''
+  return `*${c.items[0]!.isNew ? '🆕 ' : ''}${escMd(c.title.slice(0, 120))}*\n\n${escMd(c.summary.slice(0, 300))}${why}`
+}
+
+function hookKeyboard(digestId: string, index: number) {
   return {
     inline_keyboard: [
-      [
-        { text: '👍 有价值', callback_data: `fb:u:${ref}` },
-        { text: '👎 噪音', callback_data: `fb:d:${ref}` },
-      ],
-      // agy 三审：已读回执走 Telegram callback，跨端可用（原 127.0.0.1 方案手机端必失效）
-      [{ text: '👀 已读', callback_data: `vb:${digestId}` }],
+      [{ text: '展开 ▼', callback_data: `ex:${digestId}:${index}` }],
+    ],
+  }
+}
+
+function expandedKeyboard(ref: string, url: string) {
+  return {
+    inline_keyboard: [
+      [{ text: '阅读原文 ↗', url }],
+      [{ text: '不感兴趣 ✕', callback_data: `fb:d:${ref}` }],
     ],
   }
 }
@@ -67,10 +87,17 @@ export function parseViewCallbackData(data: string): { digestId: string } | unde
   return { digestId: m[1]! }
 }
 
+/** L1→L2 展开回调：`ex:<digestId>:<index>`。展开即已读（recordView 由 receiver 落账）。 */
+export function parseExpandCallbackData(data: string): { digestId: string; index: number } | undefined {
+  const m = data.match(/^ex:([a-z0-9]+):(\d+)$/)
+  if (!m) return undefined
+  return { digestId: m[1]!, index: Number(m[2]) }
+}
+
 /** 每个条目独立一条消息，👍/👎/👀 按钮紧跟自己的条目。回调协议（fb:u:ref / vb:id）不变。
  *  任一条失败即抛——调用方整轮记 failed、实发分母记 0（I-2 口径：通道事故不得假判负，宁保守少计）；
  *  全部成功返回送达条数（= clusters.length）。 */
-export async function sendDigestTelegram(digest: Digest, opts: TelegramOptions): Promise<number> {
+export async function sendDigestTelegram(digest: Digest, opts: TelegramOptions, now = Date.now()): Promise<number> {
   const fetchFn = opts.fetchFn ?? defaultFetch
   const url = telegramUrl(opts.token, 'sendMessage')
   let delivered = 0
@@ -81,16 +108,42 @@ export async function sendDigestTelegram(digest: Digest, opts: TelegramOptions):
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         chat_id: opts.chatId,
-        text: renderItemMessage(digest, i),
+        text: renderHookCard(digest, i, now),
         parse_mode: 'Markdown',
         disable_web_page_preview: true,
-        reply_markup: itemKeyboard(digest.clusters[i]!.ref, digest.id),
+        reply_markup: hookKeyboard(digest.id, i),
       }),
     })
     if (!res.ok) throw new Error(`telegram sendMessage: HTTP ${res.status}`)
     delivered++
   }
   return delivered
+}
+
+/** L2 原地展开（editMessageText）：钩子卡被编辑为消费层内容 + 出口按钮（阅读原文 / 不感兴趣）。
+ *  cluster 内容来自 memory 的 digests.json（saveDigest 落档）；找不到（过期/假 digest）由调用方走 ignored。
+ *  chatId 用回调自带的数字对话 id（非 TelegramOptions 的字符串 chatId）——收到的点击天然携带，不必回读 .env。 */
+export async function expandDigestMessage(
+  opts: { token: string; fetchFn?: FetchFn; chatId: number; messageId: number },
+  cluster: { ref: string; title: string; summary: string; why: string; url?: string; isNew?: boolean },
+): Promise<void> {
+  const fetchFn = opts.fetchFn ?? defaultFetch
+  const why = cluster.why && cluster.why !== cluster.title ? `\n\n💡 ${escMd(cluster.why.slice(0, 200))}` : ''
+  const text = `*${cluster.isNew ? '🆕 ' : ''}${escMd(cluster.title.slice(0, 120))}*\n\n${escMd(cluster.summary.slice(0, 300))}${why}`
+  const res = await fetchFn(telegramUrl(opts.token, 'editMessageText'), {
+    signal: timeoutSignal(TIMEOUTS.telegram),
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: opts.chatId,
+      message_id: opts.messageId,
+      text,
+      parse_mode: 'Markdown',
+      disable_web_page_preview: true,
+      reply_markup: expandedKeyboard(cluster.ref, cluster.url ?? ''),
+    }),
+  })
+  if (!res.ok) throw new Error(`telegram editMessageText: HTTP ${res.status}`)
 }
 
 export async function answerCallbackQuery(token: string, callbackQueryId: string, fetchFn: FetchFn = defaultFetch): Promise<void> {

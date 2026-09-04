@@ -15,6 +15,7 @@ import { appendObservation, observeRound, type RoundObservation } from './memory
 import { refreshWeights } from './memory/weights.js'
 import { pollFeedback } from './feedback/receiver.js'
 import { pushFile } from './push/file.js'
+import { pushTuna } from './push/tuna.js'
 import { sendDigestTelegram } from './push/telegram.js'
 import { acquireLock, releaseLock } from './runtime/lock.js'
 
@@ -131,10 +132,13 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
   for (const cluster of digest.clusters) {
     store.registerDigestRef(cluster.ref, digestId, cluster.items[0].id, cluster.items[0].source)
   }
+  // L1→L2 展开的内容档：回调查询只带 digestId:index，编辑渲染要 summary/why/url，推送时落一份
+  store.saveDigest(digest)
 
   const pushedPaths: string[] = []
   if (opts.outDir && digest.clusters.length > 0) {
     pushedPaths.push(pushFile(digest, opts.outDir))
+    pushedPaths.push(pushTuna(digest, join(opts.outDir, 'tuna')))
   }
 
   let telegramStatus: 'sent' | 'failed' | 'skipped-empty' | 'disabled' = 'disabled'

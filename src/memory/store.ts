@@ -3,6 +3,14 @@ import { join } from 'node:path'
 import { jaccard, tokenize } from '../collector/dedupe.js'
 import type { FeedbackRecord, FeedbackSignal, RawItem, ScoredItem, ViewRecord } from '../types.js'
 
+export interface StoredDigest {
+  digestId: string
+  generatedAt: number
+  clusters: Array<{ ref: string; title: string; summary: string; why: string; url: string; isNew: boolean }>
+}
+
+const MAX_STORED_DIGESTS = 30
+
 export interface ArchiveEntry {
   id: string
   title: string
@@ -37,6 +45,7 @@ export class MemoryStore {
   private archive: Archive = { entries: [], digestRefs: {} }
   private feedback: FeedbackRecord[] = []
   private views: ViewRecord[] = []
+  private digests: StoredDigest[] = []
   private tokenCache = new Map<string, Set<string>>()
   private weights: WeightsState = { weights: {}, feedbackHash: '' }
   private readonly maxEntries: number
@@ -76,6 +85,8 @@ export class MemoryStore {
     if (w) this.weights = w
     const v = this.loadJson<ViewRecord[]>('views.json', 'views.json')
     if (v) this.views = v
+    const d = this.loadJson<StoredDigest[]>('digests.json', 'digests.json')
+    if (d) this.digests = d
   }
 
   /** D6：非原子直写在崩溃窗口会产生截断文件——tmp+rename 原子替换。 */
@@ -200,6 +211,33 @@ export class MemoryStore {
 
   resolveRef(ref: string): { digestId: string; itemId: string; source: string } | undefined {
     return this.archive.digestRefs[ref]
+  }
+
+  /** L1→L2 展开所需的内容档（digests.json，最近 30 份）。回调查询只带 digestId:index，
+   *  编辑消息要渲染 summary/why/url——这些不在 digestRefs 里，推送时落一份精简档。 */
+  saveDigest(digest: {
+    id: string
+    generatedAt: number
+    clusters: Array<{ ref: string; title: string; summary: string; why: string; items: Array<{ url: string; isNew: boolean }> }>
+  }): void {
+    const stored: StoredDigest = {
+      digestId: digest.id,
+      generatedAt: digest.generatedAt,
+      clusters: digest.clusters.map((c) => ({
+        ref: c.ref,
+        title: c.title,
+        summary: c.summary,
+        why: c.why,
+        url: c.items[0]?.url ?? '',
+        isNew: c.items[0]?.isNew ?? false,
+      })),
+    }
+    this.digests = [stored, ...this.digests.filter((d) => d.digestId !== digest.id)].slice(0, MAX_STORED_DIGESTS)
+    this.writeFileAtomic('digests.json', JSON.stringify(this.digests, null, 2))
+  }
+
+  loadDigest(digestId: string): StoredDigest | undefined {
+    return this.digests.find((d) => d.digestId === digestId)
   }
 
   /** 反馈落盘。同 digestId+itemId+signal 去重（C′10）：重启重放/连点不得虚增「有效反馈 ≥20 条」（P-2）；

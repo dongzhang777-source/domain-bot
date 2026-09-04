@@ -26,16 +26,28 @@ export class HeuristicScorer implements Scorer {
     const signals = domain.signalWords?.length ? domain.signalWords : this.signals
     return items.map((item) => {
       const hay = ' ' + normalizeText(item.title + ' ' + item.body) + ' '
-      const kwHits = domain.keywords.filter((k) => matchesKeyword(hay, k)).length
-      const signalHits = signals.filter((s) => matchesKeyword(hay, s)).length
+      const kwHits = domain.keywords.filter((k) => matchesKeyword(hay, k))
+      const sigHits = signals.filter((s) => matchesKeyword(hay, s))
       // sqrt 压缩：命中数边际递减，避免关键词密集源（arXiv 摘要长）一律触顶 1.0
-      const kwPart = Math.min(1, Math.sqrt(kwHits) / Math.sqrt(8))
-      const sigPart = Math.min(1, Math.sqrt(signalHits) / Math.sqrt(6))
+      const kwPart = Math.min(1, Math.sqrt(kwHits.length) / Math.sqrt(8))
+      const sigPart = Math.min(1, Math.sqrt(sigHits.length) / Math.sqrt(6))
       const valueScore = 0.25 + 0.5 * kwPart + 0.25 * sigPart
-      const reason = `关键词命中 ${kwHits}，信号词命中 ${signalHits}`
+      const reason = humanizeReason(kwHits, sigHits, domain.domain)
       return { valueScore, reason }
     })
   }
+}
+
+/** 启发式打分的「为什么推给你」人话化（tuna packages/brief static-why 同思路：模板拼装、永不抛错、
+ *  永不空串）。机械计数（「关键词命中 2」）对用户决策零价值，2026-09-04 老张点评为「毫无吸引力」。
+ *  LLM 打分器自带一句话理由，不走此模板。 */
+function humanizeReason(kwHits: string[], sigHits: string[], domain: string): string {
+  const kw = kwHits.slice(0, 2).map((k) => `「${k}」`).join('')
+  const sig = sigHits[0]
+  if (kw && sig) return `聚焦你的关注点 ${kw}，并出现强信号「${sig}」`
+  if (kw) return `聚焦你的关注点 ${kw}`
+  if (sig) return `出现领域信号「${sig}」`
+  return `与「${domain}」相关`
 }
 
 /**
