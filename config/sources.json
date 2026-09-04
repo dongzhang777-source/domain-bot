@@ -32,14 +32,14 @@
     "type": "rss",
     "url": "https://www.jiqizhixin.com/rss",
     "weight": 0.3,
-    "enabled": true
+    "enabled": false
   },
   {
     "id": "qbitai",
     "type": "rss",
     "url": "https://www.qbitai.com/feed",
     "weight": 0.3,
-    "enabled": true
+    "enabled": false
   },
   {
     "id": "github-new-llm-tools",
@@ -81,7 +81,7 @@
     "type": "exa",
     "url": "大模型 开源 发布 本周 动态",
     "weight": 0.3,
-    "enabled": true
+    "enabled": false
   },
   {
     "id": "hf-daily-papers",
@@ -109,14 +109,14 @@
     "type": "v2ex",
     "url": "https://www.v2ex.com/api/topics/hot.json",
     "weight": 0.2,
-    "enabled": true
+    "enabled": false
   },
   {
     "id": "bili-llm",
     "type": "bili",
     "url": "大模型 最新",
     "weight": 0.2,
-    "enabled": true
+    "enabled": false
   },
   {
     "id": "yt-llm",
