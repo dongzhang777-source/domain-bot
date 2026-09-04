@@ -2,7 +2,7 @@
 
 ```json
 {
-  "generatedAt": "2026-09-03T00:59:58.692Z",
+  "generatedAt": "2026-09-04T14:35:42.931Z",
   "probeStart": null,
   "rounds": 4,
   "lastRound": {
@@ -71,7 +71,7 @@
       "threshold": "5%",
       "value": "feedback.json 不存在",
       "status": "nodata",
-      "note": "无 Telegram key 时无输入通道，nodata 属预期；全史口径（修复期推送计入分母）——签字稿定稿时同批切换"
+      "note": "无 Telegram key 时无输入通道，nodata 属预期；全史口径——签字稿定稿时同批切换"
     },
     {
       "id": "I-3",
@@ -83,11 +83,11 @@
     },
     {
       "id": "I-4",
-      "name": "saturationRate 持续 > 0.5（原始分口径）",
+      "name": "saturationRate 持续 > 0.5（原始分口径；判据形式待裁）",
       "threshold": "0.5",
       "value": "0",
       "status": "pass",
-      "note": "决策点 7 已拍板案 B（P90 型），criteria 签字稿改文后本行同步更新"
+      "note": "决策点 7 待裁：现行形式被 M3 证明恒真/恒假不可用；倾向案 B（rawP90 ≥ X），X 归联合标定（决策点 8），签字稿定稿时同批切换"
     },
     {
       "id": "G-1",
@@ -154,9 +154,9 @@
 | 判据 | 内容 | 阈值 | 当前值 | 状态 | 备注 |
 |---|---|---|---|---|---|
 | I-1 | 连续 3 轮 candidates=0（候选池枯竭） | 3 轮 | 1/3 轮 | **pass** | M6 标定中：拟加「且全源零新增」限定（arXiv 周五/周六无公告属排班，非仪器故障） |
-| I-2 | 反馈率 < 5%（👍+👎 数 / 推送条数） | 5% | feedback.json 不存在 | **nodata** | 无 Telegram key 时无输入通道，nodata 属预期；全史口径（修复期推送计入分母）——签字稿定稿时同批切换 |
+| I-2 | 反馈率 < 5%（👍+👎 数 / 推送条数） | 5% | feedback.json 不存在 | **nodata** | 无 Telegram key 时无输入通道，nodata 属预期；全史口径——签字稿定稿时同批切换 |
 | I-3 | 采集失败+零产出源占比 连续 3 轮 > 1/3（B′1 新口径） | 1/3 | 旧观测缺 enabledSourceIds——分母无法按轮取 | **nodata** | 分母按轮取（§2.6.4）；返回空的源单列 emptyYieldSources 可见不报警，是否并入分子待 M6 标定 |
-| I-4 | saturationRate 持续 > 0.5（原始分口径） | 0.5 | 0 | **pass** | 决策点 7 已拍板案 B（P90 型），criteria 签字稿改文后本行同步更新 |
+| I-4 | saturationRate 持续 > 0.5（原始分口径；判据形式待裁） | 0.5 | 0 | **pass** | 决策点 7 待裁：现行形式被 M3 证明恒真/恒假不可用；倾向案 B（rawP90 ≥ X），X 归联合标定（决策点 8），签字稿定稿时同批切换 |
 | G-1 | 主动消费性查看 < 10 次（两周累计） | 10 次 | views.json 不存在 | **nodata** | views.json 是 viewed 唯一定义（criteria §2c） |
 | G-2 | 👍率 < 20%（有效反馈中） | 20% | nodata | **nodata** |  |
 | G-3 | 戒断测试：停 3 天无主动打开 | 停 3 天 | 需探针期末人工判读 | **nodata** | 依赖探针结束后的戒断窗口观测 |

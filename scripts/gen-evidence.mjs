@@ -3,8 +3,12 @@
 // A′3（2026-09-02）：读 views.json，输出判定线 11 项判据自动读数（pass/fail/nodata）。
 //   - I-1..I-4 是滚动监测项：pass=未触发，fail=已触发（签字后即按此裁决）。
 //   - G/P 组是两周累计/探针期末项：中途一律 nodata（当前值仅展示）；加 --probe-end 才做期末判定。
-//   - I-4 暂按 criteria 现行文（saturationRate > 0.5，原始分口径）；决策点 7 已拍板案 B（P90 型），
-//     criteria 签字稿改文后本脚本的 I-4 行随之更新——两者必须同批改（X6 纪律）。
+//   - I-4 【待裁，非已拍板】：criteria:20 现行判据（saturationRate > 0.5，原始分）已被诊断报告
+//     M3 论证证明为恒真/恒假开关（T>Top1 恒假、T<P50 恒真），签字前必须换判据形式。
+//     诊断报告 §7.8 决策点 7：倾向案 B（rawP90 ≥ X，弃用触顶比例），X 待联合标定（决策点 8：
+//     长度归一化 + I-4 X + I-1 N 三项同批）。总管 2026-09-04 核实：workplan 数值拍板清单
+//     无此项、无老张拍板记录，原注释「已拍板案 B」系越权表述，已撤回。本行按 criteria
+//     现行文继续读数（nodata 为主），案 B 实现随签字稿同批落。
 // 用法：node scripts/gen-evidence.mjs [--md] [--probe-end]     # --md 同时写 docs/evidence-latest.md
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -118,10 +122,10 @@ const criteriaRows = [
   },
   { id: 'I-3', name: '采集失败+零产出源占比 连续 3 轮 > 1/3（B′1 新口径）', threshold: '1/3', value: i3.value, status: i3.status, note: '分母按轮取（§2.6.4）；返回空的源单列 emptyYieldSources 可见不报警，是否并入分子待 M6 标定' },
   {
-    id: 'I-4', name: 'saturationRate 持续 > 0.5（原始分口径）', threshold: '0.5',
+    id: 'I-4', name: 'saturationRate 持续 > 0.5（原始分口径；判据形式待裁）', threshold: '0.5',
     value: `${observations.at(-1)?.saturationRate ?? 'nodata'}`,
     status: observations.length < 3 ? 'nodata' : (last3.every((o) => (o.saturationRate ?? 0) > 0.5) ? 'fail' : 'pass'),
-    note: '决策点 7 已拍板案 B（P90 型），criteria 签字稿改文后本行同步更新',
+    note: '决策点 7 待裁：现行形式被 M3 证明恒真/恒假不可用；倾向案 B（rawP90 ≥ X），X 归联合标定（决策点 8），签字稿定稿时同批切换',
   },
   {
     id: 'G-1', name: '主动消费性查看 < 10 次（两周累计）', threshold: '10 次',
