@@ -211,9 +211,12 @@ function loadJson<T>(path: string): T {
 }
 
 export function printBootBanner(telegram?: { token: string; chatId: string }, once?: boolean): void {
-  const llmKey = process.env.DOMAIN_BOT_LLM_KEY || process.env.OPENAI_API_KEY
-  const llmModel = process.env.DOMAIN_BOT_LLM_MODEL || 'default'
-  const llmStatus = llmKey ? `on (model=${llmModel})` : 'fallback (heuristic)'
+  // 与 scorer.ts 的 LLM 打分器启用条件（BASE_URL/API_KEY/MODEL 三者齐备）保持一致：
+  // OPENAI_API_KEY 是其他工具的通用变量，纳入判定会让横幅在打分实际走启发式时误报 on（09-04 真机联调实测）。
+  const llmModel = process.env.DOMAIN_BOT_LLM_MODEL
+  const llmStatus = process.env.DOMAIN_BOT_LLM_BASE_URL && process.env.DOMAIN_BOT_LLM_API_KEY && llmModel
+    ? `on (model=${llmModel})`
+    : 'fallback (heuristic)'
   const tgStatus = telegram ? `on (chatId=${telegram.chatId.slice(0, 3)}***)` : 'off'
   const jinaKey = process.env.DOMAIN_BOT_JINA_API_KEY
   const jinaStatus = jinaKey ? 'on' : 'off (anonymous/fallback)'

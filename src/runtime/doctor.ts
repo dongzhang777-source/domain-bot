@@ -85,7 +85,8 @@ export async function runDoctor(root: string = process.cwd(), spawnFn: SpawnFn =
   const tgToken = process.env.DOMAIN_BOT_TELEGRAM_TOKEN
   const tgChatId = process.env.DOMAIN_BOT_TELEGRAM_CHAT_ID
   const hasTg = Boolean(tgToken && tgChatId)
-  const hasLlm = Boolean(process.env.DOMAIN_BOT_LLM_KEY || process.env.OPENAI_API_KEY)
+  // 与 scorer.ts 的 LLM 打分器启用条件（三者齐备）一致；OPENAI_API_KEY 是其他工具的通用变量，不构成 domain-bot 的 LLM 就绪
+  const hasLlm = Boolean(process.env.DOMAIN_BOT_LLM_BASE_URL && process.env.DOMAIN_BOT_LLM_API_KEY && process.env.DOMAIN_BOT_LLM_MODEL)
   const hasJina = Boolean(process.env.DOMAIN_BOT_JINA_API_KEY)
 
   if (!hasTg) {
