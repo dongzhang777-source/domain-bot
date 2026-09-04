@@ -25,11 +25,6 @@ function escMd(s: string): string {
   return s.replace(/\\/g, '').replace(/([_*[`])/g, '\\$1')
 }
 
-/** 链接 URL 里的 `)` 会提前闭合 Markdown 链接，用百分号编码消解；`\` 同理。 */
-function escUrl(u: string): string {
-  return u.replace(/\\/g, '%5C').replace(/\)/g, '%29')
-}
-
 /** 相对时间（元信息行用）。publishedAt 缺失/为 0 时返回空串，调用方负责折叠分隔符。 */
 export function timeAgo(publishedAt: number, now: number): string {
   if (!publishedAt || publishedAt > now) return ''
@@ -41,20 +36,27 @@ export function timeAgo(publishedAt: number, now: number): string {
 }
 
 /** L1 钩子卡（tuna 三级瀑布流一级·钩子层）：第一行钩子（标题精简），第二行元信息（来源 · 新鲜度）。
- *  唯一出口是「展开 ▼」——浏览行为即信号，不以显式按钮打扰（2026-09-04 老张决断，workplan Phase C′）。 */
+ *  唯一出口是「展开 ▼」——浏览行为即信号，不以显式按钮打扰（2026-09-04 老张决断，workplan Phase C′）。
+ *  D1 转义规范：粗体只包常量 token（🆕），escMd 转义后的用户文本一律在实体外——实体内禁转义，
+ *  标题含 * 或尾部 \ 时实体包裹会致 Telegram 400（DB-01 缺陷 1）。 */
 export function renderHookCard(digest: Digest, index: number, now: number): string {
   const c = digest.clusters[index]!
   const src = c.items[0]!
-  const tag = src.isNew ? '🆕 ' : ''
+  const head = src.isNew ? '*🆕* ' : ''
   const meta = [src.source, timeAgo(src.publishedAt, now)].filter(Boolean).join(' · ')
-  return `*${tag}${escMd(c.title.slice(0, 90))}*\n_${escMd(meta)}_`
+  return `${head}${escMd(c.title.slice(0, 90))}\n${escMd(meta)}`
+}
+
+/** L2 消费层正文（标题 + 一屏摘要 + 💡 为什么推给你）。L1→L2 两处渲染共用本函数，防文案双头漂移（DB-01 缺陷 3）。 */
+export function renderClusterBody(cluster: { title: string; summary: string; why: string; isNew?: boolean }): string {
+  const head = cluster.isNew ? '*🆕* ' : ''
+  const why = cluster.why && cluster.why !== cluster.title ? `\n\n💡 ${escMd(cluster.why.slice(0, 200))}` : ''
+  return `${head}${escMd(cluster.title.slice(0, 120))}\n\n${escMd(cluster.summary.slice(0, 300))}${why}`
 }
 
 /** L2 消费层（点「展开 ▼」后经 expandDigestMessage 原地编辑）：标题 + 一屏摘要 + 为什么推给你。 */
 export function renderExpandedBody(digest: Digest, index: number): string {
-  const c = digest.clusters[index]!
-  const why = c.why && c.why !== c.title ? `\n\n💡 ${escMd(c.why.slice(0, 200))}` : ''
-  return `*${c.items[0]!.isNew ? '🆕 ' : ''}${escMd(c.title.slice(0, 120))}*\n\n${escMd(c.summary.slice(0, 300))}${why}`
+  return renderClusterBody(digest.clusters[index]!)
 }
 
 function hookKeyboard(digestId: string, index: number) {
@@ -131,21 +133,19 @@ export async function expandDigestMessage(
   cluster: { ref: string; title: string; summary: string; why: string; url?: string; isNew?: boolean },
 ): Promise<void> {
   const fetchFn = opts.fetchFn ?? defaultFetch
-  const why = cluster.why && cluster.why !== cluster.title ? `\n\n💡 ${escMd(cluster.why.slice(0, 200))}` : ''
-  const text = `*${cluster.isNew ? '🆕 ' : ''}${escMd(cluster.title.slice(0, 120))}*\n\n${escMd(cluster.summary.slice(0, 300))}${why}`
-    const res = await fetchFn(telegramUrl(opts.token, 'editMessageText'), {
-      signal: timeoutSignal(TIMEOUTS.telegram),
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: opts.chatId,
-        message_id: opts.messageId,
-        text,
-        parse_mode: 'Markdown',
-        disable_web_page_preview: true,
-        reply_markup: expandedKeyboard(cluster.url ?? ''),
-      }),
-    })
+  const res = await fetchFn(telegramUrl(opts.token, 'editMessageText'), {
+    signal: timeoutSignal(TIMEOUTS.telegram),
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: opts.chatId,
+      message_id: opts.messageId,
+      text: renderClusterBody(cluster),
+      parse_mode: 'Markdown',
+      disable_web_page_preview: true,
+      reply_markup: expandedKeyboard(cluster.url ?? ''),
+    }),
+  })
   if (!res.ok) throw new Error(`telegram editMessageText: HTTP ${res.status}`)
 }
 

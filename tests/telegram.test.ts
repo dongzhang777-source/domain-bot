@@ -102,7 +102,8 @@ describe('L1 钩子卡 / L2 消费层（tuna 三级瀑布流对齐，2026-09-04 
     }
     expect(body.text.split('\n')).toHaveLength(2)
     expect(body.text).toContain('Claude 微调开源 LLM')
-    expect(body.text).toContain('_s_') // 元信息行斜体；publishedAt=0 时时间折叠
+    // D1 转义规范：粗体只包常量 token（🆕），标题/元信息在实体外；元信息不再斜体包裹
+    expect(body.text).toBe('*🆕* Claude 微调开源 LLM\ns')
     const kb = body.reply_markup.inline_keyboard
     expect(kb).toHaveLength(1)
     expect(kb[0]![0]!.callback_data).toBe('ex:d:0')

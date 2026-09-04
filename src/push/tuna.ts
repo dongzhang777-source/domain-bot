@@ -47,9 +47,9 @@ export function renderTunaBrief(digest: Digest, now = Date.now()): string {
 
 export function pushTuna(digest: Digest, outDir: string, now = Date.now()): string {
   if (outDir.includes('\0')) throw new Error('outDir 含非法字符')
-  mkdirSync(outDir, { recursive: true })
   const safeId = digest.id.replace(/[^a-z0-9]/g, '')
   if (!safeId) throw new Error(`digest id 非法: ${digest.id}`)
+  mkdirSync(outDir, { recursive: true })
   const path = join(outDir, `brief-${safeId}.json`)
   writeFileSync(path, renderTunaBrief(digest, now))
   return path
