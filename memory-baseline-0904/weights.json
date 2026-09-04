@@ -1,0 +1,12 @@
+{
+  "weights": {
+    "arxiv-cs-ai": 0.5,
+    "huggingface-blog": 0.5,
+    "github-new-llm-tools": 0.5,
+    "exa-llm-news": 0.58,
+    "hf-daily-papers": 0.58,
+    "v2ex-hot": 0.26,
+    "bili-llm": 0.26
+  },
+  "feedbackHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+}
