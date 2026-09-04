@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseCallbackData, sendDigestTelegram, renderDigestText } from '../src/push/telegram.js'
+import { parseCallbackData, sendDigestTelegram, renderItemMessage } from '../src/push/telegram.js'
 import { renderDigestMarkdown } from '../src/push/file.js'
 import type { Digest, ScoredItem } from '../src/types.js'
 
@@ -30,23 +30,39 @@ describe('telegram push', () => {
     expect(parseCallbackData('other')).toBeUndefined()
   })
 
-  it('sendMessage 携带 inline 键盘与 digest 内容', async () => {
-    let captured: RequestInit | undefined
-    const res = await sendDigestTelegram(digest, {
+  it('每个条目独立一条消息，按钮组紧跟自己的条目（09-04 真机联调：单消息堆尾无法对应条目）', async () => {
+    const multi: Digest = {
+      id: 'dm', generatedAt: 0, domain: 'ai',
+      clusters: [
+        { ref: 'dm:0', title: 'first', summary: 's', why: 'w', items: [item] },
+        { ref: 'dm:1', title: 'second', summary: 's', why: 'w', items: [item] },
+      ],
+    }
+    const bodies: string[] = []
+    const res = await sendDigestTelegram(multi, {
       token: 'T', chatId: 'C',
       fetchFn: async (_url, init) => {
-        captured = init
+        bodies.push(String(init?.body))
         return { ok: true, status: 200, text: async () => '{}' }
       },
     })
-    expect(res).toBeUndefined()
-    const body = JSON.parse(String(captured?.body)) as {
+    expect(res).toBe(2)
+    const parsed = bodies.map((b) => JSON.parse(b) as {
       chat_id: string; text: string; reply_markup: { inline_keyboard: Array<Array<{ callback_data: string }>> }
+    })
+    expect(parsed).toHaveLength(2)
+    for (let i = 0; i < parsed.length; i++) {
+      expect(parsed[i]!.chat_id).toBe('C')
+      // 每条消息的按钮组首行绑定自己的条目 ref，末行是已读回执
+      expect(parsed[i]!.reply_markup.inline_keyboard[0]![0]!.callback_data).toBe(`fb:u:dm:${i}`)
+      expect(parsed[i]!.reply_markup.inline_keyboard[0]![1]!.callback_data).toBe(`fb:d:dm:${i}`)
+      expect(parsed[i]!.reply_markup.inline_keyboard.at(-1)![0]!.callback_data).toBe('vb:dm')
     }
-    expect(body.chat_id).toBe('C')
-    expect(body.text).toContain('llm news')
-    expect(body.reply_markup.inline_keyboard[0][0].callback_data).toBe('fb:u:d1:0')
-    expect(body.reply_markup.inline_keyboard[0][1].callback_data).toBe('fb:d:d1:0')
+    // 首条带 digest 头，次条不带；条目编号与消息一一对应
+    expect(parsed[0]!.text).toContain('📡 *情报*')
+    expect(parsed[0]!.text).toContain('*1.')
+    expect(parsed[1]!.text).not.toContain('📡')
+    expect(parsed[1]!.text).toContain('*2.')
   })
 })
 
@@ -60,12 +76,14 @@ describe('telegram 增量标记', () => {
       { ref: 'd:0', title: 'new thing', summary: 's', why: 'w', items: [mk('1', 'new thing', true)] },
       { ref: 'd:1', title: 'old thing', summary: 's', why: 'w', items: [mk('2', 'old thing', false)] },
     ] }
+    const bodies: string[] = []
     await sendDigestTelegram(d, {
       token: 't', chatId: 'c',
-      fetchFn: async (_u, init) => { body = String(init?.body); return { ok: true, status: 200, text: async () => '{}' } },
+      fetchFn: async (_u, init) => { bodies.push(String(init?.body)); return { ok: true, status: 200, text: async () => '{}' } },
     })
-    expect(body).toContain('🆕')
-    expect(body).toContain('♻️')
+    // 🆕/♻️ 分别落在各自条目的消息里
+    expect(bodies[0]).toContain('🆕')
+    expect(bodies[1]).toContain('♻️')
   })
 })
 
@@ -77,7 +95,7 @@ describe('Telegram Markdown 转义（C′9，§3.4 静默失败防护）', () =>
     const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters: [
       { ref: 'd:0', title: 'path\\end BERT_base [CLS]', summary: 'a_b [c] `d`', why: 'x_y', items: [mk('1', 'BERT_base vs [CLS]')] },
     ] }
-    const text = renderDigestText(d)
+    const text = renderItemMessage(d, 0)
     // 官方 legacy 规则：可转义集仅 _ * ` [（实体外）；']' 与 '\' 不转义——'\' 直接剔除（D1）
     expect(text).toContain('pathend BERT\\_base \\[CLS]')
     expect(text).toContain('a\\_b \\[c] \\`d\\`')
@@ -94,21 +112,22 @@ describe('Telegram Markdown 转义（C′9，§3.4 静默失败防护）', () =>
     const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters: [
       { ref: 'd:0', title: 't', summary: 's', why: 'x'.repeat(500), items: [mk('1', 't')] },
     ] }
-    const text = renderDigestText(d)
+    const text = renderItemMessage(d, 0)
     expect(text.includes('x'.repeat(201))).toBe(false)
   })
 
-  it('多簇超预算时在簇边界截断，标记落在末尾（D1：截断永不切进实体/转义对）', () => {
+  it('每条目独立成消息后单条必短于 Telegram 4096 上限（8 簇极限装填仍各发各的，无截断语义）', () => {
     const clusters = Array.from({ length: 8 }, (_, i) => ({
       ref: `d:${i}`, title: `簇${i} ${'长'.repeat(80)}`, summary: 's'.repeat(300), why: 'w'.repeat(200),
       items: [mk(String(i), `簇${i}`)],
     }))
     const d: Digest = { id: 'd', generatedAt: 0, domain: 'ai', clusters }
-    const text = renderDigestText(d)
-    expect(text.endsWith('…（已截断）')).toBe(true)
-    expect(text.length).toBeLessThanOrEqual(3900)
-    // 装填进来的簇必须完整（结尾是最后一个完整簇的 why，而非切断的转义对/实体）
-    expect(text).toContain('*1. 🆕*')
+    for (let i = 0; i < clusters.length; i++) {
+      const text = renderItemMessage(d, i)
+      expect(text.length).toBeLessThanOrEqual(4096)
+      expect(text).toContain(`*${i + 1}. 🆕*`)
+      expect(text).not.toContain('已截断')
+    }
   })
 
   it('URL 中的右括号被百分号编码，不提前闭合链接', () => {
@@ -116,7 +135,7 @@ describe('Telegram Markdown 转义（C′9，§3.4 静默失败防护）', () =>
       { ref: 'd:0', title: 't', summary: 's', why: 'w', items: [mk('1', 't')] },
     ] }
     d.clusters[0]!.items[0]!.url = 'https://e.com/a(b)'
-    const text = renderDigestText(d)
+    const text = renderItemMessage(d, 0)
     expect(text).toContain('[src](https://e.com/a(b%29)')
   })
 
@@ -125,7 +144,7 @@ describe('Telegram Markdown 转义（C′9，§3.4 静默失败防护）', () =>
       { ref: 'd:0', title: 't', summary: 's', why: 'w', items: [mk('1', 't')] },
     ] }
     d.clusters[0]!.items[0]!.url = 'https://en.wikipedia.org/wiki/Foo_Bar(baz)\\test'
-    const text = renderDigestText(d)
+    const text = renderItemMessage(d, 0)
     expect(text).toContain('[src](https://en.wikipedia.org/wiki/Foo_Bar(baz%29%5Ctest)')
   })
 })

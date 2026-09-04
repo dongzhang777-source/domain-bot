@@ -144,9 +144,8 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
     telegramStatus = 'skipped-empty'
   } else if (opts.telegram) {
     try {
-      await sendDigestTelegram(digest, opts.telegram)
+      pushedDelivered = await sendDigestTelegram(digest, opts.telegram)
       telegramStatus = 'sent'
-      pushedDelivered = pushed.length
     } catch (err) {
       telegramStatus = 'failed'
       console.error('[push] telegram 失败:', err instanceof Error ? err.message : err)

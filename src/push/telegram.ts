@@ -30,35 +30,26 @@ function escUrl(u: string): string {
   return u.replace(/\\/g, '%5C').replace(/\)/g, '%29')
 }
 
-export function renderDigestText(digest: Digest): string {
-  const head = `📡 *情报* · ${escMd(digest.domain)}（${digest.clusters.length} 条趋势）\n\n`
-  // D1：why 限长 200 后单簇必然短于预算，装填只在簇边界截断——截断永不落进实体/转义对内部。
-  const blocks = digest.clusters.map((c, i) => {
-    const src = c.items[0]!
-    const tag = src.isNew ? '🆕' : '♻️'
-    return `*${i + 1}. ${tag}* ${escMd(c.title.slice(0, 120))}\n${escMd(c.summary.slice(0, 300))}\n[src](${escUrl(src.url)}) · ${escMd(c.why.slice(0, 200))}`
-  })
-  let text = head
-  for (const b of blocks) {
-    const candidate = text.length === head.length ? head + b : `${text}\n\n${b}`
-    if (candidate.length > 3880) {
-      text += '\n…（已截断）'
-      break
-    }
-    text = candidate
-  }
-  return text
+/** 单条目消息文本：首条带 digest 头。单簇必短于 4096（title 120 / summary 300 / why 200 限长），
+ *  原「多簇装填 + 3880 截断」随每条目独立成消息废除——09-04 真机联调发现：单消息挂全部按钮时
+ *  按钮组堆在消息尾部且无条目标识，用户无法分辨哪组按钮对应哪条条目。 */
+export function renderItemMessage(digest: Digest, index: number): string {
+  const c = digest.clusters[index]!
+  const src = c.items[0]!
+  const tag = src.isNew ? '🆕' : '♻️'
+  const head = index === 0 ? `📡 *情报* · ${escMd(digest.domain)}（${digest.clusters.length} 条趋势）\n\n` : ''
+  return `${head}*${index + 1}. ${tag}* ${escMd(c.title.slice(0, 120))}\n${escMd(c.summary.slice(0, 300))}\n[src](${escUrl(src.url)}) · ${escMd(c.why.slice(0, 200))}`
 }
 
-function inlineKeyboard(digest: Digest) {
+function itemKeyboard(ref: string, digestId: string) {
   return {
     inline_keyboard: [
-      ...digest.clusters.map((c) => [
-        { text: '👍 有价值', callback_data: `fb:u:${c.ref}` },
-        { text: '👎 噪音', callback_data: `fb:d:${c.ref}` },
-      ]),
+      [
+        { text: '👍 有价值', callback_data: `fb:u:${ref}` },
+        { text: '👎 噪音', callback_data: `fb:d:${ref}` },
+      ],
       // agy 三审：已读回执走 Telegram callback，跨端可用（原 127.0.0.1 方案手机端必失效）
-      [{ text: '👀 已读', callback_data: `vb:${digest.id}` }],
+      [{ text: '👀 已读', callback_data: `vb:${digestId}` }],
     ],
   }
 }
@@ -76,22 +67,30 @@ export function parseViewCallbackData(data: string): { digestId: string } | unde
   return { digestId: m[1]! }
 }
 
-export async function sendDigestTelegram(digest: Digest, opts: TelegramOptions): Promise<void> {
+/** 每个条目独立一条消息，👍/👎/👀 按钮紧跟自己的条目。回调协议（fb:u:ref / vb:id）不变。
+ *  任一条失败即抛——调用方整轮记 failed、实发分母记 0（I-2 口径：通道事故不得假判负，宁保守少计）；
+ *  全部成功返回送达条数（= clusters.length）。 */
+export async function sendDigestTelegram(digest: Digest, opts: TelegramOptions): Promise<number> {
   const fetchFn = opts.fetchFn ?? defaultFetch
   const url = telegramUrl(opts.token, 'sendMessage')
-  const res = await fetchFn(url, {
-    signal: timeoutSignal(TIMEOUTS.telegram),
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: opts.chatId,
-      text: renderDigestText(digest),
-      parse_mode: 'Markdown',
-      disable_web_page_preview: true,
-      reply_markup: inlineKeyboard(digest),
-    }),
-  })
-  if (!res.ok) throw new Error(`telegram sendMessage: HTTP ${res.status}`)
+  let delivered = 0
+  for (let i = 0; i < digest.clusters.length; i++) {
+    const res = await fetchFn(url, {
+      signal: timeoutSignal(TIMEOUTS.telegram),
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: opts.chatId,
+        text: renderItemMessage(digest, i),
+        parse_mode: 'Markdown',
+        disable_web_page_preview: true,
+        reply_markup: itemKeyboard(digest.clusters[i]!.ref, digest.id),
+      }),
+    })
+    if (!res.ok) throw new Error(`telegram sendMessage: HTTP ${res.status}`)
+    delivered++
+  }
+  return delivered
 }
 
 export async function answerCallbackQuery(token: string, callbackQueryId: string, fetchFn: FetchFn = defaultFetch): Promise<void> {
