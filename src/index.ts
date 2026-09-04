@@ -16,6 +16,7 @@ import { refreshWeights } from './memory/weights.js'
 import { pollFeedback } from './feedback/receiver.js'
 import { pushFile } from './push/file.js'
 import { pushTuna } from './push/tuna.js'
+import { settleStaleExposures } from './memory/interest.js'
 import { sendDigestTelegram } from './push/telegram.js'
 import { acquireLock, releaseLock } from './runtime/lock.js'
 
@@ -134,6 +135,11 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
   }
   // L1→L2 展开的内容档：回调查询只带 digestId:index，编辑渲染要 summary/why/url，推送时落一份
   store.saveDigest(digest)
+  // 行为→兴趣映射：结算已过判定期（24h）的曝光——未展开者计弱负证据（Beta 后验，幂等）
+  const settled = settleStaleExposures(opts.memoryDir, now)
+  if (settled.counted > 0 || settled.alreadyExpanded > 0) {
+    console.log(`[interest] 结算曝光：未展开 ${settled.counted} 条（弱负证据），已展开补记账 ${settled.alreadyExpanded} 条`)
+  }
 
   const pushedPaths: string[] = []
   if (opts.outDir && digest.clusters.length > 0) {

@@ -254,6 +254,10 @@ export class MemoryStore {
     return this.digests.find((d) => d.digestId === digestId)
   }
 
+  digestAll(): StoredDigest[] {
+    return this.digests
+  }
+
   /** 展开行为落账（条目级，不去重——同一卡展开几次算几次真实交互）。权重衰减（多次不展开 →
    *  默认不感兴趣）待打磨定参后接入，本方法先保证信号数据完整留存。 */
   recordEngagement(e: EngagementRecord): boolean {

@@ -4,6 +4,7 @@ import { defaultFetch } from '../collector/adapters/rss.js'
 import { TIMEOUTS, timeoutSignal } from '../collector/adapters/fetchUtil.js'
 import { telegramUrl } from '../push/telegram.js'
 import { refreshWeights } from '../memory/weights.js'
+import { recordExpandToDisk as interestRecordExpand } from '../memory/interest.js'
 import { MemoryStore } from '../memory/store.js'
 import { answerCallbackQuery, expandDigestMessage, parseCallbackData, parseExpandCallbackData, parseViewCallbackData } from '../push/telegram.js'
 import type { FetchFn, SourceConfig } from '../types.js'
@@ -67,6 +68,8 @@ export async function processTelegramUpdate(update: TelegramUpdate, deps: Receiv
     store.recordView(expand.digestId, (deps.now ?? Date.now)())
     // 条目级行为信号（供「多次推送不展开 → 默认不感兴趣」的源级推断）
     store.recordEngagement({ digestId: expand.digestId, index: expand.index, source: cluster.source, at: (deps.now ?? Date.now)() })
+    // 行为→兴趣映射（Beta 后验）：展开 = 强证据
+    interestRecordExpand(deps.memoryDir, cluster.source)
     await answerQuietly(deps.token, cq.id, deps.fetchFn)
     return 'recorded'
   }
