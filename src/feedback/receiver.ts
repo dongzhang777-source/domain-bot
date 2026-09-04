@@ -65,6 +65,8 @@ export async function processTelegramUpdate(update: TelegramUpdate, deps: Receiv
       cluster,
     )
     store.recordView(expand.digestId, (deps.now ?? Date.now)())
+    // 条目级行为信号（供「多次推送不展开 → 默认不感兴趣」的源级推断）
+    store.recordEngagement({ digestId: expand.digestId, index: expand.index, source: cluster.source, at: (deps.now ?? Date.now)() })
     await answerQuietly(deps.token, cq.id, deps.fetchFn)
     return 'recorded'
   }

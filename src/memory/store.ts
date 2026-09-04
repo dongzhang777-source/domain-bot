@@ -6,10 +6,20 @@ import type { FeedbackRecord, FeedbackSignal, RawItem, ScoredItem, ViewRecord } 
 export interface StoredDigest {
   digestId: string
   generatedAt: number
-  clusters: Array<{ ref: string; title: string; summary: string; why: string; url: string; isNew: boolean }>
+  clusters: Array<{ ref: string; title: string; summary: string; why: string; url: string; isNew: boolean; source: string }>
+}
+
+/** 条目级行为信号：L1→L2 展开记录。「多次推送不展开 = 默认不感兴趣」的数据基础——
+ *  视图级（views.json 按 digestId 去重）无法归因到源，负信号推断需要 item 粒度。 */
+export interface EngagementRecord {
+  digestId: string
+  index: number
+  source: string
+  at: number
 }
 
 const MAX_STORED_DIGESTS = 30
+const MAX_ENGAGEMENTS = 5000
 
 export interface ArchiveEntry {
   id: string
@@ -46,6 +56,7 @@ export class MemoryStore {
   private feedback: FeedbackRecord[] = []
   private views: ViewRecord[] = []
   private digests: StoredDigest[] = []
+  private engagements: EngagementRecord[] = []
   private tokenCache = new Map<string, Set<string>>()
   private weights: WeightsState = { weights: {}, feedbackHash: '' }
   private readonly maxEntries: number
@@ -87,6 +98,8 @@ export class MemoryStore {
     if (v) this.views = v
     const d = this.loadJson<StoredDigest[]>('digests.json', 'digests.json')
     if (d) this.digests = d
+    const e = this.loadJson<EngagementRecord[]>('engagements.json', 'engagements.json')
+    if (e) this.engagements = e
   }
 
   /** D6：非原子直写在崩溃窗口会产生截断文件——tmp+rename 原子替换。 */
@@ -218,7 +231,7 @@ export class MemoryStore {
   saveDigest(digest: {
     id: string
     generatedAt: number
-    clusters: Array<{ ref: string; title: string; summary: string; why: string; items: Array<{ url: string; isNew: boolean }> }>
+    clusters: Array<{ ref: string; title: string; summary: string; why: string; items: Array<{ url: string; isNew: boolean; source: string }> }>
   }): void {
     const stored: StoredDigest = {
       digestId: digest.id,
@@ -230,6 +243,7 @@ export class MemoryStore {
         why: c.why,
         url: c.items[0]?.url ?? '',
         isNew: c.items[0]?.isNew ?? false,
+        source: c.items[0]?.source ?? '',
       })),
     }
     this.digests = [stored, ...this.digests.filter((d) => d.digestId !== digest.id)].slice(0, MAX_STORED_DIGESTS)
@@ -238,6 +252,21 @@ export class MemoryStore {
 
   loadDigest(digestId: string): StoredDigest | undefined {
     return this.digests.find((d) => d.digestId === digestId)
+  }
+
+  /** 展开行为落账（条目级，不去重——同一卡展开几次算几次真实交互）。权重衰减（多次不展开 →
+   *  默认不感兴趣）待打磨定参后接入，本方法先保证信号数据完整留存。 */
+  recordEngagement(e: EngagementRecord): boolean {
+    this.engagements.push(e)
+    if (this.engagements.length > MAX_ENGAGEMENTS) {
+      this.engagements = this.engagements.slice(-MAX_ENGAGEMENTS)
+    }
+    this.writeFileAtomic('engagements.json', JSON.stringify(this.engagements, null, 2))
+    return true
+  }
+
+  engagementAll(): EngagementRecord[] {
+    return this.engagements
   }
 
   /** 反馈落盘。同 digestId+itemId+signal 去重（C′10）：重启重放/连点不得虚增「有效反馈 ≥20 条」（P-2）；

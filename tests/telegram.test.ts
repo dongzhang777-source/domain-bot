@@ -53,11 +53,11 @@ describe('telegram push', () => {
     expect(parsed).toHaveLength(2)
     for (let i = 0; i < parsed.length; i++) {
       expect(parsed[i]!.chat_id).toBe('C')
-      // L1 只有「展开 ▼」一个按钮，回调绑定本条目；不再有 👍/👀 显式按钮
+      // L1 只有「▽」一个极简按钮，回调绑定本条目；不再有 👍/👀/不感兴趣 显式按钮
       const kb = parsed[i]!.reply_markup.inline_keyboard
       expect(kb).toHaveLength(1)
       expect(kb[0]![0]!.callback_data).toBe(`ex:dm:${i}`)
-      expect(kb[0]![0]!.text).toContain('展开')
+      expect(kb[0]![0]!.text).toBe('▽')
     }
     // 每张卡的钩子行对应自己的条目标题
     expect(parsed[0]!.text).toContain('first')
@@ -106,7 +106,7 @@ describe('L1 钩子卡 / L2 消费层（tuna 三级瀑布流对齐，2026-09-04 
     const kb = body.reply_markup.inline_keyboard
     expect(kb).toHaveLength(1)
     expect(kb[0]![0]!.callback_data).toBe('ex:d:0')
-    expect(kb[0]![0]!.text).toContain('展开')
+    expect(kb[0]![0]!.text).toBe('▽')
   })
 
   it('L2 展开体：标题 + 摘要 + 💡 为什么推给你；用户文本转义（官方 4 字符集）、反斜杠剔除', () => {
@@ -157,9 +157,9 @@ describe('L1 钩子卡 / L2 消费层（tuna 三级瀑布流对齐，2026-09-04 
     expect(body.message_id).toBe(77)
     expect(body.text).toContain('💡 w')
     const kb = body.reply_markup.inline_keyboard
+    expect(kb).toHaveLength(1) // 只剩「↗ 原文」——不感兴趣按钮取消，负信号改行为推断
     expect(kb[0]![0]!.url).toBe('https://en.wikipedia.org/wiki/Foo_Bar(baz)') // 按钮走原生 URL，不再过 Markdown 链接转义
-    expect(kb[1]![0]!.callback_data).toBe('fb:d:d:0')
-    expect(kb[1]![0]!.text).toContain('不感兴趣')
+    expect(kb[0]![0]!.text).toBe('↗ 原文')
   })
 
   it('parseExpandCallbackData 解析 ex: 展开回调', () => {

@@ -60,16 +60,19 @@ export function renderExpandedBody(digest: Digest, index: number): string {
 function hookKeyboard(digestId: string, index: number) {
   return {
     inline_keyboard: [
-      [{ text: '展开 ▼', callback_data: `ex:${digestId}:${index}` }],
+      // 极简全宽符号：Telegram 收不到「点击消息文本」事件，回调按钮是唯一可观测入口——
+      // 视觉上压成消息的延伸，不与内容争注意力（老张 2026-09-04 UI 指令：不要展开/原文/不感兴趣按钮）
+      [{ text: '▽', callback_data: `ex:${digestId}:${index}` }],
     ],
   }
 }
 
-function expandedKeyboard(ref: string, url: string) {
+function expandedKeyboard(url: string) {
   return {
     inline_keyboard: [
-      [{ text: '阅读原文 ↗', url }],
-      [{ text: '不感兴趣 ✕', callback_data: `fb:d:${ref}` }],
+      // 原文走 URL 按钮：点击即开原文（Telegram 原生行为，零摩擦）；不再有「不感兴趣」按钮——
+      // 负信号改由行为推断（多次推送不展开，见 receiver 的 engagement 落账）
+      [{ text: '↗ 原文', url }],
     ],
   }
 }
@@ -130,19 +133,19 @@ export async function expandDigestMessage(
   const fetchFn = opts.fetchFn ?? defaultFetch
   const why = cluster.why && cluster.why !== cluster.title ? `\n\n💡 ${escMd(cluster.why.slice(0, 200))}` : ''
   const text = `*${cluster.isNew ? '🆕 ' : ''}${escMd(cluster.title.slice(0, 120))}*\n\n${escMd(cluster.summary.slice(0, 300))}${why}`
-  const res = await fetchFn(telegramUrl(opts.token, 'editMessageText'), {
-    signal: timeoutSignal(TIMEOUTS.telegram),
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: opts.chatId,
-      message_id: opts.messageId,
-      text,
-      parse_mode: 'Markdown',
-      disable_web_page_preview: true,
-      reply_markup: expandedKeyboard(cluster.ref, cluster.url ?? ''),
-    }),
-  })
+    const res = await fetchFn(telegramUrl(opts.token, 'editMessageText'), {
+      signal: timeoutSignal(TIMEOUTS.telegram),
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: opts.chatId,
+        message_id: opts.messageId,
+        text,
+        parse_mode: 'Markdown',
+        disable_web_page_preview: true,
+        reply_markup: expandedKeyboard(cluster.url ?? ''),
+      }),
+    })
   if (!res.ok) throw new Error(`telegram editMessageText: HTTP ${res.status}`)
 }
 
