@@ -29,6 +29,18 @@ export interface ReceiverDeps {
 
 export type ProcessResult = 'recorded' | 'ignored'
 
+/** 应答回调只是 UX 动作（消除客户端按钮 loading），数据在此之前已落盘，因此应答失败
+ *  不构成该条 update 的处理失败：真机联调实测，采集窗口内事件循环被解析阻塞时 answer
+ *  会超过 Telegram 应答时效（HTTP 400 query too old），旧语义把它当整条失败重试 3 次
+ *  并留痕「反馈丢失」——数据其实已入账，误报会污染值班判断。 */
+async function answerQuietly(token: string, callbackQueryId: string, fetchFn?: FetchFn): Promise<void> {
+  try {
+    await answerCallbackQuery(token, callbackQueryId, fetchFn)
+  } catch (err) {
+    console.warn(`[feedback] 回调应答失败（数据已入账，不影响判定数据；通常是处理延迟超过 Telegram 应答时效）: ${err instanceof Error ? err.message : err}`)
+  }
+}
+
 /** 处理一条 Telegram update：解析回调 → 解析 ref → 落盘反馈 → 刷新权重 → 回应 callbackQuery。 */
 export async function processTelegramUpdate(update: TelegramUpdate, deps: ReceiverDeps): Promise<ProcessResult> {
   const cq = update.callback_query
@@ -38,7 +50,7 @@ export async function processTelegramUpdate(update: TelegramUpdate, deps: Receiv
   if (viewed) {
     const store = new MemoryStore(deps.memoryDir)
     store.recordView(viewed.digestId, (deps.now ?? Date.now)())
-    await answerCallbackQuery(deps.token, cq.id, deps.fetchFn)
+    await answerQuietly(deps.token, cq.id, deps.fetchFn)
     return 'recorded'
   }
   const parsed = parseCallbackData(cq.data)
@@ -55,7 +67,7 @@ export async function processTelegramUpdate(update: TelegramUpdate, deps: Receiv
     at: (deps.now ?? Date.now)(),
   })
   refreshWeights(store, deps.sources)
-  await answerCallbackQuery(deps.token, cq.id, deps.fetchFn)
+  await answerQuietly(deps.token, cq.id, deps.fetchFn)
   return 'recorded'
 }
 

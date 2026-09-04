@@ -100,18 +100,15 @@ describe('offset 持久化（C′10）', () => {
 })
 
 describe('applyUpdates 逐条确认（D2，小巴 impl 审查）', () => {
-  it('毒 update 重试 3 次后跳过，后续 update 仍处理；offset 逐条推进不卡队', async () => {
-    const { dir, called } = setup()
-    void called
-    // c1 的 answerCallbackQuery 恒抛错 → update 1 是毒 update；c2 正常
+  // 毒 update 的构造用 now 注入抛错（数据操作失败），不再用 answerCallbackQuery 抛错——
+  // 09-04 联调语义修正：应答失败只是 UX 动作失败，数据在应答前已落盘，不得判整条失败。
+  it('数据操作失败重试 3 次后跳过留痕（真·反馈丢失），后续 update 仍处理；offset 逐条推进不卡队', async () => {
+    const { dir } = setup()
+    let calls = 0
     const deps = {
-      token: 't', memoryDir: dir, sources, now: () => 900,
-      fetchFn: async (url: string, init?: RequestInit) => {
-        if (String(url).includes('answerCallbackQuery') && String(init?.body).includes('cq1')) {
-          throw new Error('poison callback')
-        }
-        return { ok: true, status: 200, text: async () => '{}' }
-      },
+      token: 't', memoryDir: dir, sources,
+      now: () => { if (calls++ < 3) throw new Error('poison data'); return 900 },
+      fetchFn: async () => ({ ok: true, status: 200, text: async () => '{}' }),
     }
     const errors: unknown[] = []
     const updates: TelegramUpdate[] = [
@@ -120,12 +117,29 @@ describe('applyUpdates 逐条确认（D2，小巴 impl 审查）', () => {
     ]
     await applyUpdates(deps, updates, { onError: (e) => errors.push(e), retryDelayMs: 1 })
 
-    expect(errors.length).toBeGreaterThanOrEqual(3) // 毒 update 重试 3 次，每次都报错
+    expect(errors.length).toBe(3) // 毒 update 的 3 次尝试都因数据操作抛错
     expect(loadOffset(dir)).toBe(3) // 两条都推进到位（毒的跳过但 offset 前移，不卡队）
-    // update 1：反馈在抛错前已落盘，重试经 C′10 去重不重复入账
-    expect(JSON.parse(readFileSync(join(dir, 'feedback.json'), 'utf8'))).toHaveLength(1)
+    // update 1：数据操作本身失败，反馈真的没落盘（这才是「反馈丢失」的准确定义）
+    expect(existsSync(join(dir, 'feedback.json'))).toBe(false)
     // update 2（👀）正常处理
     expect(JSON.parse(readFileSync(join(dir, 'views.json'), 'utf8'))).toHaveLength(1)
+  })
+
+  it('answerCallbackQuery 失败（如超 Telegram 应答时效 HTTP 400）不构成处理失败：数据已落盘仍返回 recorded', async () => {
+    const { dir } = setup()
+    const deps = {
+      token: 't', memoryDir: dir, sources, now: () => 1300,
+      fetchFn: async (url: string) => {
+        if (String(url).includes('answerCallbackQuery')) {
+          return { ok: false, status: 400, text: async () => '{"ok":false,"error_code":400,"description":"Bad Request: query is too old and response timeout expired or query ID is invalid"}' }
+        }
+        return { ok: true, status: 200, text: async () => '{}' }
+      },
+    }
+    const res = await processTelegramUpdate({ update_id: 9, callback_query: { id: 'cq9', data: 'fb:u:d1:0' } }, deps)
+    expect(res).toBe('recorded')
+    expect(JSON.parse(readFileSync(join(dir, 'feedback.json'), 'utf8'))).toHaveLength(1)
+    expect(JSON.parse(readFileSync(join(dir, 'weights.json'), 'utf8')).weights.s1).toBeGreaterThan(0.5)
   })
 })
 
