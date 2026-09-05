@@ -26,7 +26,7 @@ export interface RoundInput {
   telegram?: 'sent' | 'failed' | 'skipped-empty' | 'disabled'
   /** 本轮 Telegram 实际送达条数（sent 时为 pushed.length，failed/disabled 时为 0） */
   pushedDelivered?: number
-  /** 宽通道（DB-08）：待定池大小 / LLM 判定 include 数。单独存档——recall 不改变 candidates 口径，判定线 I 线读数不受影响（拍板点 3：判据暂冻结） */
+  /** 宽通道（DB-08）：待定池大小 / LLM 判定 include 数。捞回条目本身已并入 candidates/relevant 口径（见 pipeline.ts），本字段只作宽通道生效标记与 I 线断链点识别（DB-09 S1-3 订正：原「不改变 candidates 口径」注释与代码相反） */
   recallPoolSize?: number
   recallIncluded?: number
 }
@@ -70,7 +70,7 @@ export interface RoundObservation {
   telegram?: 'sent' | 'failed' | 'skipped-empty' | 'disabled'
   /** 本轮 Telegram 实际成功送达条数（I-2 真实分母） */
   pushedDelivered?: number
-  /** 宽通道（DB-08）观测：不并入 candidates/relevant 口径，判据读数不变 */
+  /** 宽通道（DB-08）观测：本字段单独存档；捞回条目已并入 candidates/relevant 口径，I-1/I-3/I-4 读数自 DB-08 起含宽通道贡献（见 docs/probe-verdict-criteria.md DB-08 版本标注，DB-09 S1-3 订正） */
   recallPoolSize?: number
   recallIncluded?: number
 }

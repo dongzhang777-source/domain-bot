@@ -1,4 +1,5 @@
 import { mkdirSync, readdirSync, readFileSync, renameSync, existsSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 import type { DomainConfig, FetchFn, GatesConfig, PersonaConfig, SourceConfig } from './types.js'
 import { collectStage, runPipeline, type PipelineOptions, type PipelineResult } from './pipeline.js'
@@ -112,6 +113,8 @@ export function printBanner(personas: PersonaConfig[], gates: GatesConfig, io: C
 const RECALL_CALIBRATION_TTL_MS = 24 * 60 * 60 * 1000
 
 interface RecallCalibrationCache {
+  /** 缓存身份（DB-10/S2-7）：persona + reviewer 降级链 + 金标内容哈希。不一致即失效重校准 */
+  key: string
   calibratedAt: number
   agreementRate: number
   passed: boolean
@@ -155,34 +158,69 @@ export function makeRecallJudge(
   }
   const minRate = persona.recall.minAgreementRate ?? 0.7
   const maxTokens = editorial.reviewer.maxTokens
+  const batchSize = editorial.reviewer.batchSize
   const cachePath = join(memoryDir, 'recall-calibration.json')
+  // 缓存身份（DB-10/S2-7）：换 persona / 换端点链 / 改金标任一发生，旧校准结论一律失效
+  const cacheKey =
+    persona.id +
+    '|' +
+    createHash('sha1').update(JSON.stringify(editorial.reviewer)).digest('hex').slice(0, 12) +
+    '|' +
+    createHash('sha1').update(readFileSync(absGold)).digest('hex').slice(0, 12)
 
   return async (pool) => {
-    let cal: RecallCalibrationCache | null = null
     try {
-      if (existsSync(cachePath)) cal = JSON.parse(readFileSync(cachePath, 'utf8')) as RecallCalibrationCache
-    } catch {
-      cal = null // 坏缓存当作没有，重跑校准并覆盖
-    }
-    if (!cal || Date.now() - cal.calibratedAt > RECALL_CALIBRATION_TTL_MS) {
-      const report = await calibrateRecall(provider, gold, persona, { maxTokens, minAgreementRate: minRate })
-      cal = {
-        calibratedAt: Date.now(),
-        agreementRate: report.agreementRate,
-        passed: report.passed,
-        problems: report.problems,
+      let cal: RecallCalibrationCache | null = null
+      try {
+        if (existsSync(cachePath)) cal = JSON.parse(readFileSync(cachePath, 'utf8')) as RecallCalibrationCache
+      } catch {
+        cal = null // 坏缓存当作没有，重跑校准并覆盖
       }
-      mkdirSync(memoryDir, { recursive: true })
-      const tmp = `${cachePath}.tmp-${process.pid}`
-      writeFileSync(tmp, JSON.stringify(cal, null, 2))
-      renameSync(tmp, cachePath)
+      if (cal && cal.key !== cacheKey) cal = null // 身份不符：persona/端点/金标已变，旧结论不得沿用
+      if (!cal || Date.now() - cal.calibratedAt > RECALL_CALIBRATION_TTL_MS) {
+        const report = await calibrateRecall(provider, gold, persona, { maxTokens, minAgreementRate: minRate })
+        cal = {
+          key: cacheKey,
+          calibratedAt: Date.now(),
+          agreementRate: report.agreementRate,
+          passed: report.passed,
+          problems: report.problems,
+        }
+        mkdirSync(memoryDir, { recursive: true })
+        const tmp = `${cachePath}.tmp-${process.pid}`
+        writeFileSync(tmp, JSON.stringify(cal, null, 2))
+        renameSync(tmp, cachePath)
+        io.stdout(
+          `[${persona.id}] [recall] 金标校准：${report.judgedCount}/${report.sampleCount} 判定、漏答 ${report.missingCount}、` +
+            `一致率 ${(report.agreementRate * 100).toFixed(1)}% → ${report.passed ? '宽通道启用' : '回退关闭'}`,
+        )
+        for (const p of report.problems) io.stdout(`[${persona.id}] [recall] 校准问题: ${p}`)
+      }
+      if (!cal.passed) {
+        return {
+          included: [],
+          excluded: pool.map((it) => ({
+            itemId: it.id,
+            title: it.title,
+            source: it.source,
+            url: it.url,
+            gate: 'recall' as const,
+            ruleId: 'recall:calibrationFailed',
+            reason: '宽通道判定校准未通过（见 memory/recall-calibration.json），fail-safe 不召回',
+          })),
+        }
+      }
+      const judged = await judgeRecallPool(provider, pool, persona, { maxTokens, batchSize })
       io.stdout(
-        `[${persona.id}] [recall] 金标校准：${report.judgedCount}/${report.sampleCount} 判定、漏答 ${report.missingCount}、` +
-          `一致率 ${(report.agreementRate * 100).toFixed(1)}% → ${report.passed ? '宽通道启用' : '回退关闭'}`,
+        `[${persona.id}] [recall] 待定 ${pool.length} 条 → 捞回 ${judged.included.length}、排除 ${judged.excluded.length}` +
+          `${judged.missing > 0 ? `（漏答 ${judged.missing}）` : ''}${judged.error ? ` ⚠ ${judged.error}` : ''}`,
       )
-      for (const p of report.problems) io.stdout(`[${persona.id}] [recall] 校准问题: ${p}`)
-    }
-    if (!cal.passed) {
+      return judged
+    } catch (err) {
+      // DB-10/S2-5：判定器内任何异常（校准/判定端点全败等）不得中止整轮批产——
+      // 降级为逐条落账的「不召回」，与词表原语义同向，且漏斗可复算、可观测。
+      const msg = err instanceof Error ? err.message : String(err)
+      io.stderr(`[${persona.id}] [recall] 宽通道异常，fail-safe 逐条不召回（不中止整轮）：${msg}`)
       return {
         included: [],
         excluded: pool.map((it) => ({
@@ -191,17 +229,11 @@ export function makeRecallJudge(
           source: it.source,
           url: it.url,
           gate: 'recall' as const,
-          ruleId: 'recall:calibrationFailed',
-          reason: '宽通道判定校准未通过（见 memory/recall-calibration.json），fail-safe 不召回',
+          ruleId: 'recall:endpointFailed',
+          reason: `宽通道端点失败，fail-safe 不召回：${msg}`,
         })),
       }
     }
-    const judged = await judgeRecallPool(provider, pool, persona, { maxTokens })
-    io.stdout(
-      `[${persona.id}] [recall] 待定 ${pool.length} 条 → 捞回 ${judged.included.length}、排除 ${judged.excluded.length}` +
-        `${judged.missing > 0 ? `（漏答 ${judged.missing}）` : ''}${judged.error ? ` ⚠ ${judged.error}` : ''}`,
-    )
-    return judged
   }
 }
 

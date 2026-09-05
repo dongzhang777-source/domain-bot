@@ -7,6 +7,7 @@ import {
   recallExpectation,
 } from '../src/editorial/recall.js'
 import { EditorialProvider } from '../src/editorial/provider.js'
+import { makeRecallJudge } from '../src/cli.js'
 import type { GoldSample } from '../src/editorial/calibrate.js'
 import type { PersonaConfig, RawItem } from '../src/types.js'
 
@@ -168,7 +169,7 @@ describe('assessRecallCalibration：金标期望由 DB-03 人工审计派生', (
 
 // ---------- pipeline 集成：宽通道捞回条目走统一打分/终审链 ----------
 
-import { mkdtempSync, readFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runPipeline } from '../src/pipeline.js'
@@ -227,5 +228,87 @@ describe('runPipeline 集成：recallJudge 捞回的条目与快通道共用同�
     expect(result.dropped.some((d) => d.gate === 'blacklist' && d.ruleId.includes('recruit'))).toBe(true)
     // 观测口径：宽通道数据单独存档，candidates 口径含捞回条目
     expect(result.funnel[0]?.stage).toBe('collected')
+  })
+
+  it('recall.enabled 但无判定器（DB-10/S1-2）：gate 不得建池，词表未过条目逐条落 relevance 账（漏斗恒可复算）', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-recall-nojudge-'))
+    const fetchFn = async (url: string) => ({
+      ok: true,
+      status: 200,
+      text: async () => String(url).includes('rss') ? feed : '',
+    })
+    const result = await runPipeline({
+      persona: personaWithRecall, // recall.enabled=true，但不注入 recallJudge（端点缺失/金标失败时 cli.ts 的真实形态）
+      gates,
+      domain,
+      sources,
+      memoryDir: join(dir, 'memory'),
+      fetchFn: fetchFn as unknown as Parameters<typeof runPipeline>[0]['fetchFn'],
+      now: Date.parse('2026-09-04T12:00:00Z'),
+    })
+
+    // 治理条目（零关键词命中）必须以 relevance:belowMinPoints 落账——不得凭空消失
+    const govDrop = result.dropped.find((d) => d.title.includes('Model Economics'))
+    expect(govDrop).toBeDefined()
+    expect(govDrop?.ruleId.startsWith('relevance:belowMinPoints')).toBe(true)
+    // 快通道不受影响
+    expect(result.published.map((p) => p.title).join('\n')).toContain('LLM inference benchmark')
+    // 无任何 recall 域落账（池根本不该被创建）
+    expect(result.dropped.some((d) => d.gate === 'recall')).toBe(false)
+  })
+})
+
+describe('judgeRecallPool 分批判定（DB-10/S2-6：校准与生产同一批大小口径）', () => {
+  it('3 条按 batchSize=2 分两批，各自批内 index 从 0 对齐，跨批结果合并', async () => {
+    const items = [raw('Alpha batch'), raw('Beta batch'), raw('Gamma batch')]
+    const ok = (verdicts: unknown[]) => ({
+      body: JSON.stringify({
+        choices: [{ message: { content: JSON.stringify(verdicts) }, finish_reason: 'stop' }],
+        usage: { prompt_tokens: 10, completion_tokens: 5 },
+      }),
+    })
+    const s = scriptedFetch([
+      ok([{ index: 0, include: true, reason: 'in' }, { index: 1, include: false, reason: 'out' }]),
+      ok([{ index: 0, include: true, reason: 'in too' }]),
+    ])
+    const p = new EditorialProvider(
+      { batchSize: 2, maxTokens: 3000, temperature: 0.2, chain: [{ id: 't', baseUrlDefault: 'http://t/v1', timeoutMs: 5000 }] },
+      {} as NodeJS.ProcessEnv,
+      s.fn,
+    )
+    const r = await judgeRecallPool(p, items, persona, { batchSize: 2 })
+    expect(s.calls).toHaveLength(2)
+    expect(r.included.map((it) => it.title)).toEqual(['Alpha batch', 'Gamma batch'])
+    expect(r.excluded.map((d) => d.title)).toEqual(['Beta batch'])
+  })
+})
+
+describe('makeRecallJudge 端点全败兜底（DB-10/S2-5：不中止整轮）', () => {
+  it('校准阶段端点抛错 → 逐条落 recall:endpointFailed，不向管线上抛', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-recall-epfail-'))
+    mkdirSync(join(dir, 'config'), { recursive: true })
+    const editor = {
+      enabled: true,
+      writer: { batchSize: 3, maxTokens: 100, temperature: 0.2, chain: [{ id: 'w', baseUrlDefault: 'http://w/v1', timeoutMs: 100 }] },
+      reviewer: { batchSize: 2, maxTokens: 100, temperature: 0.2, chain: [{ id: 'r', baseUrlDefault: 'http://r/v1', timeoutMs: 100 }] },
+      calibration: { goldStandardPath: 'gold.json' },
+    }
+    writeFileSync(join(dir, 'config/editor.json'), JSON.stringify(editor))
+    writeFileSync(join(dir, 'gold.json'), JSON.stringify({
+      samples: [
+        { id: 'g1', title: 'gold drop', body: 'b', humanDecision: '剔除' },
+        { id: 'g2', title: 'gold keep', body: 'b', humanDecision: '保留' },
+      ],
+    }))
+    const stderr: string[] = []
+    const judge = makeRecallJudge(dir, persona, join(dir, 'memory'), { stdout: () => {}, stderr: (m) => stderr.push(m) }, async () => {
+      throw new Error('all endpoints down')
+    })
+    expect(judge).toBeDefined()
+    const judged = await judge!([raw('Pool item one'), raw('Pool item two')])
+    expect(judged.included).toEqual([])
+    expect(judged.excluded).toHaveLength(2)
+    expect(judged.excluded.every((d) => d.ruleId === 'recall:endpointFailed')).toBe(true)
+    expect(stderr.join('\n')).toContain('fail-safe')
   })
 })

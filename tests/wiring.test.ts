@@ -221,6 +221,12 @@ describe('单一发布路径守卫：不得再长出第二条产线', () => {
     expect(pipelineSrc).not.toMatch(/EditorialProvider|judgeRecallPool|calibrateRecall/)
   })
 
+  it('github 源查询串不得含 OR 语法（DB-10/S1-1：GitHub search API 对 qualifier 间 OR 返回 422，三源整轮断供）', () => {
+    const sources = JSON.parse(readFileSync(join(process.cwd(), 'config/sources.json'), 'utf8')) as Array<{ id: string; type: string; url: string }>
+    const bad = sources.filter((s) => s.type === 'github' && /(^|[+=(])OR([+=)]|$)/.test(s.url))
+    expect(bad.map((s) => s.id), 'github 源 URL 含 OR 语法（会被 API 422 拒绝），应改逗号 OR').toEqual([])
+  })
+
   it('publishCommand 不得自己调 gatekeep / runGates（终审属于 finalizeStage）', () => {
     const publishBody = cliSrc.slice(cliSrc.indexOf('export async function publishCommand'))
     expect(publishBody.indexOf('gatekeep(')).toBe(-1)

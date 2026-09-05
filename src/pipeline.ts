@@ -174,7 +174,9 @@ export async function collectStage(opts: PipelineOptions): Promise<CollectStageR
     gates: opts.gates,
     now,
     knownCanonical: opts.knownCanonical,
-    recall: opts.persona.recall?.enabled ? { maxPerRound: opts.persona.recall.maxPerRound } : undefined,
+    // 分流与判定必须联动（DB-10/S1-2）：无判定器时 gate 不得建池——否则池条目
+    // 既不通过也不落账、凭空消失，stderr 宣称的「词表原语义」也不会发生。
+    recall: opts.recallJudge && opts.persona.recall?.enabled ? { maxPerRound: opts.persona.recall.maxPerRound } : undefined,
   })
   // 4. 配置正则写错必须熔断，不得静默跳过——一条失效规则等于该规则不存在，闸门会假绿
   if (gateOutcome.compileErrors.length > 0) {
