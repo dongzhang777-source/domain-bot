@@ -1,0 +1,134 @@
+{
+  "minTitleChars": 15,
+  "minPoints": 3,
+  "strongAiWords": [
+    "llm", "large language model", "transformer", "gpt", "claude", "gemini",
+    "deepseek", "qwen", "llama", "mistral", "openai", "anthropic",
+    "大模型", "智能体", "推理模型", "多模态大模型"
+  ],
+  "keywordTiers": [
+    {
+      "tier": "core",
+      "points": 3,
+      "words": [
+        "llm", "large language model", "ai agent", "inference", "transformer",
+        "benchmark", "fine-tune", "fine-tuning", "rag", "retrieval",
+        "quantization", "reasoning model", "tokenizer", "multimodal",
+        "on-device ai", "edge ai", "kv cache", "moe", "mcp", "vlm", "serving",
+        "embedding", "speculative decoding", "world model", "mechanistic interpretability",
+        "大模型", "智能体", "推理模型", "多模态", "端侧", "量化", "检索增强"
+      ]
+    },
+    {
+      "tier": "ecosystem",
+      "points": 1,
+      "words": [
+        "open source", "开源", "api", "prompt", "dataset", "evaluation",
+        "architecture", "optimization", "release", "sota", "state-of-the-art",
+        "outperform", "breakthrough", "surpass", "new model",
+        "人工智能", "机器学习", "深度学习", "神经网络", "强化学习"
+      ]
+    },
+    {
+      "tier": "generic",
+      "points": 0,
+      "words": ["ai", "model", "neural", "tool", "technology", "智能", "技术"]
+    }
+  ],
+  "blacklist": [
+    {
+      "id": "ad:recruit",
+      "group": "adRecruit",
+      "pattern": "招聘|求职|兼职|招全栈|诚聘|内推|hiring|we are hiring|join our team|career opportunit",
+      "scope": "both"
+    },
+    {
+      "id": "ad:relay",
+      "group": "adRecruit",
+      "pattern": "中转站|注册送|代充|限时优惠|api 中转|低价出|免费额度|薅羊毛",
+      "scope": "both"
+    },
+    {
+      "id": "ad:course",
+      "group": "adRecruit",
+      "pattern": "零基础|小白|保姆级|学完即就业|全网最全|入门教程|基础班|小学生|少儿|培训班|割韭菜|点赞收藏|通俗易懂版教学",
+      "scope": "title"
+    },
+    {
+      "id": "ad:resume",
+      "group": "adRecruit",
+      "pattern": "portfolio|internship|homework|examen|笔试|简历|面试练习|profile for|my resume",
+      "scope": "title"
+    },
+    {
+      "id": "damaged:objectObject",
+      "group": "damaged",
+      "pattern": "\\[object Object\\]",
+      "scope": "both"
+    },
+    {
+      "id": "cross:biomed",
+      "group": "crossDomain",
+      "pattern": "pathogen|antimicrobial|drosophila|molecular diffusion|clinical trial|syndrome|neural crest|reaction-diffusion|genomic sequenc|protein fold",
+      "unlessStrongAi": true,
+      "scope": "both"
+    },
+    {
+      "id": "cross:power",
+      "group": "crossDomain",
+      "pattern": "power transformer|voltage transformer|current transformer|substation",
+      "unlessStrongAi": true,
+      "scope": "both"
+    },
+    {
+      "id": "nonTech:hardware",
+      "group": "nonTech",
+      "pattern": "bike computer|eink bike|自行车码表|单片机温控",
+      "scope": "title"
+    },
+    {
+      "id": "nonTech:chitchat",
+      "group": "nonTech",
+      "pattern": "是不是一个常用语|自救群|拉群|互助群|额度已经消耗完|做了个.*站|头 1 个了吧",
+      "scope": "title"
+    }
+  ],
+  "_eventStopwordsNote": "实体词聚类的通用词表。判据：事件标识必须是专有名词/产品名（Astra、K2 Horizon、FlashInfer），而通用话题词（agent、framework、safety、benchmark）不是——拿话题词聚类必然误并（实测：Microsoft Agent Framework 经 agent 与 Astra 报道撞车）。扩充后必跑 npm run probe:events 与 tests/eventCluster.test.ts 验证召回未退化。",
+  "dedupe": {
+    "jaccardThreshold": 0.75,
+    "maxPerEvent": 2,
+    "eventStopwords": [
+      "openai", "anthropic", "google", "microsoft", "meta", "nvidia", "deepmind",
+      "model", "models", "ai", "new", "launches", "launch", "release", "released",
+      "releases", "introducing", "announce", "announces", "announcement",
+      "the", "of", "for", "and", "is", "are", "was", "were", "be", "been",
+      "says", "said", "say", "with", "without", "from", "into", "onto",
+      "gpt", "llm", "llms", "big", "next", "has", "have", "had", "its", "their",
+      "over", "most", "best", "era", "artificial", "general", "intelligence",
+      "powerful", "chat", "chatgpt", "rivals", "all", "more", "than", "built",
+      "scrutiny", "growing", "amid", "unveils", "hails", "overview", "guide",
+      "a", "an", "in", "on", "to", "it", "at", "as", "by", "or", "if", "so",
+      "this", "that", "these", "those", "how", "what", "why", "when", "where", "who",
+      "we", "you", "they", "he", "she", "our", "your", "his", "her", "my", "me",
+      "can", "will", "would", "could", "should", "may", "might", "must", "do", "does",
+      "not", "no", "yes", "but", "just", "now", "today", "here", "there",
+      "agent", "agents", "agentic", "framework", "frameworks", "safety", "security",
+      "enterprise", "orchestration", "benchmark", "benchmarks", "serving", "kernels",
+      "research", "researchers", "developers", "community", "industry", "performance",
+      "system", "systems", "platform", "platforms", "tool", "tools", "project", "projects",
+      "feature", "features", "update", "updates", "report", "reports", "analysis",
+      "review", "reviews", "news", "press", "largest", "high", "dynamic", "interactive",
+      "knowledge", "conflict", "evaluating", "team", "teams", "users", "user",
+      "app", "apps", "application", "applications", "use", "uses", "using", "used",
+      "way", "ways", "thing", "things", "case", "cases", "inside", "behind",
+      "vs", "versus", "compared", "comparison", "reveals", "revealed", "shows", "showed",
+      "make", "makes", "made", "take", "takes", "get", "gets", "got", "need", "needs",
+      "want", "keep", "keeps", "turn", "turns", "live", "full", "top", "hot",
+      "first", "second", "third", "last", "engine", "engines", "service", "services",
+      "cloud", "local", "global", "testing", "tested", "tutorial", "tips", "tricks",
+      "大模型", "人工智能", "发布", "开源", "模型", "全新", "正式", "来了",
+      "一次", "看完", "重磅", "突发", "官方", "最新", "上线", "推出", "开放",
+      "智能体", "全网", "彻底", "案例", "横空出世", "炸锅", "神级"
+    ]
+  }
+}

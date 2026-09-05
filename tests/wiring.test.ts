@@ -14,10 +14,12 @@ function srcFiles(dir = SRC): string[] {
   return out
 }
 
-/** 生产调用 = 出现在定义文件之外、处于调用位置（`fn(` 或 `obj.fn(`）、且不在注释里。
- *  【偏差记录】工作单原正则排除点号前缀（`[^\\w.$]`），但按工作单自带的实现代码，
- *  recordFeedback/resolveRef/feedbackBySource/saveWeights 全部以 `store.fn(` 形式调用，
- *  守卫将永远无法转绿。此处放宽为 `[^\\w$]`（允许方法调用），保留"有生产调用者"的本意。 */
+/**
+ * 生产调用 = 出现在定义文件之外、处于调用位置（`fn(` 或 `obj.fn(`）、且不在注释里。
+ * 【偏差记录】原正则排除点号前缀（`[^\w.$]`），但按实现代码 store 的方法全部以
+ * `store.fn(` 形式调用，守卫将永远无法转绿。此处放宽为 `[^\w$]`（允许方法调用），
+ * 保留"有生产调用者"的本意。
+ */
 function productionCallers(fn: string, definedIn: string): string[] {
   const hits: string[] = []
   const callRe = new RegExp(`(^|[^\\w$])${fn}\\s*\\(`)
@@ -32,18 +34,29 @@ function productionCallers(fn: string, definedIn: string): string[] {
   return hits
 }
 
+/**
+ * 必须在生产路径接通的函数。
+ *
+ * 头号守卫是 `runGates`：DB-04 之前 `src/gates/` 有完整代码却**运行时零调用**
+ * （`config/gates.json` 不存在、无调用者），于是 `npm test` 149/149 全绿而用户真机
+ * 刷到的 172 条里 32.5% 是垃圾（根仓 DRIFT D-09）。这条守卫就是防它复发。
+ */
 const GUARDED: Array<{ fn: string; definedIn: string; why: string }> = [
-  { fn: 'recordFeedback', definedIn: 'memory/store.ts', why: '反馈必须落盘，否则进化无输入' },
-  { fn: 'resolveRef', definedIn: 'memory/store.ts', why: 'Telegram 回调的 ref 必须能解析回条目' },
-  { fn: 'feedbackBySource', definedIn: 'memory/store.ts', why: '权重更新的输入' },
-  { fn: 'saveWeights', definedIn: 'memory/store.ts', why: '权重必须持久化，否则每轮从 config 重置' },
+  { fn: 'runGates', definedIn: 'gates/index.ts', why: '三层硬闸门必须在生产路径被调用，否则闸门只是架子上的工具（DRIFT D-09 的根因）' },
+  { fn: 'capEvents', definedIn: 'gates/fingerprint.ts', why: '事件聚合必须真的跑，否则同事件刷屏' },
+  { fn: 'runPipeline', definedIn: 'pipeline.ts', why: 'CLI 必须真的调用产线编排，否则 run 命令空转' },
+  { fn: 'gatekeep', definedIn: 'gatekeeper/index.ts', why: '主编终审必须在发布前跑，否则十条硬断言形同虚设' },
+  { fn: 'renderPost', definedIn: 'gatekeeper/render.ts', why: '渲染必须在终审之前（机械截断/碎片钩子/浮点回显只在渲染后存在）' },
+  { fn: 'buildPack', definedIn: 'publish/pack.ts', why: '内容包必须经装配与契约校验，不得手工拷贝' },
+  { fn: 'appendFingerprints', definedIn: 'publish/pack.ts', why: '发布后必须写指纹库，否则下一轮/另一产线会重发同一内容' },
+  { fn: 'refreshWeights', definedIn: 'memory/weights.ts', why: '源权重重算入口必须被编排层调用' },
+  { fn: 'feedbackBySource', definedIn: 'memory/store.ts', why: '权重更新的输入（由 refreshWeights 调用，反馈为空时退回首轮先验）' },
   { fn: 'updateWeights', definedIn: 'memory/evolve.ts', why: '进化步骤本身' },
-  { fn: 'refreshWeights', definedIn: 'memory/weights.ts', why: '重算入口必须被编排层与接收端调用' },
-  { fn: 'parseCallbackData', definedIn: 'push/telegram.ts', why: '回调数据必须被解析' },
-  { fn: 'answerCallbackQuery', definedIn: 'push/telegram.ts', why: '不回应则 Telegram 会重复推送同一回调' },
+  { fn: 'saveWeights', definedIn: 'memory/store.ts', why: '权重必须持久化，否则每轮从 config 重置' },
+  { fn: 'observeRound', definedIn: 'memory/observe.ts', why: '观测必须落盘，否则质量随轮次的变化无读数' },
 ]
 
-describe('接线守卫：反馈回路必须在生产路径接通', () => {
+describe('接线守卫：关键函数必须在生产路径接通', () => {
   for (const g of GUARDED) {
     it(`${g.fn}() 有生产调用者 —— ${g.why}`, () => {
       const callers = productionCallers(g.fn, g.definedIn)
@@ -52,23 +65,98 @@ describe('接线守卫：反馈回路必须在生产路径接通', () => {
   }
 })
 
-// ---- A2：启动链守卫（V2 教训：摘掉 pollFeedback 启动行，67 条测试无一会红） ----
-import { readFileSync as rf2 } from 'node:fs'
+/**
+ * 已知断开、显式挂账的函数。
+ *
+ * 这四个的唯一生产调用方曾是 `src/feedback/receiver.ts`（Telegram 长轮询回调），
+ * 已随老张 2026-09-04 裁决「砍 Telegram，新建 tuna 行为回流通道」而删除。
+ *
+ * **不得静默删掉本守卫**：删了这笔欠账就隐形，读者会以为自进化在跑
+ * （实测 `memory/weights.json` 早已是空的 `{"weights":{}}`，而文档一直宣称「自进化」）。
+ * DB-06 的 `src/ingest/tuna-signals.ts` 落地后，把这四项移回上面的 GUARDED。
+ *
+ * 注：`feedbackBySource` **不在本清单**——它由 `memory/weights.ts` 的 `refreshWeights`
+ * 调用，属于接通的（反馈为空时退回首轮先验），已列入 GUARDED。
+ */
+const KNOWN_DISCONNECTED: Array<{ fn: string; definedIn: string; until: string }> = [
+  { fn: 'recordFeedback', definedIn: 'memory/store.ts', until: 'DB-06 tuna 行为回流通道' },
+  { fn: 'resolveRef', definedIn: 'memory/store.ts', until: 'DB-06 tuna 行为回流通道' },
+  { fn: 'recordView', definedIn: 'memory/store.ts', until: 'DB-06 tuna 行为回流通道' },
+  { fn: 'recordEngagement', definedIn: 'memory/store.ts', until: 'DB-06 tuna 行为回流通道' },
+]
 
-describe('启动链守卫：startBot 必须把采集与反馈接收真正跑起来', () => {
-  const indexSrc = rf2(join(SRC, 'index.ts'), 'utf8')
-  const mainBody = indexSrc.slice(indexSrc.indexOf('export async function startBot'))
+describe('已知断开：自进化反馈回路待 DB-06 接通（不得静默删除本组守卫）', () => {
+  for (const g of KNOWN_DISCONNECTED) {
+    it(`${g.fn}() 当前无生产调用者 —— 挂账至 ${g.until}`, () => {
+      const callers = productionCallers(g.fn, g.definedIn)
+      // 断言"断开"而不是删掉断言：若将来有人接通了却没把本项移回 GUARDED，
+      // 这条会变红，提醒同步守卫清单——正是本仓「文档声明 > 落地」毛病的反向护栏。
+      expect(callers, `${g.fn} 已被接通，请把本项移回 GUARDED 清单`).toHaveLength(0)
+    })
+  }
 
-  it('main 内必须调用 runOnce（否则采集管线不启动）', () => {
-    expect(mainBody).toMatch(/\brunOnce\s*\(/)
+  it('看板必须明写 selfEvolutionActive=false（断开状态对用户可见）', async () => {
+    const board = readFileSync(join(SRC, 'gatekeeper/board.ts'), 'utf8')
+    expect(board).toContain('selfEvolutionActive: false')
+    expect(board).toContain('Telegram 链路已退役')
+  })
+})
+
+describe('启动链守卫：CLI 必须把闸门、聚合、终审真正串起来', () => {
+  const pipelineSrc = readFileSync(join(SRC, 'pipeline.ts'), 'utf8')
+  const cliSrc = readFileSync(join(SRC, 'cli.ts'), 'utf8')
+
+  it('pipeline 必须调用 runGates，且 compileErrors 非空即抛错（配置写错不得静默）', () => {
+    expect(pipelineSrc).toMatch(/\brunGates\s*\(/)
+    expect(pipelineSrc).toMatch(/compileErrors\.length > 0/)
+    expect(pipelineSrc).toMatch(/throw new Error/)
   })
 
-  it('startBot 内必须在常驻分支调用反馈接收（startFeedback，默认实现即 pollFeedback）', () => {
-    expect(mainBody).toMatch(/startFeedback\s*\(/)
-    expect(mainBody).toMatch(/pollFeedbackFn\s*\?\?\s*pollFeedback/)
+  it('事件聚合必须在 maxItems 截断之前（旧管线顺序颠倒导致同事件刷屏）', () => {
+    const capAt = pipelineSrc.indexOf('capEvents(')
+    const sliceAt = pipelineSrc.indexOf('.slice(0, opts.persona.maxItems)')
+    expect(capAt).toBeGreaterThan(-1)
+    expect(sliceAt).toBeGreaterThan(-1)
+    // 这条是结构性守卫：DB-03 §2.5「缺失主题编辑」与旧 index.ts 先截断后聚类的顺序缺陷
+    expect(capAt, 'capEvents 必须出现在 maxItems 截断之前').toBeLessThan(sliceAt)
   })
 
-  it('常驻分支的启动条件必须包含 telegram 判定（无 token 不该崩，有 token 不该跳过）', () => {
-    expect(mainBody).toMatch(/telegram\s*&&\s*!once/)
+  it('渲染必须在终审之前（机械截断/碎片钩子/浮点回显只在渲染后存在）', () => {
+    const gk = readFileSync(join(SRC, 'gatekeeper/index.ts'), 'utf8')
+    const renderAt = gk.indexOf('renderOne(item')
+    const assertAt = gk.indexOf('runAssertions(rendered')
+    expect(renderAt).toBeGreaterThan(-1)
+    expect(assertAt).toBeGreaterThan(-1)
+    expect(renderAt).toBeLessThan(assertAt)
+  })
+
+  it('cli 必须把指纹库读入产线、并在非 dry-run 时写回（跨产线共享才成立）', () => {
+    expect(cliSrc).toMatch(/loadFingerprints\s*\(/)
+    expect(cliSrc).toMatch(/knownCanonical/)
+    expect(cliSrc).toMatch(/appendFingerprints\s*\(/)
+    // dry-run 分支必须在写盘之前 continue，否则试跑会污染指纹库
+    expect(cliSrc.indexOf('dry-run：不落盘')).toBeLessThan(cliSrc.indexOf('appendFingerprints('))
+  })
+
+  it('单实例锁必须包在 try/finally 里（B3 教训：抛错残留锁文件）', () => {
+    expect(cliSrc).toMatch(/acquireLock\s*\(/)
+    expect(cliSrc).toMatch(/finally\s*\{[\s\S]{0,80}releaseLock/)
+  })
+
+  it('Telegram 链路已彻底退役：src/ 内不得再有推送或长轮询实现', () => {
+    for (const gone of ['push/telegram.ts', 'feedback/receiver.ts', 'push/file.ts', 'push/tuna.ts']) {
+      expect(srcFiles().some((f) => f.endsWith(gone)), `${gone} 应已删除`).toBe(false)
+    }
+    // sendDigestTelegram / pollFeedback / pushFile 不得在任何源文件里被调用
+    for (const fn of ['sendDigestTelegram', 'pollFeedback', 'pushFile']) {
+      const hits = srcFiles().filter((f) => {
+        const code = readFileSync(f, 'utf8')
+          .split('\n')
+          .map((l) => l.replace(/\/\/.*$/, '').replace(/^\s*\*.*$/, ''))
+          .join('\n')
+        return new RegExp(`(^|[^\\w$])${fn}\\s*\\(`).test(code)
+      })
+      expect(hits, `${fn} 仍有调用点：${hits.join(', ')}`).toEqual([])
+    }
   })
 })

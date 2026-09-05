@@ -29,7 +29,5 @@
     "release", "benchmark", "sota", "state-of-the-art", "outperform", "beat",
     "open source", "new model", "breakthrough", "surpass"
   ],
-  "scoreThreshold": 0.45,
-  "maxPerDigest": 6,
   "clusterThreshold": 0.35
 }

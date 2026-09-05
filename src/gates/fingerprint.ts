@@ -1,6 +1,7 @@
 import { canonicalUrl } from '../collector/canonicalUrl.js'
 import { jaccard, tokenize } from '../collector/dedupe.js'
 import type { DropRecord, GatesConfig, RawItem } from '../types.js'
+import { clusterByEntity } from './eventCluster.js'
 
 /**
  * 门禁 3：URL 规范化指纹 + 标题指纹事件聚合。
@@ -72,15 +73,31 @@ export function collectCanonicalUrls(items: Array<{ url: string }>): string[] {
 export interface EventCapResult<T> {
   kept: T[]
   dropped: DropRecord[]
-  /** 事件簇数（看板用：kept 里有多少个独立事件） */
+  /** 独立事件簇数（看板用：kept 里有多少个独立事件） */
   eventCount: number
+  /**
+   * 每条 kept 归属的事件簇标识（按 item.id 索引）。
+   *
+   * 为何必需：Task 4 的 `gk:eventOversubscribed` 跨条目断言与 `GatekeeperInput.eventKey`
+   * 都靠这个信息；不携带就会在渲染阶段断数据流。
+   * 用 item.id 而非数组下标做键：下游经过排序/截断/递补后下标会变，id 不会。
+   */
+  eventKeyOf: Map<string, string>
 }
 
 /**
  * 同一事件在主信息流最多占 maxPerEvent 个坑。
- * 贪心：按 valueScore 降序，与已有事件代表（簇内最高分项）标题 jaccard ≥ 阈值即判同事件。
  *
- * 输入必须已按分数排好序或可排序——保留的是每个事件里分最高的那几条，不是先到的那几条。
+ * **主判据是实体词并查集（`clusterByEntity`），不是标题 jaccard**。实测依据见
+ * `src/gates/eventCluster.ts` 文件头：DB-03 里 GPT-6 Astra 同事件 10 条真实标题的
+ * 45 个配对最大 jaccard 仅 0.313，≥0.75 命中 0 条——jaccard 阈值不可调成有用。
+ *
+ * jaccard 降为**补充判据**：同簇内若两条标题 jaccard ≥ jaccardThreshold，
+ * 视为同一通稿被原样转发（而非洗稿），合并只占 1 个坑而不是 2 个。
+ *
+ * 必须在打分之后、配额截断之前调用：保留的是每个事件里分最高的那几条，
+ * 旧管线先截断后聚类（`src/index.ts` 旧版），于是 15 家媒体对同一事件的报道
+ * 能吃满全部坑位，聚类形同虚设（DB-03 §2.5 缺失「主题编辑」）。
  */
 export function capEvents<T extends RawItem & { valueScore: number }>(
   items: T[],
@@ -88,35 +105,53 @@ export function capEvents<T extends RawItem & { valueScore: number }>(
 ): EventCapResult<T> {
   const threshold = cfg.dedupe?.jaccardThreshold ?? 0.75
   const maxPerEvent = cfg.dedupe?.maxPerEvent ?? 2
-  const sorted = [...items].sort((a, b) => b.valueScore - a.valueScore)
+  const stopwords = new Set(cfg.dedupe?.eventStopwords ?? [])
 
-  const events: Array<{ tokens: Set<string>; count: number }> = []
+  // 先按分降序：簇内选留时自然取到高分项，且簇代表（key）就是最高分那条
+  const sorted = [...items].sort((a, b) => b.valueScore - a.valueScore)
+  const clusters = clusterByEntity(sorted, stopwords)
+
   const kept: T[] = []
   const dropped: DropRecord[] = []
+  const eventKeyOf = new Map<string, string>()
 
-  for (const item of sorted) {
-    const tokens = tokenize(item.title)
-    const hit = events.find((e) => jaccard(e.tokens, tokens) >= threshold)
-    if (hit) {
-      if (hit.count >= maxPerEvent) {
+  for (const cluster of clusters) {
+    // 簇代表 = 最高分那条（sorted 保证 cluster.items[0] 就是它）
+    const rep = cluster.items[0]!
+    const repTokens = tokenize(rep.title)
+    let slotsUsed = 0
+
+    for (const item of cluster.items) {
+      // 补充判据：与簇代表标题几乎逐字相同 → 同一通稿原样转发，不另占坑
+      const isVerbatimRepost =
+        item.id !== rep.id && jaccard(repTokens, tokenize(item.title)) >= threshold
+
+      if (slotsUsed >= maxPerEvent || isVerbatimRepost) {
         dropped.push(
           drop(
             item,
-            `fingerprint:eventSaturated(>${maxPerEvent})`,
-            `同事件报道已达上限 ${maxPerEvent} 条，本条为第 ${hit.count + 1} 条（标题 jaccard≥${threshold}）`,
+            isVerbatimRepost
+              ? 'fingerprint:verbatimRepost'
+              : `fingerprint:eventSaturated(>${maxPerEvent})`,
+            isVerbatimRepost
+              ? `与簇代表「${rep.title.slice(0, 40)}」标题 jaccard≥${threshold}，判为同一通稿原样转发`
+              : `同事件报道已达上限 ${maxPerEvent} 条（事件簇 ${cluster.key}，共 ${cluster.items.length} 条），本条被降权剔除`,
           ),
         )
+        // 被剔除的也记 eventKey：看板需要知道它们归属哪个事件
+        eventKeyOf.set(item.id, cluster.key)
         continue
       }
-      hit.count += 1
+      slotsUsed += 1
       kept.push(item)
-      continue
+      eventKeyOf.set(item.id, cluster.key)
     }
-    events.push({ tokens, count: 1 })
-    kept.push(item)
   }
 
-  return { kept, dropped, eventCount: events.length }
+  // kept 重新按分降序：上面是按簇遍历产出的，簇间顺序不等于全局分数顺序
+  kept.sort((a, b) => b.valueScore - a.valueScore)
+
+  return { kept, dropped, eventCount: clusters.length, eventKeyOf }
 }
 
 function drop(item: RawItem, ruleId: string, reason: string): DropRecord {

@@ -1,0 +1,23 @@
+{
+  "id": "newsline",
+  "displayName": "AI时事快线",
+  "domain": "ai-llm",
+  "sources": [
+    "hn-frontpage",
+    "exa-llm-news",
+    "exa-agent-releases",
+    "openai-news",
+    "anthropic-research",
+    "github-new-llm-tools",
+    "v2ex-hot"
+  ],
+  "maxAgeHours": 72,
+  "maxItems": 80,
+  "minQualityScore": 6,
+  "clusterThreshold": 0.35,
+  "rejectRules": [
+    { "id": "clickbait", "pattern": "全网彻底炸锅|神级案例|彻底疯了|震惊|炸裂|王炸|一夜爆火|刷屏全网" },
+    { "id": "unsourced", "pattern": "传闻|据说|爆料|消息称|知情人士|疑似曝光" },
+    { "id": "training", "pattern": "培训|课程报名|学费|就业班|训练营" }
+  ]
+}

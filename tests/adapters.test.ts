@@ -81,9 +81,22 @@ describe('github adapter', () => {
     //（DB-03 #158/#171 openai-agents-python 实证）。故此处断言「派生自 URL」而非写死哈希值。
     expect(items[0].id).toBe(itemId('https://github.com/foo/llm-kit', items[0].title, items[0].body))
     expect(items[0].id.startsWith('u-')).toBe(true)
-    expect(items[0].title).toBe('foo/llm-kit')
+    // 标题是 `owner/repo: description`，不是光秃秃的 full_name。
+    // 根因：`foo/llm-kit` 仅 11 码点 < 闸门1 的 minTitleChars(15)，会被
+    // `damaged:titleTooShort` 系统性误杀——整个 GitHub 渠道归零（实测踩过）。
+    expect(items[0].title).toBe('foo/llm-kit: Toolkit for local LLM inference')
     expect(items[0].body).toContain('120 stars')
     expect(items[0].body).toContain('inference')
+  })
+
+  it('description 为空时标题退回 full_name（不拼出 `repo: ` 尾巴）', async () => {
+    const body = JSON.stringify({
+      items: [{ id: 9, full_name: 'bar/empty-repo', description: null, html_url: 'https://github.com/bar/empty-repo', stargazers_count: 0, topics: [] }],
+    })
+    const source: SourceConfig = { id: 'gh-2', type: 'github', url: 'https://api.github.com/search', weight: 0.5, enabled: true }
+    const items = await fetchGithub(source, mockFetch(body))
+    expect(items[0].title).toBe('bar/empty-repo')
+    expect(items[0].title).not.toContain(': ')
   })
 
   it('id 对跟踪参数与 www 前缀不敏感：跨渠道同一仓库必得同一 id', () => {

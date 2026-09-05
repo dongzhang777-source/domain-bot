@@ -47,7 +47,19 @@ const gates: GatesConfig = {
     { id: 'nonTech:hardware', group: 'nonTech', pattern: 'bike computer|eink bike', scope: 'title' },
     { id: 'broken:regex', group: 'nonTech', pattern: '(unclosed', scope: 'title' },
   ],
-  dedupe: { jaccardThreshold: 0.75, maxPerEvent: 2 },
+  dedupe: {
+    jaccardThreshold: 0.75,
+    maxPerEvent: 2,
+    // 与 config/gates.json 同源的精简版：实体词聚类的必需输入，缺了会把全部条目并成一坨
+    eventStopwords: [
+      'openai', 'model', 'models', 'ai', 'new', 'launches', 'launch', 'release',
+      'the', 'of', 'for', 'and', 'is', 'says', 'with', 'gpt', 'llm', 'big', 'next',
+      'has', 'its', 'over', 'most', 'era', 'artificial', 'general', 'intelligence',
+      'powerful', 'chat', 'chatgpt', 'rivals', 'all', 'more', 'than', 'built',
+      'scrutiny', 'growing', 'amid', 'unveils', 'hails', 'introducing', 'overview',
+      'today', 'tonight', 'now', 'here',
+    ],
+  },
 }
 
 const persona: PersonaConfig = {
@@ -294,7 +306,7 @@ describe('门禁 3：dedupeByCanonicalUrl / capEvents', () => {
   it('capEvents 保留每事件分最高的 maxPerEvent 条，不是先到的那几条', () => {
     const mk = (title: string, score: number, url: string) =>
       ({ ...item({ title, url }), valueScore: score, isNew: true, reason: '' })
-    // 标题几乎逐字相同的同事件报道（同一通稿被多家原样转发）——这是 jaccard 能治的情形
+    // 同一通稿被多家原样转发（标题逐字相同，共享实体 astra）
     const same = [
       mk('OpenAI launches GPT-6 Astra model today', 0.4, 'https://a.com/1'),
       mk('OpenAI launches GPT-6 Astra model today', 0.9, 'https://b.com/2'),
@@ -304,28 +316,52 @@ describe('门禁 3：dedupeByCanonicalUrl / capEvents', () => {
     const other = mk('A completely different benchmark for llm agents', 0.6, 'https://e.com/5')
 
     const r = capEvents([...same, other], gates)
-    // maxPerEvent=2 → 同事件保留 0.9 与 0.7 两篇，外加另一事件 1 篇
-    expect(r.kept).toHaveLength(3)
+    // 标题逐字相同 → jaccard 补充判据认定为原样转发，只占 1 个坑（而非 maxPerEvent=2）
+    expect(r.kept).toHaveLength(2)
     expect(r.eventCount).toBe(2)
-    expect(r.kept.map((k) => k.valueScore).slice(0, 2)).toEqual([0.9, 0.7])
-    expect(r.dropped).toHaveLength(2)
+    expect(r.kept[0].valueScore).toBe(0.9)
+    expect(r.kept[1].valueScore).toBe(0.6)
+    expect(r.dropped).toHaveLength(3)
+    expect(r.dropped.map((d) => d.ruleId)).toContain('fingerprint:verbatimRepost')
+    // eventKeyOf 必须覆盖全部输入（kept + dropped），否则看板无法归因
+    expect(r.eventKeyOf.size).toBe(5)
+    // 同簇条目得同一 eventKey，不同簇不等
+    const keys = same.map((s) => r.eventKeyOf.get(s.id))
+    expect(new Set(keys).size).toBe(1)
+    expect(r.eventKeyOf.get(other.id)).not.toBe(keys[0])
+  })
+
+  it('洗稿标题（非逐字相同）仍受 maxPerEvent 限制，剔除理由标 eventSaturated', () => {
+    const mk = (title: string, score: number, url: string) =>
+      ({ ...item({ title, url }), valueScore: score, isNew: true, reason: '' })
+    // 共享实体 astra 但措辞不同，jaccard 低于 0.75 → 走 maxPerEvent 而非 verbatimRepost
+    const cluster = [
+      mk('OpenAI Astra release brings computer use', 0.9, 'https://a.com/1'),
+      mk('Astra model from OpenAI reviewed by analysts', 0.7, 'https://b.com/2'),
+      mk('OpenAI Astra rollout continues across regions', 0.5, 'https://c.com/3'),
+    ]
+    const r = capEvents(cluster, gates)
+    expect(r.eventCount).toBe(1)
+    expect(r.kept).toHaveLength(2)
+    expect(r.kept.map((k) => k.valueScore)).toEqual([0.9, 0.7])
+    expect(r.dropped).toHaveLength(1)
     expect(r.dropped[0].ruleId).toBe('fingerprint:eventSaturated(>2)')
   })
 
   /**
-   * 缺陷钉子（不得删）：标题 jaccard 对**真实**的同事件洗稿刷屏无效。
+   * 实体词聚类聚拢真实洗稿标题——jaccard 做不到。
    *
-   * DB-03 §3.2 门禁 3 提议「标题 jaccard > 0.75 判同事件，仅保留 1 篇」。实测推翻：
-   * 取该报告里 GPT-6 Astra 同一事件的 10 条真实报道标题（#58/#84/#85/#86/#122/#123/#124/#153-157/#181），
-   * 45 个配对中最大 jaccard 仅 **0.313**、中位 0.105，≥0.75 命中 **0**、≥0.50 命中 **0**；
-   * K2 Horizon 5 条（#32/#33/#103/#144/#191）最大 0.500，≥0.75 同样命中 0。
-   * 记者本来就刻意给同一事件写不同标题，阈值不可调成有用。
+   * 实测依据（不得删）：DB-03 §3.2 门禁 3 提议「标题 jaccard > 0.75 判同事件，仅保留 1 篇」。
+   * 取该报告 §1.3 里 GPT-6 Astra 同一事件的 10 条真实报道标题
+   * （#58/#84/#85/#86/#122/#123/#124/#153/#156/#181），45 个配对中最大 jaccard 仅 **0.313**、
+   * 中位 0.105，≥0.75 命中 **0**、≥0.50 命中 **0**；K2 Horizon 5 条（#32/#33/#103/#144/#191）
+   * 最大 0.500，≥0.75 同样命中 0。记者刻意给同一事件写不同标题，阈值不可调成有用。
+   * 复算：`npm run probe:events`。
    *
-   * 实测有效的替代：按「非通用 token 共享」做并查集聚类——Astra 8/10 聚成一簇、
-   * K2 Horizon 5/5 聚成一簇，且 3 条独立事件干扰项零误并。本用例把 jaccard 的
-   * 真实能力边界钉住，防止后续会话误以为它解决了刷屏问题。
+   * 改用实体词并查集后，同批数据实测 Astra 8/10 聚一簇、K2 5/5 聚一簇、3 条干扰项零误并。
+   * 本用例取其中 4 条（含 The Verge 那条不含 "Astra" 的——它就是实测漏网的 2 条之一）。
    */
-  it('已知缺陷：jaccard 聚不拢真实洗稿标题（各家刻意写不同标题）', () => {
+  it('实体词聚类聚拢真实洗稿标题（jaccard 做不到）', () => {
     const mk = (title: string, url: string) =>
       ({ ...item({ title, url }), valueScore: 0.8, isNew: true, reason: '' })
     const realAstra = [
@@ -335,12 +371,16 @@ describe('门禁 3：dedupeByCanonicalUrl / capEvents', () => {
       mk('OpenAI hails new era of artificial general intelligence with Astra', 'https://d.com/4'),
     ]
     const r = capEvents(realAstra, gates)
-    // 四条同事件报道被当成四个独立事件全部放行——这就是刷屏的成因。
-    // 阶段一交付后必须换为实体词并查集聚类（见 DB-04 工单 Task 5），
-    // 届时本用例应被改写为断言「聚成 1 簇、仅留 maxPerEvent 条」。
-    expect(r.eventCount).toBe(4)
-    expect(r.kept).toHaveLength(4)
-    expect(r.dropped).toHaveLength(0)
+    // 第 1/3/4 条共享实体 "astra" → 聚成一簇（受 maxPerEvent=2 限制，剔 1 条）。
+    // 第 2 条（The Verge）标题不含 "Astra"，实体集为 {entered, agi, verge}，与其余零交集
+    // → 独立成簇。这正是实测漏网的2 条之一，归 DB-05 的 LLM reviewer 语义归并。
+    // 对比旧 jaccard 实现：4 条会被当成 4 个独立事件全部放行（eventCount=4，dropped=0），
+    // 那就是刷屏的成因。
+    expect(r.eventCount).toBe(2)
+    expect(r.kept).toHaveLength(3)
+    expect(r.dropped).toHaveLength(1)
+    expect(r.dropped[0].title).toContain('Astra')
+    expect(r.kept.map((k) => k.url)).toContain('https://b.com/2')
   })
 })
 

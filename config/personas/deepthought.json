@@ -1,0 +1,23 @@
+{
+  "id": "deepthought",
+  "displayName": "AI深度思想",
+  "domain": "ai-llm",
+  "sources": [
+    "arxiv-cs-ai",
+    "huggingface-blog",
+    "simonwillison",
+    "hf-daily-papers",
+    "github-agents",
+    "github-rag",
+    "yt-llm",
+    "bili-llm"
+  ],
+  "maxAgeHours": 720,
+  "maxItems": 120,
+  "minQualityScore": 7,
+  "clusterThreshold": 0.35,
+  "rejectRules": [
+    { "id": "nameExplainer", "pattern": "^what is|^什么是|simple explanation|explained for beginners|key concepts explained|for dummies" },
+    { "id": "hollowOpinion", "pattern": "我的想法|一点感想|随便聊聊|个人看法|纯属猜测" }
+  ]
+}

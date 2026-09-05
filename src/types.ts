@@ -107,10 +107,21 @@ export interface GatesConfig {
   /** 标题最短码点数，短于此判为无意义碎条 */
   minTitleChars: number
   dedupe: {
-    /** 标题 jaccard 超此值判同事件 */
+    /** 标题 jaccard 超此值判同一通稿原样转发（补充判据，不是主判据） */
     jaccardThreshold: number
     /** 同一事件在主信息流最多占几个坑 */
     maxPerEvent: number
+    /**
+     * 实体词聚类的通用词表（必需输入，不是可选装饰）。
+     *
+     * 为何不能用标题 jaccard 做主判据（实测，2026-09-04）：取 DB-03 报告里 GPT-6 Astra
+     * 同一事件的 10 条真实报道标题，45 个配对中最大 jaccard 仅 0.313、中位 0.105，
+     * ≥0.75 命中 0、≥0.50 命中 0；K2 Horizon 5 条最大 0.500，≥0.75 同样 0。
+     * 记者刻意给同一事件写不同标题，阈值不可调成有用。
+     * 改用「非通用 token 共享」并查集后：Astra 8/10 聚一簇、K2 5/5 聚一簇、3 条干扰项零误并。
+     * 而「非通用」的定义就靠本表：不剔除 openai/model/new 这类词，全部条目会被并成一坠。
+     */
+    eventStopwords: string[]
   }
 }
 
@@ -167,6 +178,32 @@ export interface GateOutcome {
 export interface RelevanceScore {
   points: number
   hits: Array<{ word: string; tier: 'core' | 'ecosystem' | 'generic'; points: number }>
+}
+
+/**
+ * 主编终审与发布共用的「渲染后条目」形状。
+ *
+ * 与 ScoredItem 的区别：ScoredItem 是采集/打分阶段的原始条目（title/body/url/valueScore），
+ * GatekeeperInput 是面向读者的渲染产物（hooks/summary/why/lang）。
+ * 终审十条断言全部作用于本类型——机械截断 / 碎片钩子 / 浮点回显 这三类缺陷
+ * 只有在渲染后才存在，对 ScoredItem 断言无意义。故渲染必须在终审之前。
+ */
+export interface GatekeeperInput {
+  /** 稳定 id，格式 `domain-bot-<persona>:<digestId>:<index>`（对齐 tuna 侧正则 `^[a-z0-9-]+:[a-z0-9]+:\d+$`） */
+  id: string
+  title: string
+  hooks: string[]
+  summary: string
+  body: string
+  why: string
+  url: string
+  lang: 'zh' | 'en'
+  publishedAt: number
+  source: string
+  /** 事件簇标识（eventCluster 产物），供 gk:eventOversubscribed 跨条目断言使用 */
+  eventKey: string
+  /** 打分阶段的价值分（看板与排序用；终审断言不读它，防止 LLM/启发式自分自用） */
+  valueScore: number
 }
 
 export type FetchFn = (

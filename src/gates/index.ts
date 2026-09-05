@@ -12,6 +12,7 @@ export {
   collectCanonicalUrls,
   dedupeByCanonicalUrl,
 } from './fingerprint.js'
+export { clusterByEntity, entityTokens, eventKeyMap } from './eventCluster.js'
 export { compilePattern, matchesKeyword, toHaystack } from './textMatch.js'
 
 /**
