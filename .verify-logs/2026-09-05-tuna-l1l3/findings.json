@@ -1,0 +1,1047 @@
+{
+  "ts": "2026-09-05T20:05:36.615Z",
+  "gitDbHead": "add896710e18c3b4a9d3dd129e45b626de8a231c",
+  "gitTunaHead": "039e5b945f15078b3547bfe5ec224764cebf16e4",
+  "main": [
+    {
+      "file": "feed-pack-deepthought-deepthoughtmtobfpmj.json",
+      "in": 40,
+      "out": 40,
+      "diff": 0,
+      "a2": {
+        "sameCount": true,
+        "sameSet": true,
+        "postIds": 40,
+        "briefIds": 40
+      },
+      "a3": {
+        "docLen": 111252,
+        "wrappedLen": 111284,
+        "underLimit": true
+      },
+      "b4": {
+        "hookUnder": [],
+        "hookOver": [],
+        "distinctViolations": []
+      },
+      "b5": {
+        "hookRedundant": [
+          {
+            "i": 0,
+            "hook0": "Neuronto Agentic Resource Discovery (ARD) Index.",
+            "title": "neuronto/agentic-resource-discovery: Neuronto Agentic Resource Discovery (ARD) Index. Federated search across every pub…",
+            "ratio": 1
+          },
+          {
+            "i": 1,
+            "hook0": "A curated list of open-source AI agent platforms: AI coworkers and teammates, agent builders a…",
+            "title": "Agenta-AI/awesome-ai-agent-platforms: A curated list of open-source AI agent platforms: AI coworkers and teammates, age…",
+            "ratio": 0.96
+          },
+          {
+            "i": 2,
+            "hook0": "Evidence-first AI URL intelligence agent for crawling, entity resolution, social discovery, SE…",
+            "title": "vpicciuolo/url-intelligence-agent: Evidence-first AI URL intelligence agent for crawling, entity resolution, social dis…",
+            "ratio": 1
+          },
+          {
+            "i": 3,
+            "hook0": "An open-source AI agent that tests your investment thesis (why you own a stock) against new co…",
+            "title": "suvimatt/agentic-thesis: An open-source AI agent that tests your investment thesis (why you own a stock) against new co…",
+            "ratio": 1
+          },
+          {
+            "i": 4,
+            "hook0": "Production-ready cross-border e-commerce multi-agent system built on AgentScope 2.0 with DDD o…",
+            "title": "KardeniaPoyu/GlobexAgent: Production-ready cross-border e-commerce multi-agent system built on AgentScope 2.0 with DDD …",
+            "ratio": 1
+          },
+          {
+            "i": 5,
+            "hook0": "neomme · efficient · multimodal",
+            "title": "NeoMME: an efficient Multimodal-native and Multilingual Encoder",
+            "ratio": 0.93
+          },
+          {
+            "i": 6,
+            "hook0": "fine · tuning · 350m",
+            "title": "Fine-tuning a 350M Model for Better Structured Outputs in 100 GRPO Steps",
+            "ratio": 0.92
+          },
+          {
+            "i": 7,
+            "hook0": "benchmirt · actually · measuring",
+            "title": "BenchMIRT: What are LLM benchmarks actually measuring?",
+            "ratio": 0.94
+          },
+          {
+            "i": 8,
+            "hook0": "finetuning · multi · vector",
+            "title": "Training and Finetuning Multi-Vector Embedding Models with Sentence Transformers",
+            "ratio": 0.93
+          },
+          {
+            "i": 9,
+            "hook0": "multi · vector · late",
+            "title": "Multi-Vector (Late Interaction) Embedding Models with Sentence Transformers",
+            "ratio": 0.92
+          },
+          {
+            "i": 10,
+            "hook0": "quantization · aware · healing",
+            "title": "Quantization-Aware Healing: a compressed, 4-bit model that outperforms its full-precision original",
+            "ratio": 0.94
+          },
+          {
+            "i": 11,
+            "hook0": "hugging · face · endpoints",
+            "title": "How Hugging Face Inference Endpoints, Jobs, and Buckets Power Search on Papers with Code",
+            "ratio": 0.94
+          },
+          {
+            "i": 12,
+            "hook0": "lfm2 · dspark",
+            "title": "Up to 3.2x Faster Inference with LFM2.5-DSpark",
+            "ratio": 0.92
+          },
+          {
+            "i": 13,
+            "hook0": "olmoearth · embeddings · custom",
+            "title": "Introducing OlmoEarth embeddings: Custom embedding exports from OlmoEarth Studio for downstream analysis",
+            "ratio": 0.94
+          },
+          {
+            "i": 16,
+            "hook0": "Personal cognitive-retrospection Agent for tracing viewpoint changes across long-term Obsidian…",
+            "title": "drephantom/memory-garden: Personal cognitive-retrospection Agent for tracing viewpoint changes across long-term Obsidia…",
+            "ratio": 1
+          },
+          {
+            "i": 17,
+            "hook0": "Context compression for LLM pipelines that proves nothing protected was lost before it emits, …",
+            "title": "laconiq-ai/tekmyra: Context compression for LLM pipelines that proves nothing protected was lost before it emits, and r…",
+            "ratio": 1
+          },
+          {
+            "i": 18,
+            "hook0": "measuring · speech · recognition",
+            "title": "Measuring benchmark optimization in speech recognition",
+            "ratio": 0.94
+          },
+          {
+            "i": 19,
+            "hook0": "back · muse · glimmer",
+            "title": "Meta is back with Muse Glimmer: local, agentic, multimodal, and open source",
+            "ratio": 0.93
+          },
+          {
+            "i": 21,
+            "hook0": "532 live x.ai/bot shares for Grok Bot — every link status-checked, every row attributed.",
+            "title": "kydlikebtc/awesome-grokbot: 532 live x.ai/bot shares for Grok Bot — every link status-checked, every row attributed. Bi…",
+            "ratio": 1
+          },
+          {
+            "i": 22,
+            "hook0": "This 14 MB Agentic LLM(Cactus Needle 2) can control your phone completely.",
+            "title": "AbuZar-Ansarii/Needle: This 14 MB Agentic LLM(Cactus Needle 2) can control your phone completely.",
+            "ratio": 1
+          },
+          {
+            "i": 30,
+            "hook0": "Practical engineering knowledge for building and operating production AI systems — LLMs, RAG, …",
+            "title": "Laleeth/The-AI-Engineer-s-Playbook: Practical engineering knowledge for building and operating production AI systems — …",
+            "ratio": 0.96
+          },
+          {
+            "i": 31,
+            "hook0": "Thai-first local AI guide: Hermes orchestration, Open Source RAG/data masking, and selective G…",
+            "title": "Boom-Vitt/local-ai-gpt6-privacy-guide: Thai-first local AI guide: Hermes orchestration, Open Source RAG/data masking, a…",
+            "ratio": 1
+          },
+          {
+            "i": 32,
+            "hook0": "Stop your AI from making things up — it proposes, deterministic tools decide, every claim chec…",
+            "title": "2akouwu/reverify: Stop your AI from making things up — it proposes, deterministic tools decide, every claim checked aga…",
+            "ratio": 1
+          },
+          {
+            "i": 34,
+            "hook0": "Local memory for AI agents over MCP.",
+            "title": "DamianTodorovic/kepta: Local memory for AI agents over MCP. One SQLite file on your machine — no cloud, no account.",
+            "ratio": 1
+          },
+          {
+            "i": 36,
+            "hook0": "record · train · one",
+            "title": "Record, train, and deploy from one place with Strands Agents, LeRobot, and Hugging Face Storage Buckets",
+            "ratio": 0.91
+          },
+          {
+            "i": 38,
+            "hook0": "Turn arXiv and LaTeX mathematical papers into theorem dependency graphs for AI agents through …",
+            "title": "lotchuazzz-crypto/papergraph-mcp: Turn arXiv and LaTeX mathematical papers into theorem dependency graphs for AI agents…",
+            "ratio": 1
+          }
+        ],
+        "hookPseudo": [],
+        "truncTotal": 32,
+        "hookTotal": 120
+      },
+      "b6": {
+        "langMis": []
+      },
+      "c7": {
+        "summaryBad": [],
+        "titleBad": []
+      },
+      "c8": {
+        "whyBad": [],
+        "whyGeneric": [
+          {
+            "i": 28,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:28",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 29,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:29",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 36,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:36",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 37,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:37",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 38,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:38",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 39,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:39",
+            "why": "与「ai-llm」相关"
+          }
+        ],
+        "whyTooLong": [],
+        "whyDup": [
+          {
+            "i": 3,
+            "seenAt": 2,
+            "why": "聚焦你的关注点 「ai agent」「rag」，并出现强信号「open sou…"
+          },
+          {
+            "i": 9,
+            "seenAt": 8,
+            "why": "聚焦你的关注点 「embedding」"
+          },
+          {
+            "i": 12,
+            "seenAt": 11,
+            "why": "聚焦你的关注点 「inference」"
+          },
+          {
+            "i": 13,
+            "seenAt": 8,
+            "why": "聚焦你的关注点 「embedding」"
+          },
+          {
+            "i": 16,
+            "seenAt": 4,
+            "why": "聚焦你的关注点 「llm」「rag」"
+          },
+          {
+            "i": 17,
+            "seenAt": 4,
+            "why": "聚焦你的关注点 「llm」「rag」"
+          },
+          {
+            "i": 20,
+            "seenAt": 5,
+            "why": "聚焦你的关注点 「multimodal」"
+          },
+          {
+            "i": 21,
+            "seenAt": 7,
+            "why": "聚焦你的关注点 「llm」"
+          },
+          {
+            "i": 22,
+            "seenAt": 7,
+            "why": "聚焦你的关注点 「llm」"
+          },
+          {
+            "i": 23,
+            "seenAt": 11,
+            "why": "聚焦你的关注点 「inference」"
+          },
+          {
+            "i": 25,
+            "seenAt": 24,
+            "why": "聚焦你的关注点 「llm」「inference」"
+          },
+          {
+            "i": 26,
+            "seenAt": 24,
+            "why": "聚焦你的关注点 「llm」「inference」"
+          },
+          {
+            "i": 27,
+            "seenAt": 24,
+            "why": "聚焦你的关注点 「llm」「inference」"
+          },
+          {
+            "i": 29,
+            "seenAt": 28,
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 30,
+            "seenAt": 24,
+            "why": "聚焦你的关注点 「llm」「inference」"
+          },
+          {
+            "i": 32,
+            "seenAt": 7,
+            "why": "聚焦你的关注点 「llm」"
+          },
+          {
+            "i": 33,
+            "seenAt": 7,
+            "why": "聚焦你的关注点 「llm」"
+          },
+          {
+            "i": 36,
+            "seenAt": 28,
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 37,
+            "seenAt": 28,
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 38,
+            "seenAt": 28,
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 39,
+            "seenAt": 28,
+            "why": "与「ai-llm」相关"
+          }
+        ]
+      },
+      "c9": {
+        "missingSrc": []
+      },
+      "d10": {
+        "htmlPosts": [
+          {
+            "i": 15,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:15"
+          },
+          {
+            "i": 20,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:20"
+          },
+          {
+            "i": 28,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:28"
+          },
+          {
+            "i": 29,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:29"
+          },
+          {
+            "i": 33,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:33"
+          },
+          {
+            "i": 35,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:35"
+          },
+          {
+            "i": 37,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:37"
+          },
+          {
+            "i": 39,
+            "id": "domain-bot-deepthought:deepthoughtmtobfpmj:39"
+          }
+        ],
+        "arxivHits": [],
+        "objobjHits": [],
+        "spamHits": []
+      },
+      "viewCountSum": [
+        {
+          "i": 23,
+          "id": "domain-bot-deepthought:deepthoughtmtobfpmj:23",
+          "summary": "IBM Technology · 32,707 次观看"
+        },
+        {
+          "i": 24,
+          "id": "domain-bot-deepthought:deepthoughtmtobfpmj:24",
+          "summary": "AI deepdive · 123 次观看"
+        },
+        {
+          "i": 25,
+          "id": "domain-bot-deepthought:deepthoughtmtobfpmj:25",
+          "summary": "Julien Simon · 54,186 次观看"
+        },
+        {
+          "i": 26,
+          "id": "domain-bot-deepthought:deepthoughtmtobfpmj:26",
+          "summary": "AI Engineer · 63,435 次观看"
+        },
+        {
+          "i": 27,
+          "id": "domain-bot-deepthought:deepthoughtmtobfpmj:27",
+          "summary": "PyTorch · 31,307 次观看"
+        }
+      ]
+    },
+    {
+      "file": "feed-pack-newsline-newslinemtobsx4p.json",
+      "in": 16,
+      "out": 16,
+      "diff": 0,
+      "a2": {
+        "sameCount": true,
+        "sameSet": true,
+        "postIds": 16,
+        "briefIds": 16
+      },
+      "a3": {
+        "docLen": 33451,
+        "wrappedLen": 33483,
+        "underLimit": true
+      },
+      "b4": {
+        "hookUnder": [],
+        "hookOver": [],
+        "distinctViolations": []
+      },
+      "b5": {
+        "hookRedundant": [
+          {
+            "i": 0,
+            "hook0": "PromptLedger - version prompt templates, run deterministic comparison snapshots, score candida…",
+            "title": "cyptnpassira/PromptLedger: PromptLedger - version prompt templates, run deterministic comparison snapshots, score candi…",
+            "ratio": 1
+          },
+          {
+            "i": 1,
+            "hook0": "A group of AI safety researchers says a fleet of autonomous agents that identified themselves …",
+            "title": "Thousands of OpenAI Agents Quietly Turned an Abandoned Wiki Into Their Coordination Channel",
+            "ratio": 0.86
+          },
+          {
+            "i": 4,
+            "hook0": "# v1.7.0 — the working set ...",
+            "title": "v1.7.0 — the working set",
+            "ratio": 0.95
+          },
+          {
+            "i": 9,
+            "hook0": "astra · answer · questions",
+            "title": "OpenAI launches GPT-6 Astra, the AI model built to do more than answer questions - IBTimes India",
+            "ratio": 0.92
+          },
+          {
+            "i": 10,
+            "hook0": "OpenAI launches new Astra model amid growing scrutiny over agents' safety | Reuters ...",
+            "title": "OpenAI launches new Astra model amid growing scrutiny over agents' safety | Reuters",
+            "ratio": 0.96
+          },
+          {
+            "i": 11,
+            "hook0": "## OpenAI agents have gone rogue again.",
+            "title": "Rogue OpenAI agents go crazy, hijack German site to use as message board, report says - India Today",
+            "ratio": 0.81
+          },
+          {
+            "i": 14,
+            "hook0": "# Inside the OpenAI Swarm Crisis That Proved Safety Guardrails Are Already Obsolete ...",
+            "title": "Inside the OpenAI Swarm Crisis That Proved Safety Guardrails — Ipan",
+            "ratio": 0.88
+          }
+        ],
+        "hookPseudo": [],
+        "truncTotal": 20,
+        "hookTotal": 48
+      },
+      "b6": {
+        "langMis": []
+      },
+      "c7": {
+        "summaryBad": [],
+        "titleBad": []
+      },
+      "c8": {
+        "whyBad": [],
+        "whyGeneric": [
+          {
+            "i": 5,
+            "id": "domain-bot-newsline:newslinemtobsx4p:5",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 6,
+            "id": "domain-bot-newsline:newslinemtobsx4p:6",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 7,
+            "id": "domain-bot-newsline:newslinemtobsx4p:7",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 8,
+            "id": "domain-bot-newsline:newslinemtobsx4p:8",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 10,
+            "id": "domain-bot-newsline:newslinemtobsx4p:10",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 11,
+            "id": "domain-bot-newsline:newslinemtobsx4p:11",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 12,
+            "id": "domain-bot-newsline:newslinemtobsx4p:12",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 13,
+            "id": "domain-bot-newsline:newslinemtobsx4p:13",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 14,
+            "id": "domain-bot-newsline:newslinemtobsx4p:14",
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 15,
+            "id": "domain-bot-newsline:newslinemtobsx4p:15",
+            "why": "与「ai-llm」相关"
+          }
+        ],
+        "whyTooLong": [],
+        "whyDup": [
+          {
+            "i": 6,
+            "seenAt": 5,
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 7,
+            "seenAt": 5,
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 8,
+            "seenAt": 5,
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 10,
+            "seenAt": 5,
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 11,
+            "seenAt": 5,
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 12,
+            "seenAt": 5,
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 13,
+            "seenAt": 5,
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 14,
+            "seenAt": 5,
+            "why": "与「ai-llm」相关"
+          },
+          {
+            "i": 15,
+            "seenAt": 5,
+            "why": "与「ai-llm」相关"
+          }
+        ]
+      },
+      "c9": {
+        "missingSrc": []
+      },
+      "d10": {
+        "htmlPosts": [
+          {
+            "i": 5,
+            "id": "domain-bot-newsline:newslinemtobsx4p:5"
+          },
+          {
+            "i": 6,
+            "id": "domain-bot-newsline:newslinemtobsx4p:6"
+          },
+          {
+            "i": 15,
+            "id": "domain-bot-newsline:newslinemtobsx4p:15"
+          }
+        ],
+        "arxivHits": [],
+        "objobjHits": [],
+        "spamHits": []
+      },
+      "viewCountSum": []
+    }
+  ],
+  "v1Reconcile": [
+    {
+      "file": "feed-pack-deepthought-deepthoughtmtobfpmj.json",
+      "in": 40,
+      "out": 40,
+      "diff": 0
+    },
+    {
+      "file": "feed-pack-deepthought-deepthoughtmtocqoqj.json",
+      "in": 1,
+      "out": 1,
+      "diff": 0
+    },
+    {
+      "file": "feed-pack-deepthought-deepthoughtmtod4mob.json",
+      "in": 0,
+      "out": 0,
+      "diff": 0
+    },
+    {
+      "file": "feed-pack-deepthought-deepthoughtmtofkfo0.json",
+      "in": 0,
+      "out": 0,
+      "diff": 0
+    },
+    {
+      "file": "feed-pack-newsline-newslinemtobsx4p.json",
+      "in": 16,
+      "out": 16,
+      "diff": 0
+    },
+    {
+      "file": "feed-pack-newsline-newslinemtocqwmu.json",
+      "in": 0,
+      "out": 0,
+      "diff": 0
+    },
+    {
+      "file": "feed-pack-newsline-newslinemtod4tt6.json",
+      "in": 0,
+      "out": 0,
+      "diff": 0
+    },
+    {
+      "file": "feed-pack-newsline-newslinemtofkneg.json",
+      "in": 0,
+      "out": 0,
+      "diff": 0
+    },
+    {
+      "file": "tuna-feed-200.json",
+      "in": 172,
+      "out": 0,
+      "diff": 172
+    }
+  ],
+  "M": {
+    "totalPosts": 56,
+    "htmlPosts": [
+      {
+        "i": 15,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:15"
+      },
+      {
+        "i": 20,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:20"
+      },
+      {
+        "i": 28,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:28"
+      },
+      {
+        "i": 29,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:29"
+      },
+      {
+        "i": 33,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:33"
+      },
+      {
+        "i": 35,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:35"
+      },
+      {
+        "i": 37,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:37"
+      },
+      {
+        "i": 39,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:39"
+      },
+      {
+        "i": 5,
+        "id": "domain-bot-newsline:newslinemtobsx4p:5"
+      },
+      {
+        "i": 6,
+        "id": "domain-bot-newsline:newslinemtobsx4p:6"
+      },
+      {
+        "i": 15,
+        "id": "domain-bot-newsline:newslinemtobsx4p:15"
+      }
+    ],
+    "viewCountSum": [
+      {
+        "i": 23,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:23",
+        "summary": "IBM Technology · 32,707 次观看"
+      },
+      {
+        "i": 24,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:24",
+        "summary": "AI deepdive · 123 次观看"
+      },
+      {
+        "i": 25,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:25",
+        "summary": "Julien Simon · 54,186 次观看"
+      },
+      {
+        "i": 26,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:26",
+        "summary": "AI Engineer · 63,435 次观看"
+      },
+      {
+        "i": 27,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:27",
+        "summary": "PyTorch · 31,307 次观看"
+      }
+    ],
+    "whyGeneric": [
+      {
+        "i": 28,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:28",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 29,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:29",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 36,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:36",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 37,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:37",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 38,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:38",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 39,
+        "id": "domain-bot-deepthought:deepthoughtmtobfpmj:39",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 5,
+        "id": "domain-bot-newsline:newslinemtobsx4p:5",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 6,
+        "id": "domain-bot-newsline:newslinemtobsx4p:6",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 7,
+        "id": "domain-bot-newsline:newslinemtobsx4p:7",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 8,
+        "id": "domain-bot-newsline:newslinemtobsx4p:8",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 10,
+        "id": "domain-bot-newsline:newslinemtobsx4p:10",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 11,
+        "id": "domain-bot-newsline:newslinemtobsx4p:11",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 12,
+        "id": "domain-bot-newsline:newslinemtobsx4p:12",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 13,
+        "id": "domain-bot-newsline:newslinemtobsx4p:13",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 14,
+        "id": "domain-bot-newsline:newslinemtobsx4p:14",
+        "why": "与「ai-llm」相关"
+      },
+      {
+        "i": 15,
+        "id": "domain-bot-newsline:newslinemtobsx4p:15",
+        "why": "与「ai-llm」相关"
+      }
+    ],
+    "whyBad": [],
+    "whyTooLong": [],
+    "langMis": [],
+    "hookRedundant": [
+      {
+        "i": 0,
+        "hook0": "Neuronto Agentic Resource Discovery (ARD) Index.",
+        "title": "neuronto/agentic-resource-discovery: Neuronto Agentic Resource Discovery (ARD) Index. Federated search across every pub…",
+        "ratio": 1
+      },
+      {
+        "i": 1,
+        "hook0": "A curated list of open-source AI agent platforms: AI coworkers and teammates, agent builders a…",
+        "title": "Agenta-AI/awesome-ai-agent-platforms: A curated list of open-source AI agent platforms: AI coworkers and teammates, age…",
+        "ratio": 0.96
+      },
+      {
+        "i": 2,
+        "hook0": "Evidence-first AI URL intelligence agent for crawling, entity resolution, social discovery, SE…",
+        "title": "vpicciuolo/url-intelligence-agent: Evidence-first AI URL intelligence agent for crawling, entity resolution, social dis…",
+        "ratio": 1
+      },
+      {
+        "i": 3,
+        "hook0": "An open-source AI agent that tests your investment thesis (why you own a stock) against new co…",
+        "title": "suvimatt/agentic-thesis: An open-source AI agent that tests your investment thesis (why you own a stock) against new co…",
+        "ratio": 1
+      },
+      {
+        "i": 4,
+        "hook0": "Production-ready cross-border e-commerce multi-agent system built on AgentScope 2.0 with DDD o…",
+        "title": "KardeniaPoyu/GlobexAgent: Production-ready cross-border e-commerce multi-agent system built on AgentScope 2.0 with DDD …",
+        "ratio": 1
+      },
+      {
+        "i": 5,
+        "hook0": "neomme · efficient · multimodal",
+        "title": "NeoMME: an efficient Multimodal-native and Multilingual Encoder",
+        "ratio": 0.93
+      },
+      {
+        "i": 6,
+        "hook0": "fine · tuning · 350m",
+        "title": "Fine-tuning a 350M Model for Better Structured Outputs in 100 GRPO Steps",
+        "ratio": 0.92
+      },
+      {
+        "i": 7,
+        "hook0": "benchmirt · actually · measuring",
+        "title": "BenchMIRT: What are LLM benchmarks actually measuring?",
+        "ratio": 0.94
+      },
+      {
+        "i": 8,
+        "hook0": "finetuning · multi · vector",
+        "title": "Training and Finetuning Multi-Vector Embedding Models with Sentence Transformers",
+        "ratio": 0.93
+      },
+      {
+        "i": 9,
+        "hook0": "multi · vector · late",
+        "title": "Multi-Vector (Late Interaction) Embedding Models with Sentence Transformers",
+        "ratio": 0.92
+      },
+      {
+        "i": 10,
+        "hook0": "quantization · aware · healing",
+        "title": "Quantization-Aware Healing: a compressed, 4-bit model that outperforms its full-precision original",
+        "ratio": 0.94
+      },
+      {
+        "i": 11,
+        "hook0": "hugging · face · endpoints",
+        "title": "How Hugging Face Inference Endpoints, Jobs, and Buckets Power Search on Papers with Code",
+        "ratio": 0.94
+      },
+      {
+        "i": 12,
+        "hook0": "lfm2 · dspark",
+        "title": "Up to 3.2x Faster Inference with LFM2.5-DSpark",
+        "ratio": 0.92
+      },
+      {
+        "i": 13,
+        "hook0": "olmoearth · embeddings · custom",
+        "title": "Introducing OlmoEarth embeddings: Custom embedding exports from OlmoEarth Studio for downstream analysis",
+        "ratio": 0.94
+      },
+      {
+        "i": 16,
+        "hook0": "Personal cognitive-retrospection Agent for tracing viewpoint changes across long-term Obsidian…",
+        "title": "drephantom/memory-garden: Personal cognitive-retrospection Agent for tracing viewpoint changes across long-term Obsidia…",
+        "ratio": 1
+      },
+      {
+        "i": 17,
+        "hook0": "Context compression for LLM pipelines that proves nothing protected was lost before it emits, …",
+        "title": "laconiq-ai/tekmyra: Context compression for LLM pipelines that proves nothing protected was lost before it emits, and r…",
+        "ratio": 1
+      },
+      {
+        "i": 18,
+        "hook0": "measuring · speech · recognition",
+        "title": "Measuring benchmark optimization in speech recognition",
+        "ratio": 0.94
+      },
+      {
+        "i": 19,
+        "hook0": "back · muse · glimmer",
+        "title": "Meta is back with Muse Glimmer: local, agentic, multimodal, and open source",
+        "ratio": 0.93
+      },
+      {
+        "i": 21,
+        "hook0": "532 live x.ai/bot shares for Grok Bot — every link status-checked, every row attributed.",
+        "title": "kydlikebtc/awesome-grokbot: 532 live x.ai/bot shares for Grok Bot — every link status-checked, every row attributed. Bi…",
+        "ratio": 1
+      },
+      {
+        "i": 22,
+        "hook0": "This 14 MB Agentic LLM(Cactus Needle 2) can control your phone completely.",
+        "title": "AbuZar-Ansarii/Needle: This 14 MB Agentic LLM(Cactus Needle 2) can control your phone completely.",
+        "ratio": 1
+      },
+      {
+        "i": 30,
+        "hook0": "Practical engineering knowledge for building and operating production AI systems — LLMs, RAG, …",
+        "title": "Laleeth/The-AI-Engineer-s-Playbook: Practical engineering knowledge for building and operating production AI systems — …",
+        "ratio": 0.96
+      },
+      {
+        "i": 31,
+        "hook0": "Thai-first local AI guide: Hermes orchestration, Open Source RAG/data masking, and selective G…",
+        "title": "Boom-Vitt/local-ai-gpt6-privacy-guide: Thai-first local AI guide: Hermes orchestration, Open Source RAG/data masking, a…",
+        "ratio": 1
+      },
+      {
+        "i": 32,
+        "hook0": "Stop your AI from making things up — it proposes, deterministic tools decide, every claim chec…",
+        "title": "2akouwu/reverify: Stop your AI from making things up — it proposes, deterministic tools decide, every claim checked aga…",
+        "ratio": 1
+      },
+      {
+        "i": 34,
+        "hook0": "Local memory for AI agents over MCP.",
+        "title": "DamianTodorovic/kepta: Local memory for AI agents over MCP. One SQLite file on your machine — no cloud, no account.",
+        "ratio": 1
+      },
+      {
+        "i": 36,
+        "hook0": "record · train · one",
+        "title": "Record, train, and deploy from one place with Strands Agents, LeRobot, and Hugging Face Storage Buckets",
+        "ratio": 0.91
+      },
+      {
+        "i": 38,
+        "hook0": "Turn arXiv and LaTeX mathematical papers into theorem dependency graphs for AI agents through …",
+        "title": "lotchuazzz-crypto/papergraph-mcp: Turn arXiv and LaTeX mathematical papers into theorem dependency graphs for AI agents…",
+        "ratio": 1
+      },
+      {
+        "i": 0,
+        "hook0": "PromptLedger - version prompt templates, run deterministic comparison snapshots, score candida…",
+        "title": "cyptnpassira/PromptLedger: PromptLedger - version prompt templates, run deterministic comparison snapshots, score candi…",
+        "ratio": 1
+      },
+      {
+        "i": 1,
+        "hook0": "A group of AI safety researchers says a fleet of autonomous agents that identified themselves …",
+        "title": "Thousands of OpenAI Agents Quietly Turned an Abandoned Wiki Into Their Coordination Channel",
+        "ratio": 0.86
+      },
+      {
+        "i": 4,
+        "hook0": "# v1.7.0 — the working set ...",
+        "title": "v1.7.0 — the working set",
+        "ratio": 0.95
+      },
+      {
+        "i": 9,
+        "hook0": "astra · answer · questions",
+        "title": "OpenAI launches GPT-6 Astra, the AI model built to do more than answer questions - IBTimes India",
+        "ratio": 0.92
+      },
+      {
+        "i": 10,
+        "hook0": "OpenAI launches new Astra model amid growing scrutiny over agents' safety | Reuters ...",
+        "title": "OpenAI launches new Astra model amid growing scrutiny over agents' safety | Reuters",
+        "ratio": 0.96
+      },
+      {
+        "i": 11,
+        "hook0": "## OpenAI agents have gone rogue again.",
+        "title": "Rogue OpenAI agents go crazy, hijack German site to use as message board, report says - India Today",
+        "ratio": 0.81
+      },
+      {
+        "i": 14,
+        "hook0": "# Inside the OpenAI Swarm Crisis That Proved Safety Guardrails Are Already Obsolete ...",
+        "title": "Inside the OpenAI Swarm Crisis That Proved Safety Guardrails — Ipan",
+        "ratio": 0.88
+      }
+    ],
+    "hookPseudo": [],
+    "hookUnder": [],
+    "hookOver": [],
+    "missingSrc": [],
+    "summBad": [],
+    "titleBad": [],
+    "spam": [],
+    "arxiv": [],
+    "objobj": [],
+    "truncTotal": 52,
+    "hookTotal": 168,
+    "truncRatio": 0.31
+  },
+  "discrepancy": [
+    "工单 §零.2 称「其余 posts:0 的包只做 schema 存在性检查」，但 outbox/tuna 实际存在非 0 posts 的 v1 包：feed-pack-deepthought-deepthoughtmtocqoqj.json(1)、tuna-feed-200.json(172)。已对全部 v1 包执行 normalizeAll 对账。"
+  ]
+}
