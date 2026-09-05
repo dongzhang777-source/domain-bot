@@ -50,8 +50,9 @@ const OBJECT_OBJECT = /\[object Object\]/i
 const FRAGMENT_HOOK = /^arxiv:\d+\.?/i
 /** DB-03 §2.4 实测：why 直接回显打分器浮点数 `"AI深度思想·rss：价值 0.94"` */
 const SCORE_ECHO = /(价值|得分|分数|score)\s*[:：]?\s*\d+\.\d|\d\.\d{2}/
-/** DB-11/D1：tuna local-brief 路径不过 sanitize，裸标签会原样上屏 */
-const HTML_TAG = /<\/?(?:p|div|span|br|a|strong|em|b|i|u|ul|ol|li|h[1-6]|img|blockquote|pre|code)\b[^>]*>/i
+/** DB-11/D1：tuna local-brief 路径不过 sanitize，裸标签会原样上屏。
+ *  不用标签白名单：LLM 会话转录混进的 `<example>`/`<user>` 这类 XML 形标签同样上屏。 */
+const HTML_TAG = /<\/?[a-z][a-z0-9-]*(?:\s[^<>]*)?>/i
 /** DB-11/D3：视频/落地页抓取只拿到平台 chrome（「频道 · 1.2万次观看」「123K views」），无实质内容 */
 const VIEWER_CHROME =
   /频道\s*·\s*[\d,.]+\s*万?\s*次观看|[\d,.]+\s*[KMB]?\s*(?:views|subscribers|plays)|watch\s+later|subscribe\b|share\b|阅读\s*[\d,.]+\s*万?\s*次|次观看|位订阅者/gi

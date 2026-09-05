@@ -496,6 +496,8 @@ describe('DB-11 修复回归锁：交付文本必须可直接上屏（tuna local
       'gk:htmlLeak',
     )
     expectRejected(good({ why: 'why has <strong>bold</strong> inside' }), 'gk:htmlLeak')
+    // 任意标签形模式都拦（含 LLM 会话转录的 XML 形标签），白名单式会漏
+    expectRejected(good({ why: 'transcript has <user> tags inside' }), 'gk:htmlLeak')
     // 干净样本不得误伤
     const clean = good()
     expect(isAccepted(runAssertions(clean, input({ batch: [clean] })))).toBe(true)

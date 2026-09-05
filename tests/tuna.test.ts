@@ -223,6 +223,8 @@ describe('stripHtml（DB-11/D1：tuna local-brief 路径无 sanitize，生产端
     expect(stripHtml('<strong>Genie</strong> &amp; friends &#039;quoted&#039;')).toBe('Genie & friends \'quoted\'')
     expect(stripHtml('<style>.x{}</style>keep <script>bad()</script>this')).toBe('keep this')
     expect(stripHtml('plain text stays')).toBe('plain text stays')
+    // DB-11 回放实测：转义形式的标签（&lt;example&gt;）解码后必须再剥一遍
+    expect(stripHtml('prompt transcript &lt;example&gt; &lt;user&gt;hi&lt;/user&gt; end')).toBe('prompt transcript hi end')
   })
 })
 

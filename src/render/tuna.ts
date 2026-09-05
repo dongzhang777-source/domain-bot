@@ -82,6 +82,9 @@ export function stripHtml(text: string): string {
     .replace(/&quot;/g, '"')
     .replace(/&#0?39;|&apos;/g, "'")
     .replace(/&nbsp;/g, ' ')
+    // DB-11 回放实测：原文可能带**转义形式的标签**（`&lt;example&gt;`），上一步实体解码
+    // 会把它们还原成字面标签——解码后必须再剥一遍，否则等于亲手把标签放行。
+    .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
