@@ -1,4 +1,4 @@
-import { tokenize } from '../collector/dedupe.js'
+import { tokenize, stripOutletSuffix } from '../collector/dedupe.js'
 
 /**
  * 实体词并查集事件聚类。
@@ -118,13 +118,20 @@ export function topicTokens(text: string, stopwords: ReadonlySet<string>): Set<s
 
 /**
  * 抽**事件实体词**（专有名词口径）：在 topicTokens 基础上，额外要求 ASCII token
- * 在原标题里首字母大写。
+ * 在原标题里首字母大写，且先剥掉标题末尾的转载渠道名后缀。
  *
  * 用途只有一个：**事件聚类**。大写要求是区分「事件标识」与「领域词汇」的关键信号，
- * 实测依据见 `capitalizedTokens`。
+ * 实测依据见 `capitalizedTokens`；剥后缀是区分「事件标识」与「来源词汇」的补丁，
+ * 实测依据（`india` 把 GPT-6 Astra 与德国 wiki 劫持两个独立事件缝成一簇）见
+ * `src/collector/dedupe.ts` 的 `stripOutletSuffix`。
  */
 export function entityTokens(title: string, stopwords: ReadonlySet<string>): Set<string> {
-  return extractTokens(title, stopwords, true)
+  const stripped = stripOutletSuffix(title)
+  const tokens = extractTokens(stripped, stopwords, true)
+  // 守门：剥完后缀若一个实体都不剩，说明这条标题的实体**只**在后缀里——
+  // 宁可带着 outlet 词聚类（旧行为），也不让条目失去聚类资格（无实体词 → 自成一体，永不合并）。
+  if (tokens.size === 0 && stripped !== title) return extractTokens(title, stopwords, true)
+  return tokens
 }
 
 function extractTokens(text: string, stopwords: ReadonlySet<string>, requireProperNoun: boolean): Set<string> {

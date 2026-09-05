@@ -52,8 +52,48 @@ describe('HeuristicScorer', () => {
     const scorer = new HeuristicScorer()
     const ragDomain: DomainConfig = { ...domain, keywords: ['rag'], signalWords: ['beat'] }
     const [res] = await scorer.score([item('cloud storage optimization with upbeat team')], ragDomain)
-    // DB-11/D2：reason 语言随条目——英文条目产英文模板（不再是中文兜底）
-    expect(res.reason).toBe('Related to your ai feed')
+    // DB-11/D2：reason 语言随条目——英文条目产英文 why（不再是中文兜底）。
+    // DB-12/D4：无命中兜底不再是零信息模板，而是从条目自身取的主题短语。
+    expect(res.reason).toBe('Picked for cloud storage optimization…')
+  })
+
+  it('DB-12/D4：无命中的兜底 why 带内容指向，不同条目互相可区分（不再复读同一句）', async () => {
+    const scorer = new HeuristicScorer()
+    const noHit: DomainConfig = { ...domain, keywords: ['rag'], signalWords: ['beat'] }
+    const [a, b] = await scorer.score(
+      [
+        item('GeoJSON Map Viewer', 'A tiny tool to preview GeoJSON files on a map.'),
+        item('Cormac Slade on shipping agents to production', 'Interview notes about agent rollouts.'),
+      ],
+      noHit,
+    )
+    // 旧实现两条都是「Related to your ai feed」——L2「💡为什么」栏变成复读机（DB-11/C8：16/56 条）
+    expect(a.reason).not.toBe('Related to your ai feed')
+    expect(b.reason).not.toBe('Related to your ai feed')
+    expect(a.reason).toContain('GeoJSON')
+    expect(b.reason).toContain('Cormac')
+    expect(a.reason).not.toBe(b.reason)
+  })
+
+  it('DB-12/D4：中文条目产中文 why（语言随条目），不再输出「与「ai」相关」', async () => {
+    const scorer = new HeuristicScorer()
+    const noHit: DomainConfig = { ...domain, keywords: ['rag'], signalWords: ['beat'] }
+    const [zh] = await scorer.score(
+      [item('智能体记忆管理的实践笔记', '记录我们在生产环境里做智能体记忆管理的做法。')],
+      noHit,
+    )
+    expect(zh.reason).not.toBe('与「ai」相关')
+    expect(zh.reason).toContain('智能体记忆管理')
+  })
+
+  it('DB-12/D4：标题含小数时剥离（不得触发 gk:scoreEcho）；完全退化时仍回领域模板（永不空串）', async () => {
+    const scorer = new HeuristicScorer()
+    const noHit: DomainConfig = { ...domain, keywords: ['rag'], signalWords: ['beat'] }
+    const [withFloat, degenerate] = await scorer.score([item('Model v1.25 release', ''), item('', '')], noHit)
+    expect(withFloat.reason).not.toMatch(/\d\.\d/)
+    expect(withFloat.reason.length).toBeGreaterThan(0)
+    expect(degenerate.reason).toBe('Related to your ai feed')
+    expect(degenerate.reason.length).toBeGreaterThan(0)
   })
 
   it('打分不饱和：典型 arXiv 摘要不得触顶，且四个质量档位可区分', async () => {

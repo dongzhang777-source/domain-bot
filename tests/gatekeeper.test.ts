@@ -12,7 +12,8 @@ import {
 import { renderPost } from '../src/gatekeeper/render.js'
 import { BackfillPool } from '../src/gatekeeper/backfill.js'
 import { auditBoard, buildBoard } from '../src/gatekeeper/board.js'
-import { WHY_MAX } from '../src/render/tuna.js'
+import { HeuristicScorer } from '../src/refinery/scorer.js'
+import { TITLE_ECHO_OVERLAP, titleOverlap, WHY_MAX } from '../src/render/tuna.js'
 import type { GatesConfig, GatekeeperInput, PersonaConfig, ScoredItem } from '../src/types.js'
 
 /**
@@ -322,6 +323,77 @@ describe('gatekeep 编排：渲染 → 断言 → 递补 → 事件复检 → �
     expect(rendered.hooks.join('\n')).not.toContain('Announce Type')
     for (const h of rendered.hooks) expect(h).not.toMatch(/^arxiv:\d+\.?/i)
     expect(isAccepted(runAssertions(rendered, input({ batch: [rendered] })))).toBe(true)
+  })
+
+  it('DB-12/D6：首句同源的条目走机械兜底后仍过终审（去冗余不得引入新违例）', () => {
+    // 真实形态取自 DB-11 §B5 #0：正文首句就是标题主体。去冗余会改写钩子组合，
+    // 改写后的钩子必须仍同时满足 gk:mechanicalTruncation / gk:hookEntity / gk:shapeViolation。
+    const item = scored(
+      'i1',
+      'neuronto/agentic-resource-discovery: Neuronto Agentic Resource Discovery (ARD) Index',
+      'https://ex.com/1',
+      0.9,
+      'Neuronto Agentic Resource Discovery (ARD) Index. Federated search across every public ARD registry, ' +
+        'plus a verified tool index read from each MCP server. Hybrid lexical and semantic retrieval, and ARD-Bench.',
+    )
+    const rendered = renderPost(item, { persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords) })
+    expect(rendered.hooks).toHaveLength(3)
+    // DB-11 §B5 的口径是 hook[0]：门面位不得是标题复读（实体卡字符天然来自标题，不在此判）
+    expect(
+      titleOverlap(rendered.hooks[0]!, rendered.title),
+      `门面钩子与标题重叠过高：${rendered.hooks[0]}`,
+    ).toBeLessThan(TITLE_ECHO_OVERLAP)
+    const verdicts = runAssertions(rendered, input({ batch: [rendered] }))
+    expect(
+      isAccepted(verdicts),
+      `未过终审：${JSON.stringify(verdicts.filter((v) => !v.ok))}`,
+    ).toBe(true)
+  })
+
+  it('DB-12/D4：无命中条目走完 打分→渲染 后，why 非空、≤40 码点、语言随条目、不再是通用模板', async () => {
+    // 走真实产物路径：HeuristicScorer（无关键词命中）→ ScoredItem.reason → renderPost 兜底 why
+    const scorer = new HeuristicScorer()
+    const raw = [
+      { title: 'GeoJSON Map Viewer', body: 'A tiny tool to preview GeoJSON files on a map.' },
+      { title: '智能体记忆管理的实践笔记', body: '记录我们在生产环境里做智能体记忆管理的做法。' },
+    ]
+    const domainCfg = {
+      domain: 'ai-llm',
+      keywords: ['rag'],
+      signalWords: ['beat'],
+      scoreThreshold: 0.45,
+      maxPerDigest: 6,
+      clusterThreshold: 0.35,
+    }
+    const scores = await scorer.score(
+      raw.map((r) => ({ id: r.title, source: 'rss-1', title: r.title, body: r.body, url: '', publishedAt: NOW - 3_600_000 })),
+      domainCfg,
+    )
+    const items: ScoredItem[] = raw.map((r, i) => ({
+      id: r.title,
+      source: 'rss-1',
+      title: r.title,
+      body: r.body,
+      url: `https://ex.com/${i}`,
+      publishedAt: NOW - 3_600_000,
+      valueScore: scores[i]!.valueScore,
+      isNew: true,
+      reason: scores[i]!.reason,
+    }))
+    const render = (i: ScoredItem) =>
+      renderPost(i, { persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords) })
+    for (const item of items) {
+      const out = render(item)
+      const n = Array.from(out.why).length
+      expect(n, `why 非空：${out.why}`).toBeGreaterThan(0)
+      expect(n, `why ${n} 码点超上限：${out.why}`).toBeLessThanOrEqual(WHY_MAX)
+      expect(out.why).not.toMatch(/\d\.\d/)
+      expect(out.why).not.toContain('与「ai-llm」相关')
+      expect(out.why).not.toContain('Related to your ai-llm feed')
+    }
+    // 语言随条目（DB-11/D2 的意图在兜底分支同样成立）
+    expect(render(items[0]!).why).toMatch(/^Picked for /)
+    expect(render(items[1]!).why).toMatch(/^因「/)
   })
 
   it('事件复检·候选充足分支：同事件超额时裁掉低分项，并强制多样性', () => {

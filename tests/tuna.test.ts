@@ -11,6 +11,8 @@ import {
   splitSentences,
   stripHtml,
   stripMetadata,
+  TITLE_ECHO_OVERLAP,
+  titleOverlap,
   truncateChars,
   truncateWhy,
 } from '../src/render/tuna.js'
@@ -142,6 +144,53 @@ describe('deriveHooks（机械兜底：三视角，非标题切三段）', () =>
     expect(thin.length).toBeLessThan(3)
     for (const h of thin) expect(Array.from(h).length).toBeGreaterThanOrEqual(MIN_HOOK_CHARS)
   })
+
+  it('DB-12/D6：首句与标题同源时换视角递补，钩子不再是标题复读', () => {
+    // 真实形态取自 DB-11 §B5 #0（deepthought 主材）：正文首句就是标题主体，
+    // 旧实现 hook[0] = 「Neuronto Agentic Resource Discovery (ARD) Index.」，与标题重叠≈0.95
+    const title = 'neuronto/agentic-resource-discovery: Neuronto Agentic Resource Discovery (ARD) Index'
+    const body =
+      'Neuronto Agentic Resource Discovery (ARD) Index. Federated search across every public ARD registry, ' +
+      'plus a verified tool index read from each MCP server. Hybrid lexical and semantic retrieval, and ARD-Bench.'
+    const hooks = deriveHooks(title, body, 'ai-llm', 'en')
+
+    expect(hooks).toHaveLength(3)
+    expect(new Set(hooks).size).toBe(3)
+    // 修复目标：门面位（hook[0]）不得是标题复读——DB-11 §B5 扫的正是 hook[0]，阈值同口径
+    expect(titleOverlap(hooks[0]!, title), `门面钩子与标题重叠过高：${hooks[0]}`).toBeLessThan(TITLE_ECHO_OVERLAP)
+    // 与标题同源的首句本体整体消失，递补来自真实素材（次句），不是把标题换个切法
+    expect(hooks.join('\n')).not.toContain('Neuronto Agentic Resource Discovery (ARD) Index.')
+    expect(hooks.join('\n')).toContain('Federated search')
+    for (const h of hooks) {
+      // 联动约束：去冗余不得引入新违例
+      expect(isTitlePrefix(h, title), `钩子不得是标题前缀截断：${h}`).toBe(false)
+      expect(Array.from(h).length).toBeGreaterThanOrEqual(MIN_HOOK_CHARS)
+      expect(Array.from(h).length).toBeLessThanOrEqual(HOOK_LIMITS.en)
+    }
+  })
+
+  it('DB-12/D6：素材不足时同源候选回补——少一条冗余钩子好过整条被否决', () => {
+    // 标题与唯一一句正文同源、且抽不出实体卡：放宽后仍给满 3 条（够不成 3 条才会被 shapeViolation 否决）
+    const title = 'Monitoring the monitoring stack with self-hosted agents'
+    const body = 'Monitoring the monitoring stack with self-hosted agents explained.'
+    const hooks = deriveHooks(title, body, 'ai-llm', 'en')
+    for (const h of hooks) {
+      expect(Array.from(h).length).toBeGreaterThanOrEqual(MIN_HOOK_CHARS)
+      expect(isTitlePrefix(h, title)).toBe(false)
+    }
+    expect(hooks.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('DB-12/D6：titleOverlap 判据本身可复算（去省略号、忽略大小写、按去重码点）', () => {
+    expect(titleOverlap('Neuronto Agentic Resource Discovery (ARD) Index.', 'neuronto/agentic-resource-discovery: Neuronto Agentic Resource Discovery (ARD) Index'))
+      .toBeGreaterThan(0.9)
+    expect(titleOverlap('Federated search across every public ARD registry', 'Neuronto Agentic Resource Discovery (ARD) Index'))
+      .toBeLessThan(TITLE_ECHO_OVERLAP)
+    expect(titleOverlap('', 'any title')).toBe(0)
+    // 尾部省略号不参与判定：截断钩子与完整钩子同判
+    expect(titleOverlap('Federated search across every public ARD regi…', 'Neuronto Agentic Resource Discovery (ARD) Index'))
+      .toBe(titleOverlap('Federated search across every public ARD regi', 'Neuronto Agentic Resource Discovery (ARD) Index'))
+  })
 })
 
 describe('buildPack / assertPackContract（tuna-brief-v1 装配）', () => {
@@ -235,6 +284,12 @@ describe('truncateWhy（DB-11/D5：词边界截断）', () => {
     expect(cut.endsWith('…')).toBe(true)
     const last = cut.match(/([A-Za-z]+)…$/)?.[1]
     if (last) expect('Matches your interests in llm and a strong benchmark signal').toContain(last)
+    // DB-12 收口实测：切点落在单词中间时必须整词退掉（16:51 真实包出过 'be…'）
+    const real = truncateWhy('Matches your interests in inference, benchmark, with a strong "release" signal', 40)
+    expect(real.startsWith('Matches your interests in inference')).toBe(true)
+    const src2 = 'Matches your interests in inference, benchmark, with a strong "release" signal'
+    const lastWord = real.match(/([A-Za-z]+)…$/)?.[1]
+    if (lastWord) expect(new RegExp(`\\b${lastWord}\\b`).test(src2)).toBe(true)
     expect(truncateWhy('很短', 40)).toBe('很短')
     expect(Array.from(truncateWhy('a'.repeat(60), 40)).length).toBeLessThanOrEqual(40)
   })

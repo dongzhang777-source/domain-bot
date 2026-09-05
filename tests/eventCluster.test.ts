@@ -176,3 +176,64 @@ describe('eventKeyMap', () => {
     for (const key of m.values()) expect(ids.has(key)).toBe(true)
   })
 })
+
+/**
+ * DB-12/D7：newsline 同一事件 6 变体未合并的诊断与修复。
+ *
+ * 标题**逐字取自** outbox/tuna/feed-pack-newsline-newslinemtobsx4p.json（DB-11 §D7 点名的
+ * 「OpenAI agents 劫持德国 wiki」事件，2026-09-05 轮主材）。
+ *
+ * 诊断结论（先复现再动手）：聚类判据本身能聚拢这批变体——5/6 词级不同、实体相同的
+ * 变体本就聚成一簇。真正把两个**独立事件**缝成一簇的边是转载渠道名：
+ * `… - IBTimes India`（Astra 事件）与 `… - India Today`（wiki 事件）共享实体词 `india`，
+ * 并查集经它把 GPT-6 Astra 与德国 wiki 劫持缝成一簇（修复前 9 条跨两事件一簇）。
+ * outlet 名同样是专有名词，capitalizedTokens 的大小写信号区分不了「事件标识」与「来源词汇」。
+ */
+describe('DB-12/D7：newsline 同事件变体的真实洗稿形态', () => {
+  const WIKI = [
+    p('w1', 'Thousands of OpenAI Agents Quietly Turned an Abandoned Wiki Into Their Coordination Channel'),
+    p('w2', 'Rogue OpenAI agents go crazy, hijack German site to use as message board, report says - India Today'),
+    p('w3', 'Researchers Document OpenAI Agent Swarm That Repurposed German Wiki – Unite.AI'),
+    p('w4', 'OpenAI agents secretly hijacked a German wiki for two months to swap tips on evading rules - Startup Fortune'),
+    p('w5', 'Inside the OpenAI Swarm Crisis That Proved Safety Guardrails — Ipan'),
+    // 词级差异过大、实体只剩一个的变体：词法上孤立（与 The Verge 那条 Astra 同类，归 LLM reviewer 语义归并）
+    p('w6', 'Discovery of a new OpenAI agent message board'),
+  ]
+  // 同一轮主材里的另一个独立事件：GPT-6 Astra。修复前它经 `india` 被缝进 wiki 簇
+  const ASTRA_REAL = [
+    p('s1', 'GPT-6 Astra Goes Live: AGI Claim Fails OpenAI Own Bar, Monitoring Called Fragile'),
+    p('s2', 'OpenAI launches GPT-6 Astra, the AI model built to do more than answer questions - IBTimes India'),
+    p('s3', 'OpenAI launches new Astra model amid growing scrutiny over agents safety | Reuters'),
+    p('s4', 'GPT-6 Astra on OpenRouter'),
+  ]
+
+  const homeOf = (items: Probe[], id: string) => clusterByEntity(items, STOP).find((c) => c.items.some((i) => i.id === id))!
+
+  it('词级不同、实体相同的同事件变体聚成一簇（5/6）', () => {
+    const home = homeOf(WIKI, 'w1')
+    const ids = new Set(home.items.map((i) => i.id))
+    for (const id of ['w1', 'w2', 'w3', 'w4', 'w5']) {
+      expect(ids.has(id), `${id} 应在 wiki 事件簇内`).toBe(true)
+    }
+  })
+
+  it('转载渠道名后缀不再是事件实体：两个独立事件不得被缝成一簇（修复前经 india 误并）', () => {
+    const all = [...WIKI, ...ASTRA_REAL]
+    const wikiHome = homeOf(all, 'w1')
+    for (const a of ASTRA_REAL) {
+      expect(wikiHome.items.some((i) => i.id === a.id), `Astra 条目 ${a.id} 被误并进 wiki 簇`).toBe(false)
+    }
+    expect(homeOf(all, 's1').items.map((i) => i.id).sort()).toEqual(['s1', 's2', 's3', 's4'])
+    // 连接边本身被拆除：`india` 不再是事件实体
+    expect(
+      entityTokens('OpenAI launches GPT-6 Astra, the AI model built to do more than answer questions - IBTimes India', STOP).has('india'),
+    ).toBe(false)
+  })
+
+  it('守门：剥完后缀若一个实体都不剩，退回原标题抽词（不让条目失去聚类资格）', () => {
+    // 剥掉 " - Cloudflare" 后只剩小写词 → 实体集为空 → 必须回退，否则该条目永不参与合并
+    const t = entityTokens('outage hits global services - Cloudflare', STOP)
+    expect(t.size).toBeGreaterThan(0)
+    expect(t.has('cloudflare')).toBe(true)
+  })
+})

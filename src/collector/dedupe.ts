@@ -45,6 +45,29 @@ export function itemId(url: string, title: string, body: string): string {
   return `c-${contentHash({ title, body }).slice(0, 20)}`
 }
 
+/**
+ * 剥掉标题末尾的**转载渠道名后缀**（` - India Today`、` | Reuters`、` – Unite.AI`、` — Ipan`）。
+ *
+ * 为什么事件聚类必须剥（DB-12/D7 实测）：newsline 2026-09-05 轮里，
+ * `OpenAI launches GPT-6 Astra, the AI model … - IBTimes India` 与
+ * `Rogue OpenAI agents go crazy, hijack German site … - India Today` 因后缀里的
+ * `india` 被并查集缝成一簇——GPT-6 Astra 与「agents 劫持德国 wiki」是两个独立事件，
+ * 那条连接边不是事件实体，是转载渠道名。后缀 outlet 名同样是专有名词，
+ * `capitalizedTokens` 的大小写信号区分不了「事件标识」与「来源词汇」这两类。
+ *
+ * 判据刻意收窄，避免误伤：只剥**末尾一段**、分隔符必须是前带空白的 `-`/`–`/`—`/`|`、
+ * 后接 1-4 个首字母大写词。正文中间的连字符复合词（state-of-the-art）与
+ * `K2 Horizon: Frontier Performance` 这类冒号结构不受影响。
+ *
+ * 已知代价（记录在案，不装作没有）：末段恰好是真实实体的标题（`Apple unveils M4 - MacBook Pro`）
+ * 会丢掉末段实体。不引入 outlet 名单来缓解——名单维护成本高且漏一个就漏一条边。
+ */
+export function stripOutletSuffix(title: string): string {
+  return title
+    .replace(/\s+[-–—|]\s+[A-Z][A-Za-z0-9.'’&]*(?:\s+[A-Z][A-Za-z0-9.'’&]*){0,3}\s*$/, '')
+    .trim()
+}
+
 export function jaccard(a: Set<string>, b: Set<string>): number {
   if (a.size === 0 && b.size === 0) return 0
   let inter = 0

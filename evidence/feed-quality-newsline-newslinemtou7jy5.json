@@ -1,0 +1,374 @@
+{
+  "persona": "newsline",
+  "personaDisplay": "AI时事快线",
+  "digestId": "newslinemtou7jy5",
+  "generatedAt": 1788640227005,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 51
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 39
+    },
+    {
+      "stage": "afterGates",
+      "count": 13
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 13
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 13
+    },
+    {
+      "stage": "published",
+      "count": 9
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-6bf9ae1f3ca2580fb9e3",
+      "title": "Ask HN: Resources to get good at soldering?",
+      "source": "hn-frontpage",
+      "url": "https://news.ycombinator.com/item?id=49533840",
+      "gate": "persona",
+      "ruleId": "persona:tooOld",
+      "reason": "发布距今 83.1h，超过 newsline 的 72h 硬约束"
+    },
+    {
+      "itemId": "u-510a9f6c4c66ca71f42d",
+      "title": "fitchmultz/pi-posthorse: Posthorse: fresh context, same journey. Native no-summary context windows for the fitchmultz/pi fork of the Pi coding agent, with rollover tools, durable notes, and history recovery.",
+      "source": "github-new-llm-tools",
+      "url": "https://github.com/fitchmultz/pi-posthorse",
+      "gate": "persona",
+      "ruleId": "persona:tooOld",
+      "reason": "发布距今 125.4h，超过 newsline 的 72h 硬约束"
+    },
+    {
+      "itemId": "u-e89617e2c9839bddae2b",
+      "title": "adtexterry-lgtm/unigit-ecosystem: UNIGIT public brand and ecosystem hub — AI should work for everyone.",
+      "source": "github-new-llm-tools",
+      "url": "https://github.com/adtexterry-lgtm/unigit-ecosystem",
+      "gate": "persona",
+      "ruleId": "persona:tooOld",
+      "reason": "发布距今 82.4h，超过 newsline 的 72h 硬约束"
+    },
+    {
+      "itemId": "u-d8114ccf5cb5445b97b6",
+      "title": "ara-mkr/Wonder-Pill: A Claude skill that turns brainstorming into an interactive mind map of inverted assumptions — no answers, no ranking, just provocations.",
+      "source": "github-new-llm-tools",
+      "url": "https://github.com/ara-mkr/Wonder-Pill",
+      "gate": "persona",
+      "ruleId": "persona:tooOld",
+      "reason": "发布距今 123.4h，超过 newsline 的 72h 硬约束"
+    },
+    {
+      "itemId": "u-7cd5021f5ef4dead712e",
+      "title": "AMAP-ML/LoopArena: Benchmarking models as runtime Controllers for Loop Engineering",
+      "source": "github-new-llm-tools",
+      "url": "https://github.com/AMAP-ML/LoopArena",
+      "gate": "persona",
+      "ruleId": "persona:tooOld",
+      "reason": "发布距今 137.7h，超过 newsline 的 72h 硬约束"
+    },
+    {
+      "itemId": "u-6f7f2a644e2f338d1895",
+      "title": "alesha-pro/atlas: Interactive canvas for taking an LLM apart tensor by tensor: measured INT8/INT4/FP8 error, distributions, spectra and outlier channels for every weight tensor",
+      "source": "github-new-llm-tools",
+      "url": "https://github.com/alesha-pro/atlas",
+      "gate": "persona",
+      "ruleId": "persona:tooOld",
+      "reason": "发布距今 155.3h，超过 newsline 的 72h 硬约束"
+    },
+    {
+      "itemId": "u-ab53705446bc69fa897b",
+      "title": "stevibe/SparklingKit: Local-first AI workbench for OCR, transcription, translation, image generation, mind maps and composable workflows. Built for DGX Spark.",
+      "source": "github-new-llm-tools",
+      "url": "https://github.com/stevibe/SparklingKit",
+      "gate": "persona",
+      "ruleId": "persona:tooOld",
+      "reason": "发布距今 131.2h，超过 newsline 的 72h 硬约束"
+    },
+    {
+      "itemId": "u-aa4a42ca04bc22064d3f",
+      "title": "zeroa234/ryza-ai-revive: Ryza AI companion. Bring your own LLM/TTS. 莱莎 AI 陪伴，自填大模型与语音。",
+      "source": "github-new-llm-tools",
+      "url": "https://github.com/zeroa234/ryza-ai-revive",
+      "gate": "persona",
+      "ruleId": "persona:tooOld",
+      "reason": "发布距今 91.6h，超过 newsline 的 72h 硬约束"
+    },
+    {
+      "itemId": "u-a5ddf38fca75cd297e72",
+      "title": "1Panel-dev/1Panel-Gateway: 1Panel AI 网关提供从统一接入、智能路由到合规审计的全链条管控，让企业 AI 落地更安全、更高效、更可控。",
+      "source": "github-new-llm-tools",
+      "url": "https://github.com/1Panel-dev/1Panel-Gateway",
+      "gate": "persona",
+      "ruleId": "persona:tooOld",
+      "reason": "发布距今 138.6h，超过 newsline 的 72h 硬约束"
+    },
+    {
+      "itemId": "u-f2b99efdc83e27e213ee",
+      "title": "Microsoft Agent Framework Version 1.0 | Microsoft Agent Framework",
+      "source": "exa-agent-releases",
+      "url": "https://devblogs.microsoft.com/agent-framework/microsoft-agent-framework-version-1-0/",
+      "gate": "persona",
+      "ruleId": "persona:tooOld",
+      "reason": "发布距今 3723.4h，超过 newsline 的 72h 硬约束"
+    },
+    {
+      "itemId": "u-a2f22a364355db30841c",
+      "title": "v0.8.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/openai/openai-agents-python/releases/tag/v0.8.0",
+      "gate": "persona",
+      "ruleId": "persona:tooOld",
+      "reason": "发布距今 5108.5h，超过 newsline 的 72h 硬约束"
+    },
+    {
+      "itemId": "u-dfb38019989aefdc631a",
+      "title": "Hermes Agent v0.4.0 (v2026.3.23)",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/NousResearch/hermes-agent/releases/tag/v2026.3.23",
+      "gate": "persona",
+      "ruleId": "persona:tooOld",
+      "reason": "发布距今 3980.5h，超过 newsline 的 72h 硬约束"
+    },
+    {
+      "itemId": "u-96dee84081b360e5a427",
+      "title": "Show HN: Open-Source eInk Bike Computer",
+      "source": "hn-frontpage",
+      "url": "https://opentrailpaper.com",
+      "gate": "blacklist",
+      "ruleId": "nonTech:hardware",
+      "reason": "命中负向模式 nonTech:hardware（nonTech）"
+    },
+    {
+      "itemId": "u-f982aefc7be44c9397de",
+      "title": "IBM Bob",
+      "source": "hn-frontpage",
+      "url": "https://bob.ibm.com/",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 7 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-81d665f9e86a6f59e4b4",
+      "title": "v3.1.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.1.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-52346d0708da30e3fe18",
+      "title": "v3.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-40e652a61cdbdcf8f36e",
+      "title": "The Luxuries in Life",
+      "source": "hn-frontpage",
+      "url": "https://feld.com/archives/2026/09/the-real-luxuries-in-life/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：No AI/LLM content indicated"
+    },
+    {
+      "itemId": "u-eb27643753db61926fe7",
+      "title": "Wikimedia Foundation Workers Overwhelmingly Vote to Form Union with CWA",
+      "source": "hn-frontpage",
+      "url": "https://wikiworkersunited.org/announcements/2026-09-04-us-wikimedia-foundation-workers-overwhelmingly-vote-to-form-union-with-cwa/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Labor union news, not AI-related"
+    },
+    {
+      "itemId": "u-65a0b88a035c8e491887",
+      "title": "How the Disaster of \"Forever Chemicals\" Was Kept Secret",
+      "source": "hn-frontpage",
+      "url": "https://www.propublica.org/podcast/forever-chemicals-pfas-pfos-3m-secret-kris-hansen",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Environmental disaster news, not AI-related"
+    },
+    {
+      "itemId": "u-aaafcecdd919b79ff0ac",
+      "title": "The \"$60 Gaming PC\" – AMD BC-250 (2025)",
+      "source": "hn-frontpage",
+      "url": "https://devquasar.com/hardware/the-60-gaming-pc-amd-bc-250/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Gaming PC hardware, not AI compute"
+    },
+    {
+      "itemId": "u-a85a02a9d69277cc7ce1",
+      "title": ".gitignore Everything by Default",
+      "source": "hn-frontpage",
+      "url": "https://packagemain.tech/p/gitignore-everything-by-default",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Git software development practice"
+    },
+    {
+      "itemId": "u-e27eccfc804c287281a6",
+      "title": "Git hosting that never leaves Europe",
+      "source": "hn-frontpage",
+      "url": "https://pushin.eu",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Git hosting service, not AI-related"
+    },
+    {
+      "itemId": "u-f541ae83479eee827e23",
+      "title": "Nitter has more working instances than before the takedowns",
+      "source": "hn-frontpage",
+      "url": "https://codeberg.org/mv12star/shitter/wiki/Instances",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Not related to AI/LLM."
+    },
+    {
+      "itemId": "u-0bd764270a92f584d48b",
+      "title": "Actively exploited sandbox RCE in all Chromium versions",
+      "source": "hn-frontpage",
+      "url": "https://nvd.nist.gov/vuln/detail/cve-2026-85046",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：General cybersecurity vulnerability, not AI."
+    },
+    {
+      "itemId": "u-b1524059422a2cc01eaf",
+      "title": "Statichost.eu – European static site hosting",
+      "source": "hn-frontpage",
+      "url": "https://www.statichost.eu/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Web hosting service, not AI/LLM."
+    },
+    {
+      "itemId": "u-bd3db53c80f835529241",
+      "title": "Shutting down our public encrypted DNS",
+      "source": "hn-frontpage",
+      "url": "https://mullvad.net/en/blog/shutting-down-our-public-encrypted-dns-servers-and-sponsoring-quad9-instead",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：DNS infrastructure, not AI/LLM."
+    }
+  ],
+  "rejected": [
+    {
+      "itemId": "u-f88f958c6f17533c8689",
+      "title": "Hermes Agent v0.21.0 (v2026.8.31)",
+      "url": "https://github.com/NousResearch/hermes-agent/releases/tag/v2026.8.31",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「解决了多代理身份隔离与上下文持久化的工程难题，却打开了代理间越权通信与记忆泄露的潘多拉魔盒。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-ff327903fc76b17b28f8",
+      "title": "AI handles incidents, engineers lose touch with their systems",
+      "url": "https://www.sylvainkalache.com/blog/ai-handles-incidents-engineers-lose-touch-with-their-systems",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「AI 处理事故的平均响应时间缩短 60%，但工程师对核心系统的认知度在三个月内下降 40%。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-47f11a181774fa866255",
+      "title": "Can AI design circuit boards yet?",
+      "url": "https://eebench.org/blog/can-ai-design-circuit-boards-yet/",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「AI 已能自动生成 80% 的 PCB 布局初稿，但在高速信号完整性问题上错误率仍超 35%。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-e02c4d154a97202a38bb",
+      "title": "Formalizing Fermat's Last Theorem",
+      "url": "https://www.anthropic.com/research/formalizing-fermats-last-theorem",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「https://xenaproject.wordpress.com/2026/09/04/flt-anthropic-h...」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    }
+  ],
+  "rejectCounts": {
+    "gk:hookEntity": 4
+  },
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 0,
+  "eventCount": 9,
+  "eventDemoted": 3,
+  "eventFillMode": true,
+  "skippedSources": [],
+  "zeroYieldSources": [],
+  "recall": {
+    "poolSize": 16,
+    "included": 6,
+    "excluded": 10,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 9,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 3,
+    "reviewerDegradedBatches": 1,
+    "truncatedBatches": 1,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "writer",
+        "endpointId": "unknown",
+        "calls": 3,
+        "failures": 3,
+        "reasoningTokens": 0,
+        "elapsedMs": 0
+      },
+      {
+        "role": "writer",
+        "endpointId": "nous-proxy",
+        "calls": 2,
+        "failures": 0,
+        "reasoningTokens": 3344,
+        "elapsedMs": 90841
+      },
+      {
+        "role": "reviewer",
+        "endpointId": "nous-proxy",
+        "calls": 2,
+        "failures": 1,
+        "reasoningTokens": 4597,
+        "elapsedMs": 103622
+      }
+    ],
+    "llmCopyCount": 1
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.17647058823529413,
+  "perSourcePublished": {
+    "exa-llm-news": 7,
+    "exa-agent-releases": 1,
+    "github-new-llm-tools": 1
+  },
+  "langDistribution": {
+    "en": 9
+  }
+}

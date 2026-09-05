@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { canonicalUrl, sameDocument } from '../src/collector/canonicalUrl.js'
 import { itemId } from '../src/collector/dedupe.js'
@@ -386,6 +388,45 @@ describe('门禁 3：dedupeByCanonicalUrl / capEvents', () => {
     expect(r.kept.map((k) => k.url)).toContain('https://b.com/2')
     // 降权不丢弃：总数守恒
     expect(r.kept.length + r.demoted.length).toBe(realAstra.length)
+  })
+
+  /**
+   * DB-12/D7：同事件词级变体（真实洗稿形态）必须被合并/降权到 maxPerEvent 内。
+   *
+   * 标题逐字取自 2026-09-05 newsline 主材（DB-11 §D7 点名的 6 条同事件变体里词法不孤立的 5 条），
+   * 外加同一轮里的 GPT-6 Astra 独立事件——修复前两者经转载渠道名 `india` 被缝成一簇，
+   * 每个事件的独立配额被对方挤占。
+   */
+  it('DB-12/D7：同事件词级变体合并降权到 maxPerEvent 内，且不挤占其他事件配额', () => {
+    // 用**产线词表**（config/gates.json）而不是本文件的内联精简版：真实洗稿标题的连接词
+    // 依赖产线级 eventStopwords（agents/safety/report 在产线表里被剔除），精简版会把它们
+    // 当实体词、制造跨事件假边。与 tests/eventCluster.test.ts 读产线词表是同一条理由。
+    const prod: GatesConfig = JSON.parse(readFileSync(join(process.cwd(), 'config/gates.json'), 'utf8')) as GatesConfig
+    const mk = (title: string, url: string, score: number) =>
+      ({ ...item({ title, url }), valueScore: score, isNew: true, reason: '' })
+    const wiki = [
+      mk('Thousands of OpenAI Agents Quietly Turned an Abandoned Wiki Into Their Coordination Channel', 'https://w.com/1', 0.9),
+      mk('Rogue OpenAI agents go crazy, hijack German site to use as message board, report says - India Today', 'https://w.com/2', 0.85),
+      mk('Researchers Document OpenAI Agent Swarm That Repurposed German Wiki – Unite.AI', 'https://w.com/3', 0.8),
+      mk('OpenAI agents secretly hijacked a German wiki for two months to swap tips on evading rules - Startup Fortune', 'https://w.com/4', 0.7),
+      mk('Inside the OpenAI Swarm Crisis That Proved Safety Guardrails — Ipan', 'https://w.com/5', 0.6),
+    ]
+    const astra = [
+      mk('GPT-6 Astra Goes Live: AGI Claim Fails OpenAI Own Bar, Monitoring Called Fragile', 'https://a.com/1', 0.95),
+      mk('OpenAI launches GPT-6 Astra, the AI model built to do more than answer questions - IBTimes India', 'https://a.com/2', 0.75),
+      mk('GPT-6 Astra on OpenRouter', 'https://a.com/3', 0.65),
+    ]
+
+    const r = capEvents([...wiki, ...astra], prod)
+    expect(r.eventCount).toBe(2)
+    // 每个事件最多占 maxPerEvent 个坑：5 条 wiki 变体只留 2 条，3 条 Astra 也只留 2 条
+    expect(r.kept.filter((k) => k.url.startsWith('https://w.com'))).toHaveLength(prod.dedupe!.maxPerEvent!)
+    expect(r.kept.filter((k) => k.url.startsWith('https://a.com'))).toHaveLength(prod.dedupe!.maxPerEvent!)
+    // 降权不丢弃：超额 4 条全在 demoted 里，总数守恒
+    expect(r.demoted).toHaveLength(wiki.length + astra.length - 4)
+    expect(r.kept.length + r.demoted.length).toBe(wiki.length + astra.length)
+    // 同事件得同一 eventKey，两事件不等
+    expect(r.eventKeyOf.get(wiki[0]!.id)).not.toBe(r.eventKeyOf.get(astra[0]!.id))
   })
 })
 

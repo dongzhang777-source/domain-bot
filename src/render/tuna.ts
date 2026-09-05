@@ -14,6 +14,8 @@
 // 实体词卡片用 topicTokens（大小写无关）：卡片是把主题词摊给读者看，
 // 不是在做事件聚类，故不需要专有名词口径（用 entityTokens 会让小写实体全被剔掉、卡片变空）。
 import { topicTokens } from '../gates/eventCluster.js'
+// 词级覆盖率（titleOverlap）复用同一分词器，不另立口径（P2-2 教训：分词必须单点维护）
+import { tokenize } from '../collector/dedupe.js'
 
 /**
  * 钩子/概要限长（码点）。`src/gatekeeper/assertions.ts` 的 `gk:shapeViolation` 复用本常量——
@@ -100,9 +102,15 @@ export function truncateWhy(text: string, maxChars: number): string {
   const chars = Array.from(text)
   if (chars.length <= maxChars) return text
   const head = chars.slice(0, maxChars - 1).join('')
-  const m = head.match(/^(.*\S)[\s，。、！？·,:;!?–—"'()（）]+$/s)
-  const trimmed = m ? m[1]! : head
-  if (Array.from(trimmed).length >= Math.floor(maxChars / 2)) return `${trimmed}…`
+  // 先剥头部尾部的悬空空白/标点（上一刀可能正好落在词尾标点前）
+  const trimmed = head.replace(/[\s，。、！？·,:;!?–—"'()（）]+$/, '')
+  // 再找最后一个词边界（空白）回退：`…inference, be` 这类半词就是硬切留下的——
+  // 必须把残词整段退掉，而不是只修标点。回退位置不得低于预算一半（防越退越短）。
+  const lastSpace = trimmed.lastIndexOf(' ')
+  const min = Math.floor(maxChars / 2)
+  if (lastSpace >= min) return `${trimmed.slice(0, lastSpace).replace(/[\s，。、！？·,:;!?–—"'()（）]+$/, '')}…`
+  // 无可用空格（CJK 连续文本或超长单词）：码点硬切与词边界等价
+  if (Array.from(trimmed).length >= min) return `${trimmed}…`
   return `${head}…`
 }
 
@@ -135,6 +143,42 @@ export function isTitlePrefix(hook: string, title: string): boolean {
 }
 
 /**
+ * 「首句钩子与标题高度同源」的判定阈值（DB-12/D6）。
+ *
+ * 取 0.8 的依据：DB-11 验机报告 §B5 用「hook[0] 与标题字符重叠 >80%」扫出主材 33 条冗余钩子
+ * （例：hook[0]=「Neuronto Agentic Resource Discovery (ARD) Index.」实质是标题子串）。
+ * 修复沿用同一阈值修同一批人群，但**判据从字符级换成词级**——依据见 `titleOverlap`：
+ * 字符级对英文散文饱和（同一文章的两句话本就共享 >0.9 的去重字母），会把信息增量真实的
+ * 次句也误杀（实测 56 条主材里 25 条如此）。
+ */
+export const TITLE_ECHO_OVERLAP = 0.8
+
+/**
+ * 钩子对标题的**词级覆盖率**（DB-12/D6，可复算纯函数，测试与复核都用它）。
+ *
+ * 分子＝钩子（去尾部省略号）经 `tokenize()` 的词元里有多少出现在标题词元中；
+ * 分母＝钩子词元数。**必须复用 `tokenize()`**（`src/collector/dedupe.ts`）而不是另立分词：
+ * CJK 2-gram 行为在那里，另写一套会造成中英文口径分裂（本项目已修过的 P2-2 缺陷）。
+ *
+ * 词级而非字符级的依据：钩子的信息增量＝它带来了多少标题没有的**词**。字符级判据在英文上
+ * 饱和——"Federated search across every public ARD registry…" 与标题共享 0.92 的去重字母，
+ * 却带来了 6 个新词，判它是标题复读是误杀。词级下它只有 0.14（7 个词元里 1 个来自标题），
+ * 而真正的复读（首句＝标题）得 1.0，判然分开。
+ *
+ * 仍是粗粒度词法判据，是故意的：判据要能在测试与复核里复算，语义级归并归 DB-05 的 reviewer。
+ */
+export function titleOverlap(hook: string, title: string): number {
+  const bare = hook.replace(/…$/, '').trim()
+  if (!bare) return 0
+  const hookTokens = tokenize(bare)
+  if (hookTokens.size === 0) return 0
+  const titleTokens = tokenize(title)
+  let shared = 0
+  for (const t of hookTokens) if (titleTokens.has(t)) shared += 1
+  return shared / hookTokens.size
+}
+
+/**
  * 展示用最小停用词表。产线会传入 `config/gates.json` 的完整 `eventStopwords`；
  * 本默认值仅保证单独调用 deriveHooks（如单测）时不把 the/of/model 当实体展示。
  */
@@ -156,11 +200,17 @@ const DISPLAY_STOPWORDS: ReadonlySet<string> = new Set([
  *   2. **实体式**——从标题+正文抽的实体词卡（讲主题）
  *   3. **次句式**——正文第二句，不足则回退「领域｜实体卡」（讲另一侧面）
  *
+ * 首句/次句是**句子形状**的候选，若与标题高度同源（`titleOverlap` ≥ 0.8，DB-12/D6）
+ * 会被跳过——首句复述标题时，钩子对读者是零增量（DB-11 §B5 实测主材 33 条如此）。
+ * 首句被跳过时门面位由次句顶上（信息增量最高的递补），实体卡退居第二。
+ *
  * 三条均非标题前缀、均 ≥ MIN_HOOK_CHARS，因此能过 gatekeeper 的
  * `gk:mechanicalTruncation` / `gk:fragmentHook` 两条硬断言。
  *
  * **返回可能少于 3 条**：素材不足时宁可少给，也不用标题截断充数——
  * `gk:shapeViolation` 会否决不足 3 条的条目并由候补池递补（宁缺毋滥）。
+ * 唯一的例外放宽：非同源候选凑不满 3 条时，同源候选仍回补——少一条冗余钩子
+ * 换「整条被否决 + 候补池递补」不划算，冗余钩子只损失信息增量，否决损失整条内容。
  *
  * **这仍是机械兜底**：DB-05 的 LLM writer 上线后本函数只在其降级链末端被调用。
  */
@@ -178,27 +228,48 @@ export function deriveHooks(
   const entities = [...topicTokens(`${title} ${clean}`, stopwords)].slice(0, 3)
   const entityCard = entities.join(' · ')
 
-  const candidates = [
-    // 1. 首句式
-    truncateChars(sentences[0] ?? '', maxHook),
-    // 2. 实体式
-    truncateChars(entityCard, maxHook),
-    // 3. 次句式，不足则领域｜实体卡
-    truncateChars(sentences[1] ?? '', maxHook),
-    truncateChars(entityCard ? `${domain}｜${entityCard}` : '', maxHook),
-    truncateChars(entities[0] && sentences[0] ? `${entities[0]}：${sentences[0]}` : '', maxHook),
-  ]
+  const lead = truncateChars(sentences[0] ?? '', maxHook)
+  const card = truncateChars(entityCard, maxHook)
+  const second = truncateChars(sentences[1] ?? '', maxHook)
+  const domainCard = truncateChars(entityCard ? `${domain}｜${entityCard}` : '', maxHook)
+  const entityLead = truncateChars(entities[0] && sentences[0] ? `${entities[0]}：${sentences[0]}` : '', maxHook)
+  // 首句是标题复读时，门面位让给次句（信息增量最高），实体卡退居第二
+  const leadEchoes = !!lead && titleOverlap(lead, title) >= TITLE_ECHO_OVERLAP
+
+  // sentence 标记：只有句子形状的候选参与「与标题同源」判定。
+  // 实体卡的词元本就抽自标题（覆盖率恒接近 1），但它是第三视角（主题卡），
+  // 拿「与标题同源」判它会把自己误杀——故只豁免它，句子候选一律判。
+  const candidates: Array<{ text: string; sentence: boolean }> = leadEchoes
+    ? [
+        { text: second, sentence: true },
+        { text: card, sentence: false },
+        { text: domainCard, sentence: false },
+        { text: entityLead, sentence: true },
+      ]
+    : [
+        { text: lead, sentence: true },
+        { text: card, sentence: false },
+        { text: second, sentence: true },
+        { text: domainCard, sentence: false },
+        { text: entityLead, sentence: true },
+      ]
 
   const hooks: string[] = []
-  for (const c of candidates) {
-    const cleaned = c.trim()
-    // 碎片门槛：与 gk:fragmentHook 同源，不把不够长的候选当成钩子充数
-    if (Array.from(cleaned).length < MIN_HOOK_CHARS) continue
-    if (hooks.includes(cleaned)) continue
-    // 标题前缀截断不得入选（与 gk:mechanicalTruncation 同源）
-    if (isTitlePrefix(cleaned, title)) continue
-    hooks.push(cleaned)
-    if (hooks.length === 3) break
+  // allowEcho=false 先挑与标题不同源的；素材不足再放宽（见上「唯一例外」）
+  const collect = (allowEcho: boolean): void => {
+    for (const c of candidates) {
+      const cleaned = c.text.trim()
+      // 碎片门槛：与 gk:fragmentHook 同源，不把不够长的候选当成钩子充数
+      if (Array.from(cleaned).length < MIN_HOOK_CHARS) continue
+      if (hooks.includes(cleaned)) continue
+      // 标题前缀截断不得入选（与 gk:mechanicalTruncation 同源）
+      if (isTitlePrefix(cleaned, title)) continue
+      if (!allowEcho && c.sentence && titleOverlap(cleaned, title) >= TITLE_ECHO_OVERLAP) continue
+      hooks.push(cleaned)
+      if (hooks.length === 3) break
+    }
   }
+  collect(false)
+  if (hooks.length < 3) collect(true)
   return hooks
 }
