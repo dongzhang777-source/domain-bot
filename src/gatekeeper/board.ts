@@ -43,21 +43,55 @@ export interface BoardInput {
   publishedFingerprintCount: number
   /** 配置正则编译失败清单。非空即说明有规则实际未生效，必须显式暴露 */
   compileErrors: Array<{ gate: GateId; ruleId: string; error: string }>
+  /**
+   * AI 编辑部（DB-05）的实际生效情况。
+   *
+   * **不得省略**：静默降级正是「格式全绿 ≠ 内容合格」的老毛病——
+   * 端点挂了退回机械文案，产出看起来仍然字段齐备、限长合法，但钩子已退化成
+   * 实体词卡片。看板不记，下一轮就没人知道质量已塌回原点。
+   */
+  editorial: EditorialBoard
+}
+
+export interface EditorialBoard {
+  /** 配置上是否启用 */
+  enabled: boolean
+  /** 是否真的产出了 LLM 文案或判定 */
+  active: boolean
+  /** 未生效的原因（active=false 时必填） */
+  inactiveReason?: string
+  /** 降级批数：端点全链失败或响应不可解析，产物走机械兜底 */
+  writerDegradedBatches: number
+  reviewerDegradedBatches: number
+  /** 因 max_tokens 撞顶被截断的批数；>0 说明批大小或 maxTokens 配错了 */
+  truncatedBatches: number
+  /** reviewer 灵敏度自检是否通过。未通过时其分数一律不得用于判定 */
+  calibrationPassed: boolean | null
+  calibrationProblems: string[]
+  /** 实际走到的端点与用量（降级链走到哪一档必须看得出来） */
+  endpoints: Array<{ role: string; endpointId: string; calls: number; failures: number; reasoningTokens: number; elapsedMs: number }>
+  /** 拿到 LLM 文案的条数（对比 published 总数即知机械兜底占比） */
+  llmCopyCount: number
 }
 
 export interface QualityBoard extends BoardInput {
   schema: 'domain-bot-quality-board-v1'
   /**
-   * 自进化是否生效。**当前恒为 false 且不得省略**：
-   * 老张 2026-09-04 裁决砍掉 Telegram 改走 tuna 行为回流，而 `memory/views.json` 的
-   * 唯一写入方是已退役的 `src/feedback/receiver.ts`（全仓 `store.recordView` /
-   * `recordEngagement` 仅在该文件被调用），故 `interest.ts` 的 Beta 后验与
-   * `weights.ts` 的源权重学习**无信号流入**。
-   * 看板若不明写，读者会以为「自进化」在跑——那正是本项一直犯的
-   * 「文档声明 > 落地」毛病。待 DB-06 回流通道落地后由 ingest 侧置真。
+   * 自进化是否生效。**不得硬编码**，必须由真实信号存量算出来。
+   *
+   * 背景：老张 2026-09-04 裁决砍掉 Telegram 改走 tuna 行为回流，而 `memory/views.json`
+   * 的原唯一写入方是已退役的 `src/feedback/receiver.ts`。在 DB-06 回流通道落地前
+   * 本值恒为 false（实测 `memory/weights.json` 早已是空的 `{"weights":{}}`，
+   * 而文档一直宣称「自进化」）。
+   *
+   * 回流接通后（`src/ingest/tuna-signals.ts` 已有入账）本值自动转 true。
+   * 写死 false 会在接通后变成假话，写死 true 则在断开时掩盖欠账——两头都是
+   * 本项一直犯的「文档声明 > 落地」毛病。
    */
   selfEvolutionActive: boolean
   selfEvolutionNote: string
+  /** 真实信号存量：看板读者能自己核对，不必信 selfEvolutionActive 这个布尔 */
+  signalCounts: { views: number; engagements: number; feedback: number }
   /** 派生统计：入选比（published / collected），废除均摊配额后的主指标 */
   qualityYieldRatio: number
   /** 派生统计：各源入选条数（看渠道真实水质，不再看是否凑满配额） */
@@ -66,13 +100,16 @@ export interface QualityBoard extends BoardInput {
   langDistribution: Record<string, number>
 }
 
-const SELF_EVOLUTION_NOTE =
-  'Telegram 链路已退役（老张 2026-09-04 裁决），views/engagements 失去唯一写入方，' +
-  'interest.ts 的 Beta 后验与 weights.ts 的源权重学习无信号流入。待 DB-06 tuna 行为回流通道落地。'
+const NOTE_INACTIVE =
+  '无行为信号入账（views/engagements/feedback 全为 0）。Telegram 链路已退役（老张 2026-09-04 裁决），' +
+  '回流通道见 src/ingest/tuna-signals.ts；tuna 侧的 native 持久化与信号导出属 DB-06（根仓 WS-16）。'
+const NOTE_ACTIVE =
+  '已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。'
 
 export function buildBoard(
   input: BoardInput,
   published: Array<{ source: string; lang: string }>,
+  signalCounts: { views: number; engagements: number; feedback: number } = { views: 0, engagements: 0, feedback: 0 },
 ): QualityBoard {
   const collected = input.funnel[0]?.count ?? 0
   const perSourcePublished: Record<string, number> = {}
@@ -81,12 +118,14 @@ export function buildBoard(
     perSourcePublished[p.source] = (perSourcePublished[p.source] ?? 0) + 1
     langDistribution[p.lang] = (langDistribution[p.lang] ?? 0) + 1
   }
+  const active = signalCounts.views + signalCounts.engagements + signalCounts.feedback > 0
 
   return {
     ...input,
     schema: 'domain-bot-quality-board-v1',
-    selfEvolutionActive: false,
-    selfEvolutionNote: SELF_EVOLUTION_NOTE,
+    selfEvolutionActive: active,
+    selfEvolutionNote: active ? NOTE_ACTIVE : NOTE_INACTIVE,
+    signalCounts,
     qualityYieldRatio: collected === 0 ? 0 : published.length / collected,
     perSourcePublished,
     langDistribution,
@@ -94,42 +133,75 @@ export function buildBoard(
 }
 
 /**
- * 看板一致性自检：漏斗必须可对账。
+ * 看板一致性自检。
  *
- * 这是防「看板只是修辞」的硬检查——DB-03 的第一期漏斗就无人能复算。
- * 返回不一致清单，调用方（CLI / 测试）据此熔断或断言。
+ * 分两级，因为两者的处置必须不同：
+ * - **fatal**：漏斗不可对账、配置正则失效——说明看板或闸门本身在骗人，必须熔断。
+ * - **warning**：编辑部降级、批被截断、自检未过——产线仍可发布（机械兜底仍过十条客观断言），
+ *   但必须**吵**：写进看板、打到 stderr。若把降级也当 fatal，端点一抖整轮就废；
+ *   若完全不报，就是 DB-03 的静默降级老毛病。两头都不能要。
  */
-export function auditBoard(board: QualityBoard): string[] {
-  const problems: string[] = []
+export interface BoardAudit {
+  fatal: string[]
+  warnings: string[]
+}
+
+export function auditBoard(board: QualityBoard): BoardAudit {
+  const fatal: string[] = []
+  const warnings: string[] = []
   const first = board.funnel[0]?.count ?? 0
   const last = board.funnel[board.funnel.length - 1]?.count ?? 0
 
   // 漏斗必须单调不增
   for (let i = 1; i < board.funnel.length; i++) {
     if (board.funnel[i]!.count > board.funnel[i - 1]!.count) {
-      problems.push(`漏斗非单调：${board.funnel[i - 1]!.stage}(${board.funnel[i - 1]!.count}) → ${board.funnel[i]!.stage}(${board.funnel[i]!.count})`)
+      fatal.push(`漏斗非单调：${board.funnel[i - 1]!.stage}(${board.funnel[i - 1]!.count}) → ${board.funnel[i]!.stage}(${board.funnel[i]!.count})`)
     }
   }
 
   // 末层必须等于实际发布数
   if (last !== Object.values(board.perSourcePublished).reduce((a, b) => a + b, 0)) {
-    problems.push(`漏斗末层 ${board.funnel[board.funnel.length - 1]?.stage}=${last} 与 perSourcePublished 合计不等`)
+    fatal.push(`漏斗末层 ${board.funnel[board.funnel.length - 1]?.stage}=${last} 与 perSourcePublished 合计不等`)
   }
 
   // 被拦 + 被否决 的总数不得超过入口（超过说明有重复计账）
   const totalDropped = board.dropped.length + board.rejected.length
   if (totalDropped > first) {
-    problems.push(`dropped(${board.dropped.length}) + rejected(${board.rejected.length}) = ${totalDropped} 超过入口 ${first}`)
+    fatal.push(`dropped(${board.dropped.length}) + rejected(${board.rejected.length}) = ${totalDropped} 超过入口 ${first}`)
   }
 
   if (board.compileErrors.length > 0) {
-    problems.push(
+    fatal.push(
       `${board.compileErrors.length} 条配置正则编译失败（实际未生效，闸门假绿）：` +
         board.compileErrors.map((e) => `${e.gate}/${e.ruleId}: ${e.error}`).join('; '),
     )
   }
 
-  return problems
+  // 静默降级守：配置说启用了但实际没生效。产线仍可发布（机械兜底仍过终审），
+  // 但必须吵——这是 DB-03 的核心教训：退回机械文案后产出仍字段齐备、限长合法，
+  // 看上去一切正常，只有看板能暴露它。
+  if (board.editorial.enabled && !board.editorial.active) {
+    warnings.push(`AI 编辑部已启用但未生效，本轮全量走机械兜底：${board.editorial.inactiveReason ?? '原因未记录'}`)
+  }
+  if (board.editorial.truncatedBatches > 0) {
+    warnings.push(`${board.editorial.truncatedBatches} 个批因 max_tokens 撞顶被截断（批大小或 maxTokens 配错，该批产出已降级）`)
+  }
+  if (board.editorial.writerDegradedBatches > 0 || board.editorial.reviewerDegradedBatches > 0) {
+    warnings.push(`编辑部降级批：writer ${board.editorial.writerDegradedBatches} / reviewer ${board.editorial.reviewerDegradedBatches}`)
+  }
+  if (board.editorial.calibrationPassed === false) {
+    warnings.push(`reviewer 灵敏度自检未通过，其分数本轮不用于判定：${board.editorial.calibrationProblems.join(' / ')}`)
+  }
+  if (board.editorial.active && board.editorial.llmCopyCount < board.funnel[board.funnel.length - 1]!.count) {
+    warnings.push(
+      `仅 ${board.editorial.llmCopyCount}/${board.funnel[board.funnel.length - 1]!.count} 条拿到 LLM 文案，其余走机械兜底`,
+    )
+  }
+  if (!board.selfEvolutionActive) {
+    warnings.push(`自进化未生效：${board.selfEvolutionNote}`)
+  }
+
+  return { fatal, warnings }
 }
 
 /** 落盘。路径 `evidence/feed-quality-<persona>-<ts>.json`。 */

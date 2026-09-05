@@ -1,4 +1,5 @@
 import type { GatesConfig, PersonaConfig, ScoredItem } from '../types.js'
+import type { WrittenCopy } from '../editorial/writer.js'
 import {
   type AssertionVerdict,
   checkEventOversubscribed,
@@ -43,6 +44,11 @@ export interface GatekeepOptions {
   eventKeyOf?: ReadonlyMap<string, string>
   /** 实体词聚类的通用词表，透传给渲染做实体卡钩子 */
   stopwords?: ReadonlySet<string>
+  /**
+   * AI 编辑部（DB-05）的文案产出，按 item.id 索引。缺省或查不到时走机械兜底。
+   * LLM 文案与机械文案走**同一套终审断言**，不享受豁免。
+   */
+  copiesOf?: ReadonlyMap<string, WrittenCopy | null>
 }
 
 export interface RejectedRecord {
@@ -140,6 +146,7 @@ function renderOne(item: ScoredItem, index: number, opts: GatekeepOptions) {
     index,
     eventKey: opts.eventKeyOf?.get(item.id) ?? item.id,
     stopwords: opts.stopwords,
+    copy: opts.copiesOf?.get(item.id) ?? null,
   })
 }
 

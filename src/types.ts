@@ -71,7 +71,15 @@ export interface DomainConfig {
 // ---------- 三层硬闸门（config/gates.json） ----------
 
 /** 黑名单规则分组：分组 id 供质量看板逐层归因（1396→750→703 的漏斗必须可复算）。 */
-export type BlacklistGroup = 'damaged' | 'adRecruit' | 'crossDomain' | 'nonTech'
+/**
+ * 黑名单分组。分组 id 供质量看板逐层归因（1396→750→703 的漏斗必须可复算）。
+ *
+ * `hype` 单列一组的理由：标题党/情绪炒作对**两个 bot 都不可接受**，属跨 persona 的
+ * 全局禁忌，不该写在 persona.rejectRules 里（实测踩过：clickbait 只配在 newsline，
+ * 于是「GPT-6 Astra横空出世，全网彻底炸锅了！」从 deepthought 产线泄漏）。
+ * persona.rejectRules 只放两个 bot 各自特有的红线。
+ */
+export type BlacklistGroup = 'damaged' | 'adRecruit' | 'crossDomain' | 'nonTech' | 'hype'
 
 export interface BlacklistRule {
   /** 归因标识，落进 DropRecord.ruleId */

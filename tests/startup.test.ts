@@ -209,7 +209,7 @@ describe('CLI：collect 分阶段落点（为 DB-05 编辑作业预留）', () =
 })
 
 describe('CLI：启动横幅', () => {
-  it('打印 persona、闸门规则数与 LLM 状态；未配 LLM 时报 fallback', () => {
+  it('打印 persona、闸门规则数与编辑部状态；未启用时报 off', () => {
     const { io, out } = captureIO()
     const root = process.cwd()
     const gates = JSON.parse(readFileSync(join(root, 'config/gates.json'), 'utf8')) as GatesConfig
@@ -218,22 +218,34 @@ describe('CLI：启动横幅', () => {
     expect(line).toContain('personas=newsline')
     expect(line).toContain(`blacklist=${gates.blacklist.length}`)
     expect(line).toContain(`minPoints=${gates.minPoints}`)
-    expect(line).toMatch(/LLM: (on|fallback)/)
+    expect(line).toContain(`maxPerEvent=${gates.dedupe.maxPerEvent}`)
+    expect(line).toMatch(/编辑部: (on|off)/)
   })
 
-  it('OPENAI_API_KEY 不得让横幅误报 LLM on（那是其他工具的通用变量）', () => {
+  it('编辑部启用时横幅必须点名 writer 与 reviewer 各自的端点（写与评分离要看得见）', () => {
     const { io, out } = captureIO()
     const root = process.cwd()
     const gates = JSON.parse(readFileSync(join(root, 'config/gates.json'), 'utf8')) as GatesConfig
-    const saved = process.env.OPENAI_API_KEY
-    process.env.OPENAI_API_KEY = 'sk-someone-elses-tool'
-    try {
-      printBanner([loadPersona(root, 'newsline')], gates, io)
-      expect(out.join('\n')).toContain('fallback (heuristic)')
-    } finally {
-      if (saved === undefined) delete process.env.OPENAI_API_KEY
-      else process.env.OPENAI_API_KEY = saved
-    }
+    const cfg = JSON.parse(readFileSync(join(root, 'config/editor.json'), 'utf8'))
+    printBanner([loadPersona(root, 'newsline')], gates, io, { ...cfg, enabled: true })
+    const line = out.join('\n')
+    expect(line).toContain('编辑部: on')
+    expect(line).toContain('writer=')
+    expect(line).toContain('reviewer=')
+    // 两端点必须不同：同一模型既写又评构成循环（老张裁决 4）
+    const w = line.match(/writer=([^,)]+)/)![1]
+    const r = line.match(/reviewer=([^)]+)\)/)![1]
+    expect(w).not.toBe(r)
+  })
+
+  it('编辑部启用但端点全不可解析时，横幅必须显示"无端点"而不是假装 on', () => {
+    const { io, out } = captureIO()
+    const root = process.cwd()
+    const gates = JSON.parse(readFileSync(join(root, 'config/gates.json'), 'utf8')) as GatesConfig
+    const cfg = JSON.parse(readFileSync(join(root, 'config/editor.json'), 'utf8'))
+    const empty = { ...cfg, enabled: true, writer: { ...cfg.writer, chain: [] }, reviewer: { ...cfg.reviewer, chain: [] } }
+    printBanner([loadPersona(root, 'newsline')], gates, io, empty)
+    expect(out.join('\n')).toContain('writer=无端点')
   })
 })
 

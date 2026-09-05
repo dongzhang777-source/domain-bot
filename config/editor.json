@@ -1,0 +1,66 @@
+{
+  "_note": "AI 编辑部配置。老张 2026-09-04 裁决：端点不绑定，做成配置项 + 自动降级链，不硬编码任何地址。enabled=false 时产线走启发式打分 + 机械渲染兜底（阶段一行为），不报错。",
+  "_endpointNote": "下列默认端点是 2026-09-04 实测本机可用者，不是承诺：127.0.0.1:8052 是 ~/.codex/nous-proxy.py（实测 4.1s/短请求，但无视传入 model 参数、一律路由到 meituan/longcat-2.0:free，免费档有限流与 OAuth 刷新依赖风险）；127.0.0.1:8080 是 llama-server 跑本地 Qwen3.8-Flash-Next（实测生成 9.9 tok/s，与 Claude Code 共用 8082 代理会抢资源）。老张口述的 192.168.100.1:8002 + deepseek-v4-flash 经实测不存在，故未写入。",
+  "_throughputNote": "实测吞吐决定批大小，不是拍的：writer 批=3/max_tokens=6000 单批 47.1s（completion 2500 其中 reasoning 1739），200 条约 53 分钟；reviewer 批=10/max_tokens=1500 单批 17.8s（completion 940 其中 reasoning 795），200 条约 6 分钟。两角色走不同端点可并行，墙钟由 writer 决定。批大小受限于 reasoning 开销（占输出 70-85%），不是可见输出；思考无法用 reasoning:false / chat_template_kwargs.enable_thinking:false / reasoning_effort:low 关闭（三种参数实测 reasoning 不变）。",
+  "enabled": false,
+  "stagingDir": "staging/jobs",
+  "writer": {
+    "batchSize": 3,
+    "maxTokens": 6000,
+    "temperature": 0.3,
+    "chain": [
+      {
+        "id": "nous-proxy",
+        "baseUrlEnv": "EDITOR_WRITER_BASE_URL",
+        "baseUrlDefault": "http://127.0.0.1:8052/v1",
+        "apiKeyEnv": "EDITOR_WRITER_API_KEY",
+        "modelEnv": "EDITOR_WRITER_MODEL",
+        "modelDefault": "qwen3.7-plus",
+        "timeoutMs": 240000
+      },
+      {
+        "id": "llama-local",
+        "baseUrlEnv": "EDITOR_WRITER_FALLBACK_BASE_URL",
+        "baseUrlDefault": "http://127.0.0.1:8080/v1",
+        "apiKeyEnv": "EDITOR_WRITER_FALLBACK_API_KEY",
+        "modelEnv": "EDITOR_WRITER_FALLBACK_MODEL",
+        "modelDefault": "qwen",
+        "timeoutMs": 420000
+      }
+    ]
+  },
+  "reviewer": {
+    "batchSize": 10,
+    "maxTokens": 1500,
+    "temperature": 0.2,
+    "_separationNote": "写与评分离（老张裁决 4）：reviewer 必须与 writer 用不同底座，否则同一模型既写又评构成循环。默认 writer 走 8052（云端 longcat 族）、reviewer 走 8080（本地 Qwen3.8 族），异族异失效模式。",
+    "chain": [
+      {
+        "id": "llama-local",
+        "baseUrlEnv": "EDITOR_REVIEWER_BASE_URL",
+        "baseUrlDefault": "http://127.0.0.1:8080/v1",
+        "apiKeyEnv": "EDITOR_REVIEWER_API_KEY",
+        "modelEnv": "EDITOR_REVIEWER_MODEL",
+        "modelDefault": "qwen",
+        "timeoutMs": 420000
+      },
+      {
+        "id": "nous-proxy",
+        "baseUrlEnv": "EDITOR_REVIEWER_FALLBACK_BASE_URL",
+        "baseUrlDefault": "http://127.0.0.1:8052/v1",
+        "apiKeyEnv": "EDITOR_REVIEWER_FALLBACK_API_KEY",
+        "modelEnv": "EDITOR_REVIEWER_FALLBACK_MODEL",
+        "modelDefault": "qwen3.7-plus",
+        "timeoutMs": 240000
+      }
+    ]
+  },
+  "calibration": {
+    "_note": "reviewer 灵敏度自检。本项目已有「打分饱和 + 传送带消耗使『噪音逐轮下降』验收标准完全无读数」的前车之鉴，故 reviewer 上线前必须先过自检，否则其分数不得用作任何判定。",
+    "goldStandardPath": "tests/fixtures/gold-standard.json",
+    "minDistinctBuckets": 3,
+    "maxSaturationRate": 0.5,
+    "minAgreementRate": 0.7,
+    "_saturationNote": "金标集（tests/fixtures/gold-standard.json，取自 DB-03 真实审计）自身顶档(7-10)占比 29.5%，故阈值取 0.5 而非更低——阈值低于金标集自身的顶档占比会让完全复现人工判定的 reviewer 也判失败，那是标尺坏了不是仪器坏了。"
+  }
+}

@@ -24,7 +24,10 @@ import { appendObservation, observeRound } from './memory/observe.js'
 import { refreshWeights } from './memory/weights.js'
 import { settleStaleExposures } from './memory/interest.js'
 import { gatekeep, type GatekeepResult } from './gatekeeper/index.js'
-import { buildBoard, type FunnelStage, type QualityBoard } from './gatekeeper/board.js'
+import { buildBoard, type EditorialBoard, type FunnelStage, type QualityBoard } from './gatekeeper/board.js'
+import { runEditorial, type EditorialConfig, type EditorialOutcome } from './editorial/index.js'
+import { meetsQualityBar } from './editorial/reviewer.js'
+import type { WrittenCopy } from './editorial/writer.js'
 
 /**
  * 双产线批产编排：采集 → 精确去重 → 四层闸门 → 打分 → 事件聚合 → 截断 → 主编终审 → 归档观测。
@@ -58,6 +61,15 @@ export interface PipelineOptions {
   now?: number
   /** 跨产线共享的已发布指纹库；命中即一票否决 */
   knownCanonical?: ReadonlySet<string>
+  /**
+   * AI 编辑部配置（DB-05）。缺省或 `enabled=false` 时走启发式打分 + 机械渲染兜底，
+   * 产线**不停摆**，但看板必须显式记 `editorialActive=false` 与原因（不得静默降级）。
+   */
+  editorial?: EditorialConfig
+  /** 仓根，编辑部进度文件与金标集的路径基准 */
+  root?: string
+  /** 测试注入点：代替真实 HTTP 请求模型端点 */
+  editorialFetchFn?: FetchFn
 }
 
 export interface PipelineResult {
@@ -74,6 +86,8 @@ export interface PipelineResult {
   backfillPool: ScoredItem[]
   /** 渲染 → 过终审 → 递补后的最终产出 */
   published: GatekeeperInput[]
+  /** AI 编辑部的执行情况（未启用时 active=false 且带 inactiveReason） */
+  editorial: EditorialOutcome | null
   funnel: FunnelStage[]
   dropped: DropRecord[]
   gatekeep: GatekeepResult
@@ -154,11 +168,57 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
   const capped = capEvents(candidates, opts.gates)
   const dropped: DropRecord[] = [...gateOutcome.dropped, ...capped.dropped]
 
-  // 8. maxItems 截断（上限，不是配额；无每源下限）
-  const selected = capped.kept.slice(0, opts.persona.maxItems)
-  const backfillPool = capped.kept.slice(opts.persona.maxItems)
+  // 8. 编辑部（DB-05）+ maxItems 截断。
+  //
+  // 只对「主池 + 等量候补」跑编辑部，不对全量 capped.kept 跑：后者可达数百条，
+  // 按实测 writer 每条 15.7s 会把单轮拖到数小时。maxItems 两份的量级（≤240 条）
+  // 对应实测的 ≈53 分钟，落在老张认可的「过夜批产 1 小时级」内。
+  const editorialTargets = capped.kept.slice(0, opts.persona.maxItems * 2)
+  let editorial: EditorialOutcome | null = null
+  let ordered = editorialTargets
+  const copiesOf = new Map<string, WrittenCopy | null>()
 
-  // 9. 渲染 → 主编终审 → 递补 → 事件复检 → 重编号
+  if (opts.editorial) {
+    editorial = await runEditorial({
+      config: opts.editorial,
+      persona: opts.persona,
+      candidates: editorialTargets,
+      root: opts.root ?? process.cwd(),
+      now,
+      fetchFn: opts.editorialFetchFn,
+    })
+    if (!editorial.active) {
+      console.warn(`[editorial] 未生效，退回机械兜底：${editorial.inactiveReason ?? '未知原因'}`)
+    }
+    editorialTargets.forEach((item, i) => copiesOf.set(item.id, editorial!.copies[i] ?? null))
+
+    // reviewer 分数只用于**递补排序**：达标的排前、不达标的排后。
+    // 不用它判定合格——本项目已有「打分饱和使验收无读数」的前车之鉴，
+    // 且 LLM 自分自用构成循环。合格与否由 gatekeeper 的十条客观断言定。
+    // reviewer 未生效（qualifiedIndices=null）时保持原分数序，不得用空判定洗掉排序。
+    if (editorial.qualifiedIndices) {
+      const demoted = new Set(
+        editorial.verdicts
+          .map((v, i) => ({ v, item: editorialTargets[i]! }))
+          .filter(({ v }) => v !== null && (v.decision === '剔除' || !meetsQualityBar(v, opts.persona)))
+          .map(({ item }) => item.id),
+      )
+      ordered = [
+        ...editorialTargets.filter((it) => !demoted.has(it.id)),
+        ...editorialTargets.filter((it) => demoted.has(it.id)),
+      ]
+    }
+  }
+
+  // 9. maxItems 截断（上限，不是配额；无每源下限）
+  const selected = ordered.slice(0, opts.persona.maxItems)
+  const backfillPool = [
+    ...ordered.slice(opts.persona.maxItems),
+    // 未进编辑部作用域的剩余候选仍可做候补（只是没有 LLM 文案，走机械兜底）
+    ...capped.kept.slice(editorialTargets.length),
+  ]
+
+  // 10. 渲染 → 主编终审 → 递补 → 事件复检 → 重编号
   const digestId = sanitizeDigestId(`${opts.persona.id}${now.toString(36)}`)
   const gatekeepResult = gatekeep(selected, backfillPool, {
     persona: opts.persona,
@@ -168,19 +228,45 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     knownCanonical: opts.knownCanonical ?? new Set<string>(),
     eventKeyOf: capped.eventKeyOf,
     stopwords,
+    copiesOf,
   })
 
-  // 10. 归档：全量候选入档（截断前），再 markPushed 升级实际发布的。
+  // 11. 归档：全量候选入档（截断前），再 markPushed 升级实际发布的。
   // 两步分离是「解传送带」纪律：只归档推送条目的话，去重库只屏蔽推过的 N 条，
   // 同一批源内容被逐轮消费，推送质量单调衰减（本项目已踩过并修过）。
   store.recordItems(candidates, now)
   const publishedIds = publishedItemIds([...selected, ...backfillPool], gatekeepResult)
   store.markPushed(publishedIds)
+
+  // 内容档 + ref 登记：tuna 行为回流的归因链靠它。
+  // tuna 侧信号按 postId 归因，而 postId = `domain-bot-<persona>:<digestId>:<index>`，
+  // 去掉首段就是 `registerDigestRef` 要求的 ref 格式 `<digestId>:<index>`（正则 ^[a-z0-9]+:\d+$）。
+  // 没这一步，回流的信号无法映射回 itemId 与 source → weights/interest 仍然喂不进去。
+  // 同时 settleStaleExposures 靠 saveDigest 的 clusters[].source 结算「曝光未展开」弱负证据。
+  const itemIdByUrl = new Map([...selected, ...backfillPool].map((it) => [it.url, it.id]))
+  store.saveDigest({
+    id: digestId,
+    generatedAt: now,
+    clusters: gatekeepResult.published.map((p, i) => ({
+      ref: `${digestId}:${i}`,
+      title: p.title,
+      summary: p.summary,
+      why: p.why,
+      items: [{ url: p.url, isNew: true, source: p.source }],
+    })),
+  })
+  for (let i = 0; i < gatekeepResult.published.length; i++) {
+    const p = gatekeepResult.published[i]!
+    const itemId = itemIdByUrl.get(p.url)
+    if (!itemId) continue
+    store.registerDigestRef(`${digestId}:${i}`, digestId, itemId, p.source)
+  }
+
   // 行为→兴趣映射：结算已过判定期的曝光。Telegram 退役后无新曝光入账，
   // 本调用在 DB-06 回流通道落地前恒为空转——保留接线，看板明写 selfEvolutionActive=false。
   settleStaleExposures(opts.memoryDir, now)
 
-  // 11. 观测
+  // 12. 观测
   const funnel: FunnelStage[] = [
     { stage: 'collected', count: collected.length },
     { stage: 'afterDedupe', count: afterDedupe.length },
@@ -232,8 +318,12 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
       zeroYieldSources,
       publishedFingerprintCount: collectCanonicalUrls(gatekeepResult.published).length,
       compileErrors: gateOutcome.compileErrors,
+      editorial: editorialBoard(editorial, gatekeepResult.published, [...selected, ...backfillPool], copiesOf),
     },
     gatekeepResult.published,
+    // 真实信号存量：决定看板的 selfEvolutionActive。不得硬编码——
+    // 回流接通前恒 0（false），接通后自动转 true，两头都不说谎。
+    { views: store.viewCount(), engagements: store.engagementAll().length, feedback: store.feedbackCount() },
   )
 
   return {
@@ -245,12 +335,81 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     selected,
     backfillPool,
     published: gatekeepResult.published,
+    editorial,
     funnel,
     dropped,
     gatekeep: gatekeepResult,
     board,
     skippedSources: skipped.map((s) => s.id),
     zeroYieldSources,
+  }
+}
+
+/**
+ * 把编辑部执行结果投成看板字段。
+ *
+ * `enabled` 与 `active` 必须分开记：前者是配置意图，后者是实际结果。
+ * 两者不一致（启用了但未生效）就是静默降级，auditBoard 会报 warning。
+ */
+function editorialBoard(
+  editorial: EditorialOutcome | null,
+  published: GatekeeperInput[],
+  pool: ScoredItem[],
+  copiesOf: ReadonlyMap<string, WrittenCopy | null>,
+): EditorialBoard {
+  if (!editorial) {
+    return {
+      enabled: false,
+      active: false,
+      inactiveReason: '未配置编辑部（config/editor.json 未传入产线），走启发式打分 + 机械渲染兜底',
+      writerDegradedBatches: 0,
+      reviewerDegradedBatches: 0,
+      truncatedBatches: 0,
+      calibrationPassed: null,
+      calibrationProblems: [],
+      endpoints: [],
+      llmCopyCount: 0,
+    }
+  }
+  const endpoints: EditorialBoard['endpoints'] = []
+  for (const [role, job] of [
+    ['writer', editorial.writerJob],
+    ['reviewer', editorial.reviewerJob],
+  ] as const) {
+    for (const [endpointId, s] of Object.entries(job?.state.endpointUsage ?? {})) {
+      endpoints.push({
+        role,
+        endpointId,
+        calls: s.calls,
+        failures: s.failures,
+        reasoningTokens: s.reasoningTokens,
+        elapsedMs: s.elapsedMs,
+      })
+    }
+  }
+  // 已发布条目里有多少真拿到了 LLM 文案。
+  // 回映路径：published.url → pool 里的 ScoredItem.id → copiesOf。
+  // 不得用「钩子数 = 3」之类的外观特征估算：机械兜底也给 3 条钩子，分不出来。
+  const itemByUrl = new Map(pool.map((it) => [it.url, it.id]))
+  let llmCopyCount = 0
+  for (const p of published) {
+    const srcId = itemByUrl.get(p.url)
+    if (srcId !== undefined && copiesOf.get(srcId)) llmCopyCount += 1
+  }
+
+  return {
+    enabled: editorial.enabled,
+    active: editorial.active,
+    inactiveReason: editorial.inactiveReason,
+    writerDegradedBatches: editorial.writerJob?.state.degradedBatches.length ?? 0,
+    reviewerDegradedBatches: editorial.reviewerJob?.state.degradedBatches.length ?? 0,
+    truncatedBatches:
+      (editorial.writerJob?.state.truncatedBatches.length ?? 0) +
+      (editorial.reviewerJob?.state.truncatedBatches.length ?? 0),
+    calibrationPassed: editorial.calibration ? editorial.calibration.problems.length === 0 : null,
+    calibrationProblems: editorial.calibration?.problems ?? [],
+    endpoints,
+    llmCopyCount: editorial.active ? llmCopyCount : 0,
   }
 }
 

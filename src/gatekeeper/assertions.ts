@@ -32,7 +32,12 @@ export interface AssertionInput {
   now: number
   /** 跨产线共享的已发布指纹库 */
   knownCanonical: ReadonlySet<string>
-  /** 同批全部条目，供跨条目断言（URL 唯一）使用 */
+  /**
+   * 同批已接受的条目 + **待判条目作为最后一个元素**。
+   *
+   * 契约：`gk:duplicateUrl` 假定待判条目就是 `batch` 的末位，只否决「前面已有同规范 URL」
+   * 的那一条，而不是把重复组全部否决——全否决会白白浪费坑位，且无法判定哪条才是权威源。
+   */
   batch: ReadonlyArray<{ url: string }>
 }
 
@@ -78,14 +83,20 @@ function checkDamaged(item: GatekeeperInput): AssertionVerdict {
     : fail('gk:damagedBody', `含 [object Object]，解析已损坏（命中字段：${fieldOf(item, hit)})`)
 }
 
-/** 2. 规范 URL 批内唯一。 */
+/**
+ * 2. 规范 URL 批内唯一。
+ *
+ * 只否决「前面已出现过同规范 URL」的那一条（待判条目约定为 `batch` 末位）。
+ * 把重复组全否决看似更严，实际是浪费：第一条本来合法，否决它只会让坑位空着。
+ */
 function checkDuplicateUrl(item: GatekeeperInput, batch: ReadonlyArray<{ url: string }>): AssertionVerdict {
   const canon = canonicalUrl(item.url)
   if (!canon) return ok('gk:duplicateUrl') // 无 URL 的条目由 id 内容哈希兜底，不在此判
-  const dupes = batch.filter((b) => canonicalUrl(b.url) === canon).length
-  return dupes <= 1
+  const prior = batch.slice(0, -1)
+  const hit = prior.find((b) => canonicalUrl(b.url) === canon)
+  return hit === undefined
     ? ok('gk:duplicateUrl')
-    : fail('gk:duplicateUrl', `规范 URL 在本批出现 ${dupes} 次：${canon}`)
+    : fail('gk:duplicateUrl', `规范 URL 与本批已接受条目重复：${canon}`)
 }
 
 /** 3. 不在已发布指纹库（跨产线共享，防同一事件两个 bot 各发一遍）。 */

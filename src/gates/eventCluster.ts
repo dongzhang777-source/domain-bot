@@ -21,8 +21,26 @@ import { tokenize } from '../collector/dedupe.js'
  * 复算脚本：`npm run probe:events`（scripts/probe-event-cluster.mjs）。
  */
 
-/** 实体 token 的最短码点数：≤2 的 token 噪音过大（含 tokenize 滤掉的单字符）。 */
-const MIN_ENTITY_LEN = 3
+/**
+ * 实体 token 的最短码点数，**按语言区分**。
+ *
+ * 为何不能统一取 3（实测踩过的坑，2026-09-04）：`tokenize()` 对 CJK 连续段产出的是
+ * **2-gram**（P2-2 修复：中文标题字间无空格，纯 split 得不到可聚类 token），
+ * 统一门槛 3 会把全部 CJK 2-gram 滤掉——中文内容的实体集只剩「整段长串」，
+ * 于是中文条目之间永远聚不拢、`gk:hookEntity` 对中文钩子也永远判不过。
+ * 实测证据：中文正文的实体集曾是
+ * `{bench, reasoning, 是首个评估, 智能体动态知识冲突的交互基准, 实验显示参数知识与检索上下文冲突时性能明显退化}`
+ * ——「知识」「冲突」「检索」这些真正有用的 2-gram 全部缺席。
+ *
+ * 故：含 CJK 的 token 门槛 2（保住 2-gram），纯 ASCII 门槛 3（滤掉 kc/up/of 这类碎片）。
+ */
+const MIN_ASCII_LEN = 3
+const MIN_CJK_LEN = 2
+const HAS_CJK = /[\u3400-\u4dbf\u4e00-\u9fff]/
+
+function longEnough(token: string): boolean {
+  return token.length >= (HAS_CJK.test(token) ? MIN_CJK_LEN : MIN_ASCII_LEN)
+}
 
 /**
  * 从混合 token 里抽连续 ASCII 字母/数字段。
@@ -45,10 +63,14 @@ const ASCII_RUN = /[a-z0-9]{3,}/g
 export function entityTokens(title: string, stopwords: ReadonlySet<string>): Set<string> {
   const out = new Set<string>()
   for (const t of tokenize(title)) {
-    if (t.length >= MIN_ENTITY_LEN && !stopwords.has(t)) out.add(t)
-    // 混合 token 的 ASCII 段补抽：`astra横空出世` → 额外得到 `astra`
+    if (!longEnough(t)) continue
+    if (stopwords.has(t)) continue
+    out.add(t)
+    // 混合 token 的 ASCII 段补抽：`astra横空出世` → 额外得到 `astra`。
+    // 根因：normalizeText 只把非 `\p{L}\p{N}` 换成空格，而 CJK **属于 `\p{L}`**，
+    // 所以英文实体会粘在中文里成一个 token，跨语言同事件因此聚不拢。
     for (const m of t.match(ASCII_RUN) ?? []) {
-      if (m.length >= MIN_ENTITY_LEN && !stopwords.has(m)) out.add(m)
+      if (m.length >= MIN_ASCII_LEN && !stopwords.has(m)) out.add(m)
     }
   }
   return out

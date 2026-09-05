@@ -17,7 +17,21 @@
   "minQualityScore": 7,
   "clusterThreshold": 0.35,
   "rejectRules": [
-    { "id": "nameExplainer", "pattern": "^what is|^什么是|simple explanation|explained for beginners|key concepts explained|for dummies" },
-    { "id": "hollowOpinion", "pattern": "我的想法|一点感想|随便聊聊|个人看法|纯属猜测" }
+    {
+      "id": "nameExplainer",
+      "pattern": "^what is|^什么是|simple explanation|explained for beginners|key concepts explained|for dummies"
+    },
+    {
+      "id": "hollowOpinion",
+      "pattern": "我的想法|一点感想|随便聊聊|个人看法|纯属猜测"
+    },
+    {
+      "id": "conceptComparison",
+      "pattern": "\\bvs\\.?\\b|versus|如何选择|选择指南|区别是什么|comparing"
+    },
+    {
+      "id": "listicleClickbait",
+      "pattern": "不是.{0,12}而是|真正的.{0,10}不是|这\\s*\\d+\\s*个|\\d+\\s*个细节|\\d+\\s*个技巧"
+    }
   ]
 }

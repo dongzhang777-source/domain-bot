@@ -79,10 +79,9 @@ describe('接线守卫：关键函数必须在生产路径接通', () => {
  * 调用，属于接通的（反馈为空时退回首轮先验），已列入 GUARDED。
  */
 const KNOWN_DISCONNECTED: Array<{ fn: string; definedIn: string; until: string }> = [
-  { fn: 'recordFeedback', definedIn: 'memory/store.ts', until: 'DB-06 tuna 行为回流通道' },
-  { fn: 'resolveRef', definedIn: 'memory/store.ts', until: 'DB-06 tuna 行为回流通道' },
-  { fn: 'recordView', definedIn: 'memory/store.ts', until: 'DB-06 tuna 行为回流通道' },
-  { fn: 'recordEngagement', definedIn: 'memory/store.ts', until: 'DB-06 tuna 行为回流通道' },
+  // 2026-09-04：recordView / recordEngagement / recordFeedback / resolveRef 已由
+  // src/ingest/tuna-signals.ts 接通，移回 GUARDED（见上组用例）。本清单现为空——
+  // 保留结构是因为它是「欠账不得隐形」的护栏：将来再有函数断开，登记到这里而不是删断言。
 ]
 
 describe('已知断开：自进化反馈回路待 DB-06 接通（不得静默删除本组守卫）', () => {
@@ -95,10 +94,26 @@ describe('已知断开：自进化反馈回路待 DB-06 接通（不得静默删
     })
   }
 
-  it('看板必须明写 selfEvolutionActive=false（断开状态对用户可见）', async () => {
+  it('看板的 selfEvolutionActive 必须由真实信号存量算出，不得硬编码', () => {
     const board = readFileSync(join(SRC, 'gatekeeper/board.ts'), 'utf8')
-    expect(board).toContain('selfEvolutionActive: false')
+    // 写死 false 会在回流接通后变成假话；写死 true 则在断开时掩盖欠账。
+    // 两头都是本项一直犯的「文档声明 > 落地」毛病，故断言它是算出来的。
+    expect(board).not.toMatch(/selfEvolutionActive:\s*(false|true)\s*,/)
+    expect(board).toContain('signalCounts.views + signalCounts.engagements + signalCounts.feedback > 0')
     expect(board).toContain('Telegram 链路已退役')
+    const pipeline = readFileSync(join(SRC, 'pipeline.ts'), 'utf8')
+    expect(pipeline).toContain('store.viewCount()')
+    expect(pipeline).toContain('store.engagementAll()')
+  })
+
+  it('回流接收端接通后，views/engagements/feedback 必须有生产调用者', () => {
+    // DB-06 的接收端 src/ingest/tuna-signals.ts 已落地，故这四个函数从「已知断开」移回接通清单。
+    // 若将来有人再删掉 ingest，这条会红——欠账不会隐形。
+    for (const fn of ['recordView', 'recordEngagement', 'recordFeedback', 'resolveRef']) {
+      const callers = productionCallers(fn, 'memory/store.ts')
+      expect(callers, `${fn} 又断开了（ingest 被删？）`).not.toHaveLength(0)
+      expect(callers.some((c) => c.startsWith('ingest/')), `${fn} 的调用方应含 ingest/`).toBe(true)
+    }
   })
 })
 

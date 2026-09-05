@@ -63,6 +63,18 @@ export class PersonaGate {
           reason: `发布时间在未来（${new Date(item.publishedAt).toISOString()}），判为坏数据`,
         }
       }
+    } else {
+      // 源未给时间时，标题里的显式年份是唯一可用的时效线索。
+      // DB-03 #193 实例：「AI 大模型周报 2024年10月 d」混进 2026 年信息流，
+      // 而 bili 源恒返回 publishedAt=0，上面的时效闸对它完全无效。
+      const stale = staleYearInTitle(item.title, now)
+      if (stale !== null) {
+        return {
+          passed: false,
+          ruleId: 'persona:staleYearInTitle',
+          reason: `源未给发布时间，但标题里写明 ${stale} 年（当前 ${new Date(now).getUTCFullYear()} 年），判为过期旧闻`,
+        }
+      }
     }
 
     const hay = `${item.title}\n${item.body}`
@@ -90,4 +102,29 @@ export function toDropRecord(item: RawItem, verdict: PersonaVerdict): DropRecord
     ruleId: verdict.ruleId ?? 'persona:unknown',
     reason: verdict.reason ?? '',
   }
+}
+
+/** 标题里出现四位年份的形态（中英文日期均覆盖）。 */
+const YEAR_IN_TITLE = /(19|20)\d{2}\s*年|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(?:19|20)\d{2}|\b(?:19|20)\d{2}-\d{2}\b/gi
+
+/**
+ * 标题里是否写明了早于当前年份一年以上的年份。
+ *
+ * 为何需要：bili/ytsearch/jina 恒返回 `publishedAt = 0`（源不给时间），
+ * 时效硬约束对它们完全失效。DB-03 #193 实例：「AI 大模型周报 2024年10月 d」
+ * 堂而皇之混进 2026 年的信息流，审计报告判为「时效性彻底破产」。
+ *
+ * 阈值取「上一年之前」而不是「不等于今年」：年底发布的「2026 年度回顾」在
+ * 2027 年初仍属合法内容，按不等式判会误杀。返回命中的年份供归因，未命中返回 null。
+ */
+export function staleYearInTitle(title: string, now: number): number | null {
+  const currentYear = new Date(now).getUTCFullYear()
+  YEAR_IN_TITLE.lastIndex = 0
+  for (const m of title.match(YEAR_IN_TITLE) ?? []) {
+    const yearMatch = m.match(/(19|20)\d{2}/)
+    if (!yearMatch) continue
+    const year = Number(yearMatch[0])
+    if (year < currentYear - 1) return year
+  }
+  return null
 }

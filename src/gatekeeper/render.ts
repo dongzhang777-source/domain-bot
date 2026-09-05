@@ -8,6 +8,7 @@ import {
   stripMetadata,
   truncateChars,
 } from '../render/tuna.js'
+import type { WrittenCopy } from '../editorial/writer.js'
 
 /**
  * 渲染：把打分阶段的 ScoredItem 转成面向读者的 GatekeeperInput。
@@ -28,6 +29,12 @@ export interface RenderContext {
   eventKey?: string
   /** 实体词聚类的通用词表，透传给 deriveHooks 做实体卡 */
   stopwords?: ReadonlySet<string>
+  /**
+   * AI 编辑部（DB-05）的产出。为 null / 缺省时走机械兜底。
+   * 两者走同一条渲染路径与同一套终审断言——LLM 文案不享受豁免，
+   * 否则「格式全绿 ≠ 内容合格」的老毛病会以新形式重现。
+   */
+  copy?: WrittenCopy | null
 }
 
 export function renderPost(item: ScoredItem, ctx: RenderContext): GatekeeperInput {
@@ -38,15 +45,22 @@ export function renderPost(item: ScoredItem, ctx: RenderContext): GatekeeperInpu
   // 四段式 `domain-bot:<persona>:<digestId>:<index>` 会校验失败。
   const id = `domain-bot-${ctx.persona.id}:${ctx.digestId}:${ctx.index}`
 
+  const copy = ctx.copy ?? null
+  const hooks = copy ? copy.hooks : deriveHooks(item.title, cleanBody, ctx.persona.domain, lang, ctx.stopwords)
+  const summary = copy
+    ? truncateChars(copy.summary, SUMMARY_MAX[lang])
+    : truncateChars(cleanBody.trim(), SUMMARY_MAX[lang])
+
   // why 不得回显内部浮点数（DB-03 §2.4：`"AI深度思想·rss：价值 0.94"` 把打分器调试日志搬上 UI）。
   // 机械兜底期取 scorer 的人话 reason；为空时用 persona+来源模板，永不拼分数。
-  const why = truncateChars(fallbackWhy(item, ctx.persona), WHY_MAX)
+  const why = truncateChars(copy ? copy.why : fallbackWhy(item, ctx.persona), WHY_MAX)
 
   return {
     id,
     title: truncateChars(item.title.trim(), 120),
-    hooks: deriveHooks(item.title, cleanBody, ctx.persona.domain, lang, ctx.stopwords),
-    summary: truncateChars(cleanBody.trim(), SUMMARY_MAX[lang]),
+    hooks,
+    summary,
+    // L3 底料始终给清洗后的原文：LLM 摘要是 L2，不得拿摘要冒充原文（DB-02 缺口 d）
     body: cleanBody || item.title,
     why,
     url: item.url,
@@ -85,11 +99,17 @@ function fallbackWhy(item: ScoredItem, persona: PersonaConfig): string {
  */
 export function renderPosts(
   items: ScoredItem[],
-  ctx: Omit<RenderContext, 'index' | 'eventKey'>,
+  ctx: Omit<RenderContext, 'index' | 'eventKey' | 'copy'>,
   eventKeyOf?: ReadonlyMap<string, string>,
+  copies?: ReadonlyArray<WrittenCopy | null>,
 ): GatekeeperInput[] {
   return items.map((item, index) =>
-    renderPost(item, { ...ctx, index, eventKey: eventKeyOf?.get(item.id) ?? item.id }),
+    renderPost(item, {
+      ...ctx,
+      index,
+      eventKey: eventKeyOf?.get(item.id) ?? item.id,
+      copy: copies?.[index] ?? null,
+    }),
   )
 }
 
