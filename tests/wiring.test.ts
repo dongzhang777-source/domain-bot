@@ -54,6 +54,9 @@ const GUARDED: Array<{ fn: string; definedIn: string; why: string }> = [
   { fn: 'updateWeights', definedIn: 'memory/evolve.ts', why: '进化步骤本身' },
   { fn: 'saveWeights', definedIn: 'memory/store.ts', why: '权重必须持久化，否则每轮从 config 重置' },
   { fn: 'observeRound', definedIn: 'memory/observe.ts', why: '观测必须落盘，否则质量随轮次的变化无读数' },
+  { fn: 'collectStage', definedIn: 'pipeline.ts', why: '分段命令必须复用产线的采集段，不得在 cli 里另写一份（两条采集逻辑必然漂移）' },
+  { fn: 'restoreStage', definedIn: 'staging.ts', why: '分段作业必须从快照还原而不是重跑采集，否则 collect 的落盘就没意义' },
+  { fn: 'editorialTargetsOf', definedIn: 'staging.ts', why: 'edit/review/publish 三段与整链 run 必须共用同一个作用域口径，否则 targetIds 校验成了摆设' },
 ]
 
 describe('接线守卫：关键函数必须在生产路径接通', () => {
@@ -127,13 +130,23 @@ describe('启动链守卫：CLI 必须把闸门、聚合、终审真正串起来
     expect(pipelineSrc).toMatch(/throw new Error/)
   })
 
-  it('事件聚合必须在 maxItems 截断之前（旧管线顺序颠倒导致同事件刷屏）', () => {
+  it('事件聚合必须在终审之前，且 pipeline 不得提前按 maxItems 截断候选集', () => {
     const capAt = pipelineSrc.indexOf('capEvents(')
-    const sliceAt = pipelineSrc.indexOf('.slice(0, opts.persona.maxItems)')
-    expect(capAt).toBeGreaterThan(-1)
-    expect(sliceAt).toBeGreaterThan(-1)
+    const gkAt = pipelineSrc.indexOf('gatekeep(selected')
+    expect(capAt, 'capEvents 必须在产线内被调用').toBeGreaterThan(-1)
+    expect(gkAt, 'gatekeep 必须以 selected 为入参被调用').toBeGreaterThan(-1)
     // 这条是结构性守卫：DB-03 §2.5「缺失主题编辑」与旧 index.ts 先截断后聚类的顺序缺陷
-    expect(capAt, 'capEvents 必须出现在 maxItems 截断之前').toBeLessThan(sliceAt)
+    expect(capAt, 'capEvents 必须出现在 gatekeep 之前').toBeLessThan(gkAt)
+    // 2026-09-04 真跑实测：`selected = ordered.slice(0, maxItems)` 会把低分的同事件条目
+    // 直接挡在终审门外，于是「每事件最多 maxPerEvent 条」的多样性选择根本没有发生机会
+    // （实测 deepthought 1184 采集 → 126 过闸 → 提前截断到 6 条时全是同一事件）。
+    // 截断只能由 gatekeep 的 target 在扫描循环里做，故此处断言 selected 就是 ordered 全量。
+    expect(pipelineSrc, 'selected 必须是事件降权后的全量 ordered，不得在此截断').toMatch(
+      /^\s*const selected = ordered\s*$/m,
+    )
+    expect(pipelineSrc, '产线内不得再出现按 maxItems 的容量截断').not.toMatch(
+      /\.slice\(0,\s*opts\.persona\.maxItems\s*\)/,
+    )
   })
 
   it('渲染必须在终审之前（机械截断/碎片钩子/浮点回显只在渲染后存在）', () => {
@@ -173,5 +186,46 @@ describe('启动链守卫：CLI 必须把闸门、聚合、终审真正串起来
       })
       expect(hits, `${fn} 仍有调用点：${hits.join(', ')}`).toEqual([])
     }
+  })
+})
+
+describe('单一发布路径守卫：不得再长出第二条产线', () => {
+  const cliSrc = readFileSync(join(SRC, 'cli.ts'), 'utf8')
+
+  /**
+   * 三道影子工序（`/tmp/edit.mjs` → 人肉终审 → 人工拷贝进 tuna）的成因就是
+   * 「同一件事有两个实现」。分段命令上线后这个风险变高：`publish` 很容易
+   * 就地再写一遍 buildPack / appendFingerprints。故断言它们在 cli.ts 里各只有
+   * **一个调用点**（就在 `emitPublished` 内；import 行不带括号，不计入），
+   * `run` 与 `publish` 共用同一段落盘逻辑。
+   */
+  it('buildPack / writePack / appendFingerprints / writeBoard 在 cli.ts 内各只有一个调用点', () => {
+    for (const fn of ['buildPack(', 'writePack(', 'appendFingerprints(', 'writeBoard(']) {
+      const occurrences = cliSrc.split(fn).length - 1
+      expect(occurrences, `${fn} 在 cli.ts 内有 ${occurrences} 个调用点，应只有 emitPublished 内一处`).toBe(1)
+    }
+  })
+
+  it('runCommand 与 publishCommand 都必须走 emitPublished（不得各自落盘）', () => {
+    const occurrences = cliSrc.split('emitPublished(').length - 1
+    // 定义 1 次 + runCommand 1 次 + publishCommand 1 次
+    expect(occurrences, `emitPublished 应被两条路径共用（定义+两个调用），实际 ${occurrences} 处`).toBe(3)
+  })
+
+  it('publishCommand 不得自己调 gatekeep / runGates（终审属于 finalizeStage）', () => {
+    const publishBody = cliSrc.slice(cliSrc.indexOf('export async function publishCommand'))
+    expect(publishBody.indexOf('gatekeep(')).toBe(-1)
+    expect(publishBody.indexOf('runGates(')).toBe(-1)
+    // 它只能走 runPipeline({ staged })——这是与整链共用同一段 finalizeStage 的唯一入口
+    expect(publishBody).toMatch(/runPipeline\(\{[\s\S]{0,400}staged: snapshot/)
+  })
+
+  it('collectCommand 不得走整链（否则 collect+publish 会双重归档）', () => {
+    const collectBody = cliSrc.slice(
+      cliSrc.indexOf('export async function collectCommand'),
+      cliSrc.indexOf('export interface StageRunOptions'),
+    )
+    expect(collectBody).toMatch(/collectStage\(/)
+    expect(collectBody.indexOf('runPipeline('), 'collect 不得调整链 runPipeline').toBe(-1)
   })
 })

@@ -324,19 +324,42 @@ describe('gatekeep 编排：渲染 → 断言 → 递补 → 事件复检 → �
     expect(isAccepted(runAssertions(rendered, input({ batch: [rendered] })))).toBe(true)
   })
 
-  it('事件复检在递补之后：同事件超额时裁掉低分项', () => {
+  it('事件复检·候选充足分支：同事件超额时裁掉低分项，并强制多样性', () => {
+    // maxItems=2 而候选有 3 条同事件 + 1 条独立事件 → 多样性足以填满 target，
+    // 超额的同事件条目全部不要（eventTrimmed>0，非填充模式）
+    const selected = [
+      scored('i1', 'OpenAI Astra rollout continues across european regions for LLM serving', 'https://ex.com/1', 0.9),
+      scored('i2', 'OpenAI Astra rollout expands into asian markets for LLM serving', 'https://ex.com/2', 0.8),
+      scored('i3', 'OpenAI Astra rollout reaches enterprise customers for LLM serving', 'https://ex.com/3', 0.7),
+      scored('i4', 'FlashInfer kernels accelerate transformer serving for LLM inference', 'https://ex.com/4', 0.6),
+    ]
+    const eventKeyOf = new Map([['i1', 'ev1'], ['i2', 'ev1'], ['i3', 'ev1'], ['i4', 'ev2']])
+    // maxItems=3：ev1 最多占 2 个坑，第 3 条 i3 被降权排队，i4（ev2）补上第 3 个坑。
+    // 这条断言的是「多样性在接受时就强制」——旧实现按分数序取满 target 就停，
+    // i3 会先占满第 3 个坑、i4 永远进不来。
+    const r = gatekeep(selected, [], { ...ctx, persona: { ...persona, maxItems: 3 }, eventKeyOf })
+    expect(r.published).toHaveLength(3)
+    expect(r.eventFillMode).toBe(false)
+    expect(r.eventTrimmed).toBe(1) // i3 留在 deferred 未获回填
+    expect(r.published.map((p) => p.url)).toEqual(['https://ex.com/1', 'https://ex.com/2', 'https://ex.com/4'])
+    expect(checkEventOversubscribed(r.published, gates).ok).toBe(true)
+  })
+
+  it('事件复检·候选薄分支：宁发重复不发薄包，并显式标记 eventFillMode', () => {
+    // maxItems=3 但只有 3 条同事件候选 → 多样性最多给 2 条，不足 target。
+    // 此时**不得**为了多样性发一个 2 条的薄包：「宁缺毋滥」适用于质量（十条客观断言），
+    // 不适用于事件多样性——用不可靠的词法聚类结果惩罚用户是错的。
     const selected = [
       scored('i1', 'OpenAI Astra rollout continues across european regions for LLM serving', 'https://ex.com/1', 0.9),
       scored('i2', 'OpenAI Astra rollout expands into asian markets for LLM serving', 'https://ex.com/2', 0.8),
       scored('i3', 'OpenAI Astra rollout reaches enterprise customers for LLM serving', 'https://ex.com/3', 0.7),
     ]
-    // 三条同事件（共享实体 astra），maxPerEvent=2 → 必须裁掉最低分那条
     const eventKeyOf = new Map([['i1', 'ev1'], ['i2', 'ev1'], ['i3', 'ev1']])
     const r = gatekeep(selected, [], { ...ctx, eventKeyOf })
-    expect(r.published).toHaveLength(2)
-    expect(r.eventTrimmed).toBe(1)
-    expect(r.published.every((p) => p.url !== 'https://ex.com/3')).toBe(true)
-    expect(checkEventOversubscribed(r.published, gates).ok).toBe(true)
+    expect(r.published).toHaveLength(3) // 填满 target，不发薄包
+    expect(r.eventFillMode).toBe(true) // 但必须显式暴露：本轮防刷屏能力降级
+    // 填充模式下 checkEventOversubscribed 必然不 ok——这是已知取舍，不是缺陷
+    expect(checkEventOversubscribed(r.published, gates).ok).toBe(false)
   })
 
   it('跨产线指纹库命中在终审层也拦一次（门禁 3 之外的第二道保险）', () => {
@@ -367,6 +390,8 @@ describe('质量看板：漏斗必须可对账', () => {
     backfilled: 2,
     poolExhausted: false,
     eventTrimmed: 1,
+    eventFillMode: false,
+    eventDemoted: 0,
     eventCount: 25,
     skippedSources: [],
     zeroYieldSources: [],

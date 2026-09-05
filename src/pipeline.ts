@@ -16,7 +16,7 @@ import { fetchRss } from './collector/adapters/rss.js'
 import { fetchGithub } from './collector/adapters/github.js'
 import { fetchBili, fetchExa, fetchJina, fetchV2ex, fetchYtSearch } from './collector/adapters/agentreach.js'
 import { resolveSourceUrl } from './collector/urlTemplate.js'
-import { capEvents, collectCanonicalUrls, runGates } from './gates/index.js'
+import { capEvents, collectCanonicalUrls, entityTokens, runGates } from './gates/index.js'
 import { makeScorerFromEnv } from './refinery/scorer.js'
 import { MemoryStore } from './memory/store.js'
 import { applyNovelty, applySourceWeight } from './memory/evolve.js'
@@ -28,6 +28,13 @@ import { buildBoard, type EditorialBoard, type FunnelStage, type QualityBoard } 
 import { runEditorial, type EditorialConfig, type EditorialOutcome } from './editorial/index.js'
 import { meetsQualityBar } from './editorial/reviewer.js'
 import type { WrittenCopy } from './editorial/writer.js'
+import {
+  assertTargetAlignment,
+  editorialTargetsOf,
+  restoreStage,
+  type CollectStageResult,
+  type CollectStageSnapshot,
+} from './staging.js'
 
 /**
  * 双产线批产编排：采集 → 精确去重 → 四层闸门 → 打分 → 事件聚合 → 截断 → 主编终审 → 归档观测。
@@ -70,6 +77,20 @@ export interface PipelineOptions {
   root?: string
   /** 测试注入点：代替真实 HTTP 请求模型端点 */
   editorialFetchFn?: FetchFn
+  /**
+   * 分阶段作业：给定采集快照时跳过步骤 1-7，直接从快照进入编辑部与终审。
+   * `collect` / `edit` / `review` / `publish` 四段命令靠它把一次过夜批产拆成
+   * 可续跑的独立进程，而不必在 cli 里复制一份产线逻辑。
+   */
+  staged?: CollectStageSnapshot
+  /** 分阶段作业：已由 `edit` / `review` 跑好的编辑部产物（给了就不再调端点） */
+  stagedEditorial?: StagedEditorial
+}
+
+/** 分阶段作业传入的编辑部产物。targetIds 用于硬校验下标对齐（见 assertTargetAlignment）。 */
+export interface StagedEditorial {
+  outcome: EditorialOutcome
+  targetIds: string[]
 }
 
 export interface PipelineResult {
@@ -80,9 +101,12 @@ export interface PipelineResult {
   candidates: ScoredItem[]
   /** 独立事件簇数 */
   events: number
-  /** 事件聚合 + maxItems 截断后进终审的主池 */
+  /** 交给终审的全部候选（按「事件降权后」的顺序）。截断由 gatekeep 的 target 做 */
   selected: ScoredItem[]
-  /** 被 maxItems 截掉、供终审递补的候补池 */
+  /**
+   * 候补池。**当前恒为空**：截断与递补都统一由 gatekeep 的扫描循环完成
+   * （见 runPipeline 第 9 步的实测说明），保留字段是为 DB-05 编辑部按批作用域留口。
+   */
   backfillPool: ScoredItem[]
   /** 渲染 → 过终审 → 递补后的最终产出 */
   published: GatekeeperInput[]
@@ -97,6 +121,19 @@ export interface PipelineResult {
 }
 
 export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult> {
+  const stage = opts.staged ? restoreStage(opts.staged) : await collectStage(opts)
+  return finalizeStage(stage, opts)
+}
+
+/**
+ * 产线步骤 1-7：采集 → 精确去重 → 四层闸门 → 打分 → 源权重/新颖性 → 事件聚合。
+ *
+ * 单独导出是为了 `collect` 命令：它的产物落盘后，`edit` / `review` / `publish`
+ * 可在**另外的进程**里接手（writer 实测 ≈53 分钟，一个进程跑完整链中途失败就得从头再来）。
+ * 注意本函数**不写任何归档**：recordItems / markPushed / saveDigest 全在 finalizeStage，
+ * 否则 collect 跑一次就会把候选记成「已消费」，publish 重跑时全被 dedupe 屏蔽。
+ */
+export async function collectStage(opts: PipelineOptions): Promise<CollectStageResult> {
   const now = opts.now ?? Date.now()
   const store = new MemoryStore(opts.memoryDir)
   const stopwords = new Set(opts.gates.dedupe?.eventStopwords ?? [])
@@ -118,7 +155,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     }
   }
 
-  // 2. 精确 id 去重（跨轮次）。id 已由 itemId() 从规范 URL 派生，跨渠道同文档必得同 id
+  // 2. 精确 id 去重（跟轮次）。id 已由 itemId() 从规范 URL 派生，跨渠道同文档必得同 id
   const { kept: afterDedupe } = dedupe(collected, store.knownIds())
   const sourceAfterDedupe: Record<string, number> = {}
   for (const it of afterDedupe) sourceAfterDedupe[it.source] = (sourceAfterDedupe[it.source] ?? 0) + 1
@@ -133,7 +170,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
   // 4. 配置正则写错必须熔断，不得静默跳过——一条失效规则等于该规则不存在，闸门会假绿
   if (gateOutcome.compileErrors.length > 0) {
     throw new Error(
-      `闸门配置有 ${gateOutcome.compileErrors.length} 条正则编译失败（规则实际未生效，拒绝继续）：` +
+      `闸门配置有 ${gateOutcome.compileErrors.length} 条正则编译失败（规则实际未生效，拒绍继续）：` +
         gateOutcome.compileErrors.map((e: { gate: GateId; ruleId: string; error: string }) => `${e.gate}/${e.ruleId}: ${e.error}`).join('; '),
     )
   }
@@ -164,21 +201,108 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
   const candidates = ranked.map((r) => r.entry)
   const rawScores = ranked.map((r) => r.raw)
 
-  // 7. 事件聚合 —— 必须在截断之前（见文件头）
-  const capped = capEvents(candidates, opts.gates)
-  const dropped: DropRecord[] = [...gateOutcome.dropped, ...capped.dropped]
+  // 7. 事件聚合 —— 必须在截断之前（见文件头）。
+  // 背景 df 用**过滤前的全量采集**算：过滤到 AI 强相关子集后，领域词汇的相对频率被
+  // 人为抬高，与真事件标识落在同一量级，任何阈值都分不开（真跑实测：126 条塌成 24 簇、
+  // 最大簇 101、误杀 100 条）。全量 1184 条做分母时 language 的 df 是数百、astra 仍是 15。
+  const backgroundDf = new Map<string, number>()
+  for (const it of collected) {
+    for (const tok of entityTokens(it.title, stopwords)) {
+      backgroundDf.set(tok, (backgroundDf.get(tok) ?? 0) + 1)
+    }
+  }
+  const capped = capEvents(candidates, opts.gates, {
+    backgroundDf,
+    backgroundSize: collected.length,
+  })
+  // 事件聚合**不产生 dropped**：超额条目是降权（排在 kept 之后），不是拒绍。
+  // 词法聚类判别不可靠（见 capEvents 的实测说明），丢弃会静默摧毁内容。
+  const eventOrdered = [...capped.kept, ...capped.demoted]
+  const zeroYieldSources = enabled
+    .filter((s) => (sourceAfterDedupe[s.id] ?? 0) > 0 && (sourceRelevant[s.id] ?? 0) === 0)
+    .map((s) => s.id)
+
+  return {
+    persona: opts.persona.id,
+    personaDisplay: opts.persona.displayName,
+    // digestId 在采集阶段就定死：分段作业的四份产物靠它互相认，不能到 publish 才算
+    digestId: sanitizeDigestId(`${opts.persona.id}${now.toString(36)}`),
+    now,
+    candidates,
+    rawScores,
+    eventOrder: eventOrdered.map((it) => it.id),
+    eventOrdered,
+    eventKeyOf: capped.eventKeyOf,
+    eventCount: capped.eventCount,
+    eventDemoted: capped.demoted.length,
+    dropped: [...gateOutcome.dropped],
+    weights,
+    funnelPrefix: [
+      { stage: 'collected', count: collected.length },
+      { stage: 'afterDedupe', count: afterDedupe.length },
+      { stage: 'afterGates', count: relevant.length },
+      // 事件聚合是**降权**不是过滤，故本层不减量；超额数另记 eventDemoted 供看板归因
+      { stage: 'afterEventCap', count: eventOrdered.length },
+    ],
+    skippedSources: skipped.map((s) => s.id),
+    zeroYieldSources,
+    // 观测口径的三项计数只在本函数内可得（分段跑时 finalizeStage 拿不到源级明细）
+    observed: {
+      collectedCount: collected.length,
+      relevantCount: relevant.length,
+      sourceFetched,
+      sourceAfterDedupe,
+      sourceRelevant,
+      skippedSourceIds: skipped.map((s) => s.id),
+      enabledSourceIds: enabled.map((s) => s.id),
+    },
+  }
+}
+
+export interface FinalizeOptions {
+  persona: PersonaConfig
+  gates: GatesConfig
+  memoryDir: string
+  /** 跨产线共享的已发布指纹库；命中即一票否决 */
+  knownCanonical?: ReadonlySet<string>
+  /** 缺省时不调端点（分阶段作业已由 edit/review 跑完，或本轮就是机械兜底） */
+  editorial?: EditorialConfig
+  root?: string
+  editorialFetchFn?: FetchFn
+  /** 分阶段作业：已跑好的编辑部产物。与 editorial 同时给时以本项为准（不重复调端点） */
+  stagedEditorial?: StagedEditorial
+}
+
+/**
+ * 产线步骤 8-12：编辑部 → 渲染 → 主编终审 → 递补 → 归档 → 观测。
+ *
+ * 与 `collectStage` 分开是为了让 `publish` 命令能在不重跑采集（不联网、不消耗配额）
+ * 的前提下完成发布，且**走的是同一段代码**——不在 cli 里另写一份终审与归档。
+ */
+export async function finalizeStage(stage: CollectStageResult, opts: FinalizeOptions): Promise<PipelineResult> {
+  const now = stage.now
+  const store = new MemoryStore(opts.memoryDir)
+  const stopwords = new Set(opts.gates.dedupe?.eventStopwords ?? [])
+  const digestId = stage.digestId
+  const candidates = stage.candidates
+  const rawScores = stage.rawScores
 
   // 8. 编辑部（DB-05）+ maxItems 截断。
   //
-  // 只对「主池 + 等量候补」跑编辑部，不对全量 capped.kept 跑：后者可达数百条，
+  // 只对「主池 + 等量候补」跑编辑部，不对全量 eventOrdered 跑：后者可达数百条，
   // 按实测 writer 每条 15.7s 会把单轮拖到数小时。maxItems 两份的量级（≤240 条）
   // 对应实测的 ≈53 分钟，落在老张认可的「过夜批产 1 小时级」内。
-  const editorialTargets = capped.kept.slice(0, opts.persona.maxItems * 2)
+  const editorialTargets = editorialTargetsOf(stage, opts.persona.maxItems)
   let editorial: EditorialOutcome | null = null
   let ordered = editorialTargets
   const copiesOf = new Map<string, WrittenCopy | null>()
 
-  if (opts.editorial) {
+  if (opts.stagedEditorial) {
+    // 下标错位不会让任何断言变红，只会让 A 条目的文案挂到 B 条目上——格式完美、内容张冠李戴。
+    // 故这里硬校验，不一致就抛错而不是错发。
+    assertTargetAlignment('copy', opts.stagedEditorial.targetIds, editorialTargets.map((t) => t.id))
+    editorial = opts.stagedEditorial.outcome
+  } else if (opts.editorial) {
     editorial = await runEditorial({
       config: opts.editorial,
       persona: opts.persona,
@@ -187,6 +311,9 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
       now,
       fetchFn: opts.editorialFetchFn,
     })
+  }
+
+  if (editorial) {
     if (!editorial.active) {
       console.warn(`[editorial] 未生效，退回机械兜底：${editorial.inactiveReason ?? '未知原因'}`)
     }
@@ -210,23 +337,26 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     }
   }
 
-  // 9. maxItems 截断（上限，不是配额；无每源下限）
-  const selected = ordered.slice(0, opts.persona.maxItems)
-  const backfillPool = [
-    ...ordered.slice(opts.persona.maxItems),
-    // 未进编辑部作用域的剩余候选仍可做候补（只是没有 LLM 文案，走机械兜底）
-    ...capped.kept.slice(editorialTargets.length),
-  ]
+  // 9. 交给终审的候选集：**不在这里按 maxItems 截断**。
+  //
+  // 截断由 gatekeep 的 target 做，不能提前（2026-09-04 实测）：提前按分数截断会把
+  // 低分的同事件条目直接挡在终审门外，于是「每事件最多 maxPerEvent 条」的多样性
+  // 选择根本没有发生机会——实测 8 条 Astra + 13 条其他内容、maxItems=6 时，
+  // 若 Astra 分数偏低就一条都进不了 selected，多样性约束形同虚设。
+  //
+  // gatekeep 的扫描循环在 accepted 达到 target 时才 break，被拒/被降权的条目不占 target，
+  // 因此它会自然向候选集深处扫描，兼有「递补」与「多样性」两种作用，不需要独立候补池。
+  const selected = ordered
+  const backfillPool: ScoredItem[] = []
 
   // 10. 渲染 → 主编终审 → 递补 → 事件复检 → 重编号
-  const digestId = sanitizeDigestId(`${opts.persona.id}${now.toString(36)}`)
   const gatekeepResult = gatekeep(selected, backfillPool, {
     persona: opts.persona,
     gates: opts.gates,
     now,
     digestId,
     knownCanonical: opts.knownCanonical ?? new Set<string>(),
-    eventKeyOf: capped.eventKeyOf,
+    eventKeyOf: stage.eventKeyOf,
     stopwords,
     copiesOf,
   })
@@ -262,22 +392,15 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     store.registerDigestRef(`${digestId}:${i}`, digestId, itemId, p.source)
   }
 
-  // 行为→兴趣映射：结算已过判定期的曝光。Telegram 退役后无新曝光入账，
-  // 本调用在 DB-06 回流通道落地前恒为空转——保留接线，看板明写 selfEvolutionActive=false。
+  // 行为→兴趣映射：结算已过判定期的曝光。Telegram 退役后曝光改由 tuna 回流入账。
   settleStaleExposures(opts.memoryDir, now)
 
   // 12. 观测
   const funnel: FunnelStage[] = [
-    { stage: 'collected', count: collected.length },
-    { stage: 'afterDedupe', count: afterDedupe.length },
-    { stage: 'afterGates', count: relevant.length },
-    { stage: 'afterEventCap', count: capped.kept.length },
+    ...stage.funnelPrefix,
     { stage: 'afterTruncate', count: selected.length },
     { stage: 'published', count: gatekeepResult.published.length },
   ]
-  const zeroYieldSources = enabled
-    .filter((s) => (sourceAfterDedupe[s.id] ?? 0) > 0 && (sourceRelevant[s.id] ?? 0) === 0)
-    .map((s) => s.id)
 
   const observation = observeRound({
     candidates,
@@ -285,16 +408,16 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     // observeRound 的 pushed 口径是 ScoredItem；终审产出是渲染后条目，
     // 这里回映到对应的 ScoredItem 以保持观测口径与旧序列可比
     pushed: [...selected, ...backfillPool].filter((s) => publishedIds.includes(s.id)),
-    weights,
+    weights: stage.weights,
     at: now,
-    collected: collected.length,
-    relevant: relevant.length,
-    skippedSources: skipped.map((s) => s.id),
+    collected: stage.observed.collectedCount,
+    relevant: stage.observed.relevantCount,
+    skippedSources: stage.observed.skippedSourceIds,
     feedbackCount: store.feedbackCount(),
-    enabledSourceIds: enabled.map((s) => s.id),
-    sourceFetched,
-    sourceAfterDedupe,
-    sourceRelevant,
+    sourceFetched: stage.observed.sourceFetched,
+    sourceAfterDedupe: stage.observed.sourceAfterDedupe,
+    sourceRelevant: stage.observed.sourceRelevant,
+    enabledSourceIds: stage.observed.enabledSourceIds,
     telegram: 'disabled',
     pushedDelivered: 0,
   })
@@ -307,17 +430,19 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
       digestId,
       generatedAt: now,
       funnel,
-      dropped,
+      dropped: stage.dropped,
       rejected: gatekeepResult.rejected,
       rejectCounts: gatekeepResult.rejectCounts,
       backfilled: gatekeepResult.backfilled,
       poolExhausted: gatekeepResult.poolExhausted,
       eventTrimmed: gatekeepResult.eventTrimmed,
-      eventCount: capped.eventCount,
-      skippedSources: skipped.map((s) => s.id),
-      zeroYieldSources,
+      eventCount: stage.eventCount,
+      eventDemoted: stage.eventDemoted,
+      eventFillMode: gatekeepResult.eventFillMode,
+      skippedSources: stage.skippedSources,
+      zeroYieldSources: stage.zeroYieldSources,
       publishedFingerprintCount: collectCanonicalUrls(gatekeepResult.published).length,
-      compileErrors: gateOutcome.compileErrors,
+      compileErrors: [],
       editorial: editorialBoard(editorial, gatekeepResult.published, [...selected, ...backfillPool], copiesOf),
     },
     gatekeepResult.published,
@@ -331,17 +456,17 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     personaDisplay: opts.persona.displayName,
     digestId,
     candidates,
-    events: capped.eventCount,
+    events: stage.eventCount,
     selected,
     backfillPool,
     published: gatekeepResult.published,
     editorial,
     funnel,
-    dropped,
+    dropped: stage.dropped,
     gatekeep: gatekeepResult,
     board,
-    skippedSources: skipped.map((s) => s.id),
-    zeroYieldSources,
+    skippedSources: stage.skippedSources,
+    zeroYieldSources: stage.zeroYieldSources,
   }
 }
 
@@ -371,22 +496,16 @@ function editorialBoard(
       llmCopyCount: 0,
     }
   }
-  const endpoints: EditorialBoard['endpoints'] = []
-  for (const [role, job] of [
-    ['writer', editorial.writerJob],
-    ['reviewer', editorial.reviewerJob],
-  ] as const) {
-    for (const [endpointId, s] of Object.entries(job?.state.endpointUsage ?? {})) {
-      endpoints.push({
-        role,
-        endpointId,
-        calls: s.calls,
-        failures: s.failures,
-        reasoningTokens: s.reasoningTokens,
-        elapsedMs: s.elapsedMs,
-      })
-    }
-  }
+  // 端点用量读归一化的 stats，不直接摸 job.state：分阶段作业时 job 在另一个进程里
+  // 跑完，publish 阶段的 outcome 由 staging 快照重建，手上根本没有 job 对象。
+  const endpoints: EditorialBoard['endpoints'] = editorial.stats.endpoints.map((s) => ({
+    role: s.role,
+    endpointId: s.endpointId,
+    calls: s.calls,
+    failures: s.failures,
+    reasoningTokens: s.reasoningTokens,
+    elapsedMs: s.elapsedMs,
+  }))
   // 已发布条目里有多少真拿到了 LLM 文案。
   // 回映路径：published.url → pool 里的 ScoredItem.id → copiesOf。
   // 不得用「钩子数 = 3」之类的外观特征估算：机械兜底也给 3 条钩子，分不出来。
@@ -401,11 +520,9 @@ function editorialBoard(
     enabled: editorial.enabled,
     active: editorial.active,
     inactiveReason: editorial.inactiveReason,
-    writerDegradedBatches: editorial.writerJob?.state.degradedBatches.length ?? 0,
-    reviewerDegradedBatches: editorial.reviewerJob?.state.degradedBatches.length ?? 0,
-    truncatedBatches:
-      (editorial.writerJob?.state.truncatedBatches.length ?? 0) +
-      (editorial.reviewerJob?.state.truncatedBatches.length ?? 0),
+    writerDegradedBatches: editorial.stats.writerDegradedBatches,
+    reviewerDegradedBatches: editorial.stats.reviewerDegradedBatches,
+    truncatedBatches: editorial.stats.truncatedBatches,
     calibrationPassed: editorial.calibration ? editorial.calibration.problems.length === 0 : null,
     calibrationProblems: editorial.calibration?.problems ?? [],
     endpoints,

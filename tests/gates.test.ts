@@ -321,9 +321,10 @@ describe('门禁 3：dedupeByCanonicalUrl / capEvents', () => {
     expect(r.eventCount).toBe(2)
     expect(r.kept[0].valueScore).toBe(0.9)
     expect(r.kept[1].valueScore).toBe(0.6)
-    expect(r.dropped).toHaveLength(3)
-    expect(r.dropped.map((d) => d.ruleId)).toContain('fingerprint:verbatimRepost')
-    // eventKeyOf 必须覆盖全部输入（kept + dropped），否则看板无法归因
+    // 超额是**降权不是丢弃**：三条重复转发进 demoted，一条都不丢
+    expect(r.demoted).toHaveLength(3)
+    expect(r.demoted.map((d) => d.valueScore)).toEqual([0.7, 0.5, 0.4])
+    // eventKeyOf 必须覆盖全部输入（kept + demoted），否则看板无法归因
     expect(r.eventKeyOf.size).toBe(5)
     // 同簇条目得同一 eventKey，不同簇不等
     const keys = same.map((s) => r.eventKeyOf.get(s.id))
@@ -331,7 +332,7 @@ describe('门禁 3：dedupeByCanonicalUrl / capEvents', () => {
     expect(r.eventKeyOf.get(other.id)).not.toBe(keys[0])
   })
 
-  it('洗稿标题（非逐字相同）仍受 maxPerEvent 限制，剔除理由标 eventSaturated', () => {
+  it('洗稿标题（非逐字相同）仍受 maxPerEvent 限制，超额条目降权而非丢弃', () => {
     const mk = (title: string, score: number, url: string) =>
       ({ ...item({ title, url }), valueScore: score, isNew: true, reason: '' })
     // 共享实体 astra 但措辞不同，jaccard 低于 0.75 → 走 maxPerEvent 而非 verbatimRepost
@@ -344,8 +345,11 @@ describe('门禁 3：dedupeByCanonicalUrl / capEvents', () => {
     expect(r.eventCount).toBe(1)
     expect(r.kept).toHaveLength(2)
     expect(r.kept.map((k) => k.valueScore)).toEqual([0.9, 0.7])
-    expect(r.dropped).toHaveLength(1)
-    expect(r.dropped[0].ruleId).toBe('fingerprint:eventSaturated(>2)')
+    // 降权而非丢弃：词法聚类判别不可靠，丢弃会在候选池薄时静默摧毁内容
+    expect(r.demoted).toHaveLength(1)
+    expect(r.demoted[0].valueScore).toBe(0.5)
+    // kept + demoted 必须等于输入总数（一条都不能凭空消失）
+    expect(r.kept.length + r.demoted.length).toBe(cluster.length)
   })
 
   /**
@@ -371,16 +375,17 @@ describe('门禁 3：dedupeByCanonicalUrl / capEvents', () => {
       mk('OpenAI hails new era of artificial general intelligence with Astra', 'https://d.com/4'),
     ]
     const r = capEvents(realAstra, gates)
-    // 第 1/3/4 条共享实体 "astra" → 聚成一簇（受 maxPerEvent=2 限制，剔 1 条）。
-    // 第 2 条（The Verge）标题不含 "Astra"，实体集为 {entered, agi, verge}，与其余零交集
-    // → 独立成簇。这正是实测漏网的2 条之一，归 DB-05 的 LLM reviewer 语义归并。
-    // 对比旧 jaccard 实现：4 条会被当成 4 个独立事件全部放行（eventCount=4，dropped=0），
-    // 那就是刷屏的成因。
+    // 第 1/3/4 条共享实体 "astra" → 聚成一簇（受 maxPerEvent=2 限制，超额 1 条降权）。
+    // 第 2 条（The Verge）标题不含 "Astra"，实体集为 {agi, verge}，与其余零交集
+    // → 独立成簇。这正是实测漏网的 2 条之一，归 DB-05 的 LLM reviewer 语义归并。
+    // 对比旧 jaccard 实现：4 条会被当成 4 个独立事件全部放行（eventCount=4），那就是刷屏的成因。
     expect(r.eventCount).toBe(2)
     expect(r.kept).toHaveLength(3)
-    expect(r.dropped).toHaveLength(1)
-    expect(r.dropped[0].title).toContain('Astra')
+    expect(r.demoted).toHaveLength(1)
+    expect(r.demoted[0].title).toContain('Astra')
     expect(r.kept.map((k) => k.url)).toContain('https://b.com/2')
+    // 降权不丢弃：总数守恒
+    expect(r.kept.length + r.demoted.length).toBe(realAstra.length)
   })
 })
 

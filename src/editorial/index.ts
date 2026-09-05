@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import type { FetchFn, PersonaConfig, ScoredItem } from '../types.js'
 import { EditorialProvider, type EditorialConfig, type Usage } from './provider.js'
-import { makeJobId, runJob, type JobResult } from './job.js'
+import { makeJobId, runJob, type JobResult, type EndpointUsageStat } from './job.js'
 import { toWriterInput, writeBatch, type WrittenCopy } from './writer.js'
 import { reviewBatch, meetsQualityBar, type ReviewVerdict } from './reviewer.js'
 import { assessCalibration, isCalibrated, loadGoldStandard, type CalibrationReport, type CalibrationThresholds, type GoldSample } from './calibrate.js'
@@ -53,6 +53,78 @@ export interface EditorialRunOptions {
   goldStandardPath?: string
   calibrationThresholds?: CalibrationThresholds
   onProgress?: (line: string) => void
+  /**
+   * 只跑指定角色（缺省两者都跑）。
+   *
+   * 分阶段命令 `edit` / `review` 靠它把一次过夜批产拆成两个独立进程：
+   * writer 实测 ≈53 分钟、reviewer ≈6 分钟，合成一个进程时中途失败就得从头再来。
+   *
+   * **roles=['writer'] 仍会先跑 reviewer 的金标自检**：写与评分离，评分侧不可信时
+   * 写作侧的产出无从验收（见下方 calibration 前置的说明）。自检成本 ≈90 秒，
+   * 相对 53 分钟的写作可忽略，换的是「writer 产物一定可被验收」这条不变量。
+   */
+  roles?: Array<'writer' | 'reviewer'>
+}
+
+/** 单个端点的用量。看板与 staging 快照共用此形态。 */
+export interface EditorialEndpointStat {
+  role: 'writer' | 'reviewer'
+  endpointId: string
+  calls: number
+  failures: number
+  reasoningTokens: number
+  elapsedMs: number
+}
+
+/**
+ * 归一化的编辑部执行统计。
+ *
+ * 为什么不直接读 `writerJob.state`：分阶段作业时 job 在**另一个进程**里跑完，
+ * `publish` 阶段的 outcome 由 staging 快照重建，手上没有 job 对象。
+ * 看板只读本字段，两条路径（整链 run / 分段 publish）的看板口径才不会漂。
+ */
+export interface EditorialStats {
+  endpoints: EditorialEndpointStat[]
+  writerDegradedBatches: number
+  reviewerDegradedBatches: number
+  truncatedBatches: number
+}
+
+export const EMPTY_EDITORIAL_STATS: EditorialStats = {
+  endpoints: [],
+  writerDegradedBatches: 0,
+  reviewerDegradedBatches: 0,
+  truncatedBatches: 0,
+}
+
+/** 从 job 结果提取归一化统计（job 为 null 表示该角色本轮未跑）。 */
+export function statsFromJobs(
+  writerJob?: JobResult<WrittenCopy> | null,
+  reviewerJob?: JobResult<ReviewVerdict> | null,
+): EditorialStats {
+  const endpoints: EditorialEndpointStat[] = []
+  for (const [role, job] of [
+    ['writer', writerJob],
+    ['reviewer', reviewerJob],
+  ] as const) {
+    for (const [endpointId, s] of Object.entries(job?.state.endpointUsage ?? {} as Record<string, EndpointUsageStat>)) {
+      endpoints.push({
+        role,
+        endpointId,
+        calls: s.calls,
+        failures: s.failures,
+        reasoningTokens: s.reasoningTokens,
+        elapsedMs: s.elapsedMs,
+      })
+    }
+  }
+  return {
+    endpoints,
+    writerDegradedBatches: writerJob?.state.degradedBatches.length ?? 0,
+    reviewerDegradedBatches: reviewerJob?.state.degradedBatches.length ?? 0,
+    truncatedBatches:
+      (writerJob?.state.truncatedBatches.length ?? 0) + (reviewerJob?.state.truncatedBatches.length ?? 0),
+  }
 }
 
 export interface EditorialOutcome {
@@ -69,6 +141,8 @@ export interface EditorialOutcome {
   reviewerJob?: JobResult<ReviewVerdict>
   calibration?: CalibrationReport
   usage: { writer: Usage | null; reviewer: Usage | null }
+  /** 归一化统计（见 EditorialStats 的说明）。未启用/未生效时为空值而非缺字段 */
+  stats: EditorialStats
 }
 
 export async function runEditorial(opts: EditorialRunOptions): Promise<EditorialOutcome> {
@@ -82,6 +156,7 @@ export async function runEditorial(opts: EditorialRunOptions): Promise<Editorial
     verdicts: opts.candidates.map(() => null),
     qualifiedIndices: null,
     usage: { writer: null, reviewer: null },
+    stats: EMPTY_EDITORIAL_STATS,
   }
 
   if (!opts.config.enabled) {
@@ -93,8 +168,15 @@ export async function runEditorial(opts: EditorialRunOptions): Promise<Editorial
 
   const writerProvider = new EditorialProvider(opts.config.writer, env, opts.fetchFn)
   const reviewerProvider = new EditorialProvider(opts.config.reviewer, env, opts.fetchFn)
-  if (!writerProvider.available && !reviewerProvider.available) {
-    return { ...empty, inactiveReason: 'writer 与 reviewer 的降级链均无可解析端点（baseUrl 全空）' }
+  const wantWriter = opts.roles?.includes('writer') ?? true
+  const wantReviewer = opts.roles?.includes('reviewer') ?? true
+  const writerUsable = wantWriter && writerProvider.available
+  const reviewerUsable = wantReviewer && reviewerProvider.available
+  if (!writerUsable && !reviewerUsable) {
+    return {
+      ...empty,
+      inactiveReason: `本次请求的角色（${opts.roles?.join('+') ?? 'writer+reviewer'}）在降级链上均无可解析端点（baseUrl 全空）`,
+    }
   }
 
   // 校准前置于生产：reviewer 分数没通过灵敏度自检就不得参与递补决策。
@@ -129,7 +211,7 @@ export async function runEditorial(opts: EditorialRunOptions): Promise<Editorial
   const sameEndpoint =
     writerProvider.endpoints[0]?.baseUrl === reviewerProvider.endpoints[0]?.baseUrl
 
-  const writerJobPromise = writerProvider.available
+  const writerJobPromise = writerUsable
     ? runJob<ReturnType<typeof toWriterInput>, WrittenCopy>({
         jobId: makeJobId('writer', opts.persona.id, now),
         role: 'writer',
@@ -145,7 +227,7 @@ export async function runEditorial(opts: EditorialRunOptions): Promise<Editorial
       })
     : Promise.resolve(null)
 
-  const reviewerJobPromise = reviewerProvider.available
+  const reviewerJobPromise = reviewerUsable
     ? runJob<ReturnType<typeof toWriterInput>, ReviewVerdict>({
         jobId: makeJobId('reviewer', opts.persona.id, now),
         role: 'reviewer',
@@ -197,6 +279,7 @@ export async function runEditorial(opts: EditorialRunOptions): Promise<Editorial
       writer: writerJob ? lastUsage(writerJob.state.endpointUsage) : null,
       reviewer: reviewerJob ? lastUsage(reviewerJob.state.endpointUsage) : null,
     },
+    stats: statsFromJobs(writerJob, reviewerJob),
   }
 }
 

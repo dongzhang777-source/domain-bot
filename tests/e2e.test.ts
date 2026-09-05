@@ -204,9 +204,12 @@ describe('e2e: 采集 → 闸门 → 事件聚合 → 主编终审 → 归档观
     expect(r.published.some((p) => /flashinfer/i.test(p.title))).toBe(true)
     expect(r.published.some((p) => /kc-bench/i.test(p.title))).toBe(true)
     expect(r.published).toHaveLength(4)
-    // 8 条同事件里被剔的 6 条必须带可归因的 ruleId，不得静默消失
-    const eventDropped = r.dropped.filter((d) => d.ruleId.startsWith('fingerprint:event'))
-    expect(eventDropped).toHaveLength(6)
+    // 8 条同事件里超额的 6 条是**降权**（排在 kept 之后被 maxItems 截掉），不是丢弃。
+    // 事件聚合不产生 DropRecord：词法聚类判别不可靠，丢弃会静默摧毁内容。
+    expect(r.dropped.filter((d) => d.ruleId.startsWith('fingerprint:event'))).toHaveLength(0)
+    expect(r.board.eventDemoted).toBeGreaterThan(0)
+    // 降权的条目仍进了归档（下一轮 dedupe 能屏蔽），没有凭空消失
+    expect(r.candidates.length).toBe(10)
   })
 
   it('废除均摊：单一高质量源可以占满 maxItems，不设每源上限', async () => {

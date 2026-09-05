@@ -37,6 +37,18 @@ export interface BoardInput {
   eventTrimmed: number
   /** 独立事件数（capEvents 产出） */
   eventCount: number
+  /**
+   * 本轮是否处于「填充模式」：候选不足以在 maxPerEvent 约束下填满 maxItems，
+   * 故放行同事件超额条目而不是发薄包。为 true 时**防刷屏能力本轮是降级的**，
+   * 必须显式暴露（隐式降级正是 DB-03 的老毛病）。
+   */
+  eventFillMode: boolean
+  /**
+   * 同事件超额被**降权**的条数（不是丢弃）。
+   * 词法聚类判别不可靠，故超额只降权：候选池厚时被 maxItems 自然截掉（防刷屏），
+   * 候选池薄时仍进产出（不摧毁内容）。看板记这个数，才能看出降权是否吃掉了内容。
+   */
+  eventDemoted: number
   skippedSources: string[]
   /** 采集成功但零相关产出的源（I-3 盲区：skippedSources 口径下不可见） */
   zeroYieldSources: string[]
@@ -199,6 +211,13 @@ export function auditBoard(board: QualityBoard): BoardAudit {
   }
   if (!board.selfEvolutionActive) {
     warnings.push(`自进化未生效：${board.selfEvolutionNote}`)
+  }
+  if (board.eventFillMode) {
+    warnings.push(
+      `填充模式：候选不足以在 maxPerEvent 约束下填满 maxItems，本轮放行同事件超额条目` +
+        `（事件簇 ${board.eventCount} 个、降权 ${board.eventDemoted} 条、实发 ${board.funnel[board.funnel.length - 1]?.count ?? 0} 条），` +
+        `防刷屏能力本轮降级`,
+    )
   }
 
   return { fatal, warnings }

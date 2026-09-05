@@ -11,7 +11,9 @@
  * - 语言判定（与 tuna `feeds/sanitize.ts` 的 `detectLang` 同族）
  * - 钩子/句子的机械兜底构造（DB-05 的 LLM writer 上线后只在其降级链末端被调用）
  */
-import { entityTokens } from '../gates/eventCluster.js'
+// 实体词卡片用 topicTokens（大小写无关）：卡片是把主题词摊给读者看，
+// 不是在做事件聚类，故不需要专有名词口径（用 entityTokens 会让小写实体全被剔掉、卡片变空）。
+import { topicTokens } from '../gates/eventCluster.js'
 
 /**
  * 钩子/概要限长（码点）。`src/gatekeeper/assertions.ts` 的 `gk:shapeViolation` 复用本常量——
@@ -131,7 +133,7 @@ export function deriveHooks(
   const clean = stripMetadata(summary || title)
   const sentences = splitSentences(clean)
 
-  const entities = [...entityTokens(`${title} ${clean}`, stopwords)].slice(0, 3)
+  const entities = [...topicTokens(`${title} ${clean}`, stopwords)].slice(0, 3)
   const entityCard = entities.join(' · ')
 
   const candidates = [

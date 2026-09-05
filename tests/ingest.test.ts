@@ -267,6 +267,8 @@ describe('看板 selfEvolutionActive 由真实信号存量决定', () => {
     backfilled: 0,
     poolExhausted: false,
     eventTrimmed: 0,
+    eventFillMode: false,
+    eventDemoted: 0,
     eventCount: 2,
     skippedSources: [],
     zeroYieldSources: [],

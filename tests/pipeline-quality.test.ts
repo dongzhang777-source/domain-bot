@@ -208,10 +208,44 @@ describe('内容质量回归：DB-03 的真实垃圾必须一条都进不了产�
       humanScore: 7,
       humanDecision: '保留' as const,
     }))
-    const r = await runSamples(astra)
+    // 关键：必须掺入足量**其他事件**的内容，让候选充足。
+    // 只喂 8 条 Astra 时 maxItems=200 远大于候选，产线会进入填充模式
+    //（宁发重复不发薄包），此时刷屏压不住是**设计取舍**而不是缺陷。
+    const filler: GoldSample[] = KNOWN_GOOD.filter((s) => !/astra/i.test(s.title)).map((s, i) => ({
+      ...s,
+      id: `filler-${i}`,
+    }))
+    // maxItems 取 10：14 个独立事件 × maxPerEvent=2 = 28 的多样性容量 > 10，
+    // 故不需要动用填充就能填满 target，Astra 应被压到 ≤maxPerEvent。
+    const r = await runSamples([...astra, ...filler], { maxItems: 10 })
     const astraCount = r.published.filter((p) => /astra/i.test(p.title)).length
     expect(astraCount).toBeLessThanOrEqual(gates.dedupe.maxPerEvent)
     expect(astraCount).toBeGreaterThan(0) // 不是靠"全杀"达标的
+    expect(r.published).toHaveLength(10)
+    expect(r.board.eventFillMode).toBe(false)
+    // 多样性是真的：产出里的事件数应接近条数，而不是被一个事件占满
+    expect(r.board.eventCount).toBeGreaterThan(5)
+  })
+
+  it('同事件刷屏·候选薄时进填充模式：宁发重复不发薄包，但必须显式标记', async () => {
+    // 只喂同事件内容且 maxItems 大于候选 → 填充模式。
+    // 这是 2026-09-04 真跑实测确立的取舍：词法聚类判别不可靠（1184 条采集里
+    // 126 条候选曾被塌缩成 24 簇、误杀 100 篇彼此独立的论文），
+    // 在判别不可靠的前提下「丢弃」比「重复」危险得多。
+    const astraOnly: GoldSample[] = Array.from({ length: 5 }, (_, i) => ({
+      id: `astra-only-${i}`,
+      title: `OpenAI Astra rollout wave ${['european', 'asian', 'enterprise', 'developer', 'regulatory'][i]} for LLM serving`,
+      body: 'OpenAI 发布新一代 LLM，具备更强推理与工具调用能力，业界关注安全审查机制。',
+      humanScore: 7,
+      humanDecision: '保留' as const,
+    }))
+    const r = await runSamples(astraOnly, { maxItems: 20 })
+    expect(r.board.eventFillMode).toBe(true)
+    // 填充模式：5 条同事件候选全部进产出（一条都不因聚类而丢）
+    expect(r.published).toHaveLength(astraOnly.length)
+    expect(r.published.length).toBeGreaterThan(gates.dedupe.maxPerEvent)
+    // 降权数必须落看板，取舍可见
+    expect(r.board.eventDemoted).toBeGreaterThan(0)
   })
 })
 

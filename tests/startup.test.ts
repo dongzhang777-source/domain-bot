@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { collectCommand, listPersonaIds, loadPersona, main, printBanner, runCommand, type CliIO } from '../src/cli.js'
 import { acquireLock } from '../src/runtime/lock.js'
+import { STAGE_SCHEMA, restoreStage, type CollectStageSnapshot } from '../src/staging.js'
 import type { GatesConfig } from '../src/types.js'
 
 /**
@@ -192,19 +193,28 @@ describe('CLI：单实例锁', () => {
   })
 })
 
-describe('CLI：collect 分阶段落点（为 DB-05 编辑作业预留）', () => {
-  it('collect 只写 staging 候选包，不写 outbox / evidence', async () => {
+describe('CLI：collect 分阶段落点（供 edit / review / publish 接手）', () => {
+  it('collect 只写 staging 快照，不写 outbox / evidence', async () => {
     const root = fakeRoot()
     const { io } = captureIO()
     const r = await collectCommand({ root, persona: 'newsline', io, fetchFn: okFetch })
     expect(r.exitCode).toBe(0)
     expect(existsSync(r.path)).toBe(true)
     expect(existsSync(join(root, 'outbox'))).toBe(false)
+    expect(existsSync(join(root, 'evidence'))).toBe(false)
 
-    const staging = JSON.parse(readFileSync(r.path, 'utf8')) as { schema: string; candidates: unknown[]; funnel: unknown[] }
-    expect(staging.schema).toBe('domain-bot-candidates-v1')
+    // 旧 schema `domain-bot-candidates-v1` 只存了 `candidates` 与 `funnel`，
+    // 缺事件键映射与观测口径明细，`publish` 无法从它还原终审与归档所需的输入——
+    // 于是它只能当「预留落点」而用不起来。现为可还原的完整快照（STAGE_SCHEMA）。
+    // 还原保真、下标对齐、与整链产出一致这三项由 tests/cli-stages.test.ts 覆盖。
+    const staging = JSON.parse(readFileSync(r.path, 'utf8')) as CollectStageSnapshot
+    expect(staging.schema).toBe(STAGE_SCHEMA)
     expect(staging.candidates.length).toBeGreaterThan(0)
-    expect(staging.funnel.length).toBeGreaterThan(0)
+    expect(staging.funnelPrefix.length).toBeGreaterThan(0)
+    // eventOrder 是 candidates 的一个排列（事件聚合只降权、不增删）
+    expect(staging.eventOrder).toHaveLength(staging.candidates.length)
+    expect(staging.observed.enabledSourceIds.length).toBeGreaterThan(0)
+    expect(() => restoreStage(staging)).not.toThrow()
   })
 })
 
@@ -253,6 +263,27 @@ describe('CLI：main 命令分派', () => {
   it('未知命令非零退出并列出可用命令', async () => {
     const code = await main(['bogus'])
     expect(code).toBe(2)
+  })
+
+  it('分阶段命令集齐备：collect / edit / review / publish / run / ingest / calibrate 均已分派', async () => {
+    // 改造方案明列这七个分阶段命令。它们的存在不是装饰：批产实测 writer ≈53 分钟，
+    // 绑在一个进程里中途失败就得从头再来——分段是「过夜批产」能成立的前提。
+    // 断言打在 cli.ts 源码上而不是跑一遍：跑 edit/review 会去连模型端点。
+    const src = readFileSync(join(process.cwd(), 'src/cli.ts'), 'utf8')
+    for (const cmd of ['collect', 'edit', 'review', 'publish', 'run', 'ingest', 'calibrate']) {
+      expect(src, `${cmd} 必须被 main() 分派`).toMatch(new RegExp(`cmd === '${cmd}'`))
+    }
+    // 用法串必须同步列全，否则操作者不知道有这些命令（等于没有）
+    const usage = src.slice(src.indexOf('未知命令「'))
+    for (const cmd of ['collect', 'edit', 'review', 'publish', 'calibrate', 'ingest', 'doctor']) {
+      expect(usage, `用法串必须列出 ${cmd}`).toContain(cmd)
+    }
+  })
+
+  it('edit / review / publish 缺 --persona 时非零退出（不得默默拿第一条产线开刷）', async () => {
+    for (const cmd of ['edit', 'review', 'publish']) {
+      expect(await main([cmd])).toBe(2)
+    }
   })
 
   it('run 缺 persona 时默认 all（两条产线依次跑）', async () => {

@@ -1,5 +1,6 @@
 {
   "_note": "AI 编辑部配置。老张 2026-09-04 裁决：端点不绑定，做成配置项 + 自动降级链，不硬编码任何地址。enabled=false 时产线走启发式打分 + 机械渲染兜底（阶段一行为），不报错。",
+  "_enabledNote": "enabled 保持 false 的实测依据（2026-09-05 00:20 复核）：curl 127.0.0.1:8052/v1/models → 200（nous-proxy 活着），127.0.0.1:8080/v1/models → 无响应（llama-server 未起）。此时开启会让 reviewer 的主端点失败而降级到 8052，与 writer 同一个底座——直接违反老张裁决 4「写与评分离」（同一模型既写又评构成循环）。故开启前必须先拉起 8080，或把 reviewer 改成另一个异族端点。另：runEditorial 的 sameEndpoint 判定比的是**配置里的首端点**（8052 vs 8080，不相等 → 判为可并行），而降级后才实际同端点，所以并行判定拦不住这种降级撞车——这是开启前必须人工确认端点齐备的原因。",
   "_endpointNote": "下列默认端点是 2026-09-04 实测本机可用者，不是承诺：127.0.0.1:8052 是 ~/.codex/nous-proxy.py（实测 4.1s/短请求，但无视传入 model 参数、一律路由到 meituan/longcat-2.0:free，免费档有限流与 OAuth 刷新依赖风险）；127.0.0.1:8080 是 llama-server 跑本地 Qwen3.8-Flash-Next（实测生成 9.9 tok/s，与 Claude Code 共用 8082 代理会抢资源）。老张口述的 192.168.100.1:8002 + deepseek-v4-flash 经实测不存在，故未写入。",
   "_throughputNote": "实测吞吐决定批大小，不是拍的：writer 批=3/max_tokens=6000 单批 47.1s（completion 2500 其中 reasoning 1739），200 条约 53 分钟；reviewer 批=10/max_tokens=1500 单批 17.8s（completion 940 其中 reasoning 795），200 条约 6 分钟。两角色走不同端点可并行，墙钟由 writer 决定。批大小受限于 reasoning 开销（占输出 70-85%），不是可见输出；思考无法用 reasoning:false / chat_template_kwargs.enable_thinking:false / reasoning_effort:low 关闭（三种参数实测 reasoning 不变）。",
   "enabled": false,

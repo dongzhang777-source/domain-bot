@@ -16,18 +16,43 @@
         <string>/opt/homebrew/bin:/Users/aiatwork/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
 
+    <!-- 入口：DB-04 后产线入口是 dist/cli.js（`run --persona=all` 跑双产线）。
+         dist/index.js 仅作兼容转发保留，不应再由 launchd 指着它——
+         指向退役入口会让定时作业的行为取决于那个转发壳里的默认值。 -->
     <key>ProgramArguments</key>
     <array>
         <string>/Users/aiatwork/.local/bin/node</string>
         <string>--env-file-if-exists=.env</string>
-        <string>dist/index.js</string>
+        <string>dist/cli.js</string>
+        <string>run</string>
+        <string>--persona=all</string>
     </array>
 
-    <!-- 守护常驻：崩溃自动重启，挂起时需看门狗协助 -->
+    <!-- ❗不得用 KeepAlive（DB-04 修正）。
+         旧配置是 RunAtLoad+KeepAlive 守护一个**常驻循环**（日推 6 条 + Telegram 长轮询），
+         那时语义成立。但老张 2026-09-04 裁决「只保留批产线、砍掉每日摘要」后，
+         本命令是**一次性作业**（跑完即退，退出码 0）。KeepAlive=true 与一次性作业
+         组合 = launchd 认为「它又挂了」而立即重拉，形成紧凑重启循环：
+         每轮重跑采集与发布，靠指纹库幂等才没重发内容，但观测序列会被刷成垃圾。
+         改用 StartCalendarInterval：定时触发，跑完就结束，不重拉。 -->
     <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
+    <false/>
+    <!-- 每日 03:00 跑一轮过夜批产。老张 2026-09-04 认可「过夜批产（1 小时级）」；
+         启用 AI 编辑部后 writer 实测 ≈53 分钟，03:00 起跑能在早上前结束。
+         改时只需改 Hour/Minute；要改频率就改成数组形式多组时间点。 -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    <!-- 单次作业上限：启用编辑部后正常在 1 小时内，给到 2 小时宽限。
+         超时被杀会残留 memory/.lock（信号清理钩子对 SIGKILL 无效），
+         而 acquireLock 对**活 PID** 一律拒绝——下次定时会直接失败。
+         故宁可给足宽限也不要让它被中途杀。 -->
+    <key>ExitTimeOut</key>
+    <integer>7200</integer>
 
     <!-- 日志落盘目录 -->
     <key>StandardOutPath</key>

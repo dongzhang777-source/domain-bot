@@ -44,7 +44,35 @@ describe('环境诊断 doctor 模块', () => {
     expect(content).toContain('/opt/homebrew/bin')
     expect(content).toContain('/Users/aiatwork/.local/bin')
     expect(content).toContain('--env-file-if-exists=.env')
-    expect(content).toContain('<key>KeepAlive</key>')
-    expect(content).toContain('<true/>')
+  })
+
+  /**
+   * 本组断言在 DB-04 被**反转**，不是删除。
+   *
+   * 旧版本这里断言 `content` 必须包含 `<key>KeepAlive</key>` 与 `<true/>`——
+   * 它把缺陷锁死了：KeepAlive 守护的是已退役的常驻循环（日推 6 条 + Telegram
+   * 长轮询）。老张 2026-09-04 裁决「只保留批产线」后本命令是一次性作业，
+   * KeepAlive=true 与它组合 = launchd 认为「又挂了」而立即重拉，形成紧凑重启循环。
+   * 改完 plist 后正是本断言把修改判为失败——所以它必须跟着反转。
+   */
+  it('plist 不得用 KeepAlive 守护一次性批产（紧凑重启循环），改用 StartCalendarInterval', () => {
+    const content = readFileSync(join(process.cwd(), 'ops/com.domain-bot.plist'), 'utf8')
+    expect(content, 'KeepAlive 与一次性批产组合会造成紧凑重启循环').not.toContain('<key>KeepAlive</key>')
+    expect(content, '定时触发必须由 StartCalendarInterval 承担').toContain('<key>StartCalendarInterval</key>')
+    expect(content).toContain('<key>RunAtLoad</key>')
+    // RunAtLoad 必须为 false：否则每次 load（重启/调试）都会立即触发一轮完整批产，
+    // 启用编辑部后那是 ≈53 分钟的作业，会在调试时意外起跑。
+    expect(content).toMatch(/<key>RunAtLoad<\/key>\s*<false\/>/)
+  })
+
+  it('plist 的入口必须指向现行产线 dist/cli.js，不得指退役入口 dist/index.js', () => {
+    const content = readFileSync(join(process.cwd(), 'ops/com.domain-bot.plist'), 'utf8')
+    const args = content.slice(content.indexOf('<key>ProgramArguments</key>'), content.indexOf('</array>'))
+    expect(args, 'launchd 必须跑 cli.js 的 run 子命令').toContain('<string>dist/cli.js</string>')
+    expect(args).toContain('<string>run</string>')
+    expect(args).toContain('<string>--persona=all</string>')
+    // dist/index.ts 仅作兼容转发保留（避免旧调用方式静默失效），但定时作业不应指着它：
+    // 指退役入口会让作业行为取决于那个转发壳里的默认值。
+    expect(args, '不得再指退役入口').not.toContain('dist/index.js')
   })
 })

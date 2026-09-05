@@ -3,6 +3,34 @@
 > 状态：**草稿，冻结中——签字流程已后置**。2026-09-04 老张决断：先打磨产品功能与形态（L1-L3 行为范式，见 workplan Phase C′），老张认可后才进入判定线重写定稿与签字；届时 G/P 判据将随行为范式（展开即已读）重写，I-2 改零互动口径。生效后探针期内不得修改（D §七.2：事后定向会向结果靠拢）。
 > 依据：A 边界声明 + C12 非对称通过线 + A9 戒断测试 + D 无效探针判据（见 cross-review-fourparty §2.3）。
 
+> ## ❄️ DB-04 冻结声明（2026-09-05 补登，不改下方判据正文一字）
+>
+> **判定线 11 项整体冻结，本轮不重写。** 老张 2026-09-04 已确认签字冻结（沿用上方既有冻结：先打磨产品功能与形态，认可后才进入判定线重写定稿与签字）。
+>
+> DB-04（信息流产线收编）改了行为数据的**来源与语义**，使部分判据的口径失效。
+> 以下为逐项实测核对结果（读取时间 2026-09-05 00:10，核对对象：`scripts/gen-evidence.mjs`、
+> `memory/views.json`、`src/memory/observe.ts`、`src/ingest/tuna-signals.ts`）：
+>
+> | 判据 | DB-04 后的真实状态 | 失效机制（实测，非推测） |
+> |---|---|---|
+> | **I-2** 反馈率 | **永久 `nodata`** | 分母 `totalPushed` 取自观测的 `pushedDelivered`；新产线恒传 `telegram: 'disabled'` + `pushedDelivered: 0`（`src/pipeline.ts` 的 `finalizeStage`），故 `totalPushed === 0` → `gen-evidence.mjs:118` 直接判 `nodata`。Telegram 送达数这个分母已无来源 |
+> | **G-1 / P-1** 主动查看次数 | **可计算，但口径已换且现存数据是脏的** | `memory/views.json` 的写入方**已恢复**（DB-06 的 `src/ingest/tuna-signals.ts:158` 调 `store.recordView`），不是「永久无写入方」。但该文件现存 5 条是联调期数据（`digestId` 为 `liantiao` / `lv113` / `lv115` 等），非真实用户行为；且新语义是 tuna 端侧行为回流折算，与原先的 Telegram L1-L3 展开交互**不是同一个量**，两者不得混算成一条序列 |
+> | **G-2** 👍率 | **可计算，但口径已换** | `feedback.json` 的写入方同为 `ingest`（`recordFeedback`），但 up/down 现由 tuna 的 `reaction` / `dismissed` / 收藏折算而来，不再是 Telegram 的 👍/👎 按钮点击。阈值 20% 是针对按钮语义定的，折算语义下未重新标定 |
+> | **G-3** 戒断测试 | **无法开跑** | 依赖 G-1 的连续行为序列；口径未定 + 现存数据是脏的，戒断窗口的起点无从确定 |
+> | **I-1 / I-3 / I-4** | 不受影响 | 三项均读 `observations.jsonl` 的采集侧字段（candidates / skippedSources / zeroYieldSources / enabledSourceIds / saturationRate），新产线照旧落盘。但 I-4 另有独立的待裁问题（决策点 7：现行 `saturationRate > 0.5` 形式已被诊断报告 M3 证明恒真/恒假不可用），与 DB-04 无关 |
+>
+> **`scripts/gen-evidence.mjs` 本轮不改**（按 DB-04 工单 Task 8 Step 4）。它的 I-2 分子分母口径随
+> Telegram 退役已失效，G-1/G-2 的语义随回流通道已变——重写归 **DB-07**。
+>
+> **DB-07 的两个前置条件**（缺一即不得开跑判定线）：
+> 1. tuna 行为回流通道已积累**真实**信号（不是联调数据）；开跑前须清空或用 `--probe-start` 窗口隔离 `memory/views.json` 与 `memory/feedback.json` 的存量脏数据；
+> 2. 老张解冻探针签字。
+>
+> **不得把本声明读成「自进化未生效」**：DB-06 落地后回流通道已接通，
+> 质量看板的 `selfEvolutionActive` 由真实信号存量算出（有信号即自动转 `true`）。
+> 冻结的是**判定线**（需求命题的证伪判据），不是**自进化回路**（源权重与兴趣后验）——
+> 两者曾被混为一谈，故此处显式区分。
+
 ## 0. 结论边界（开跑前写死）
 
 **本探针只能证伪，不能证实。** 老张本人是第一个用户，且是设计者。

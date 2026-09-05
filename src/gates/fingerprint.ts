@@ -71,9 +71,26 @@ export function collectCanonicalUrls(items: Array<{ url: string }>): string[] {
 }
 
 export interface EventCapResult<T> {
+  /** 每个事件簇内排名靠前（≤maxPerEvent）的条目，按分降序 */
   kept: T[]
-  dropped: DropRecord[]
-  /** 独立事件簇数（看板用：kept 里有多少个独立事件） */
+  /**
+   * 同事件超额条目：**降权而非丢弃**，排在 kept 之后。
+   *
+   * 为何改成降权（2026-09-04 真跑实测，三轮迭代后的结论）：
+   * 词法单链接聚类无法可靠区分「同一新闻事件」与「同一研究领域」——真事件名
+   * （Astra）天然被 15 条共享，领域词汇（language/multi/learning）也天然被 8-11 条共享，
+   * 任何 df / 大写 / jaccard 阈值都分不开（实测扫 maxEntityDf：2→68 簇真事件也散、
+   * 3→46 簇最大簇 66、20→24 簇最大簇 101）。
+   *
+   * 在判别不可靠的前提下，「丢弃」是危险的：真跑一轮 126 条候选被误杀 90-100 篇
+   * 彼此独立的论文，而候选池薄时这些内容再也回不来（静默的内容贫困）。
+   * 「降权」则两头都对：候选池厚时超额条目排在后面、被 maxItems 自然截掉（刷屏照样防住）；
+   * 候选池薄时它们仍在产出里，不摧毁内容。
+   *
+   * 语义事件的精确归并交给 DB-05 的 LLM reviewer（它拿得到正文与全批上下文）。
+   */
+  demoted: T[]
+  /** 独立事件簇数（看板用） */
   eventCount: number
   /**
    * 每条 kept 归属的事件簇标识（按 item.id 索引）。
@@ -99,9 +116,20 @@ export interface EventCapResult<T> {
  * 旧管线先截断后聚类（`src/index.ts` 旧版），于是 15 家媒体对同一事件的报道
  * 能吃满全部坑位，聚类形同虚设（DB-03 §2.5 缺失「主题编辑」）。
  */
+export interface CapEventsOptions {
+  /**
+   * 背景文档频率表（token → 在全量采集里出现的条目数）与背景批大小。
+   * 由 pipeline 从**过滤前**的 collected 算出后传入；分母口径的理由见
+   * `src/gates/eventCluster.ts` 的 `ClusterOptions.backgroundDf`（真跑实测）。
+   */
+  backgroundDf?: ReadonlyMap<string, number>
+  backgroundSize?: number
+}
+
 export function capEvents<T extends RawItem & { valueScore: number }>(
   items: T[],
   cfg: GatesConfig,
+  opts: CapEventsOptions = {},
 ): EventCapResult<T> {
   const threshold = cfg.dedupe?.jaccardThreshold ?? 0.75
   const maxPerEvent = cfg.dedupe?.maxPerEvent ?? 2
@@ -109,10 +137,17 @@ export function capEvents<T extends RawItem & { valueScore: number }>(
 
   // 先按分降序：簇内选留时自然取到高分项，且簇代表（key）就是最高分那条
   const sorted = [...items].sort((a, b) => b.valueScore - a.valueScore)
-  const clusters = clusterByEntity(sorted, stopwords)
+  const clusters = clusterByEntity(sorted, stopwords, {
+    // 文档频率上限：防单链接传递闭包在千条级同质语料上塌缩
+    //（真跑实测：126 条被塌成 24 簇、最大簇 101、误杀 100 条）
+    maxEntityDf: cfg.dedupe?.maxEntityDf,
+    maxEntityDfRatio: cfg.dedupe?.maxEntityDfRatio,
+    backgroundDf: opts.backgroundDf,
+    backgroundSize: opts.backgroundSize,
+  })
 
   const kept: T[] = []
-  const dropped: DropRecord[] = []
+  const demoted: T[] = []
   const eventKeyOf = new Map<string, string>()
 
   for (const cluster of clusters) {
@@ -122,36 +157,26 @@ export function capEvents<T extends RawItem & { valueScore: number }>(
     let slotsUsed = 0
 
     for (const item of cluster.items) {
-      // 补充判据：与簇代表标题几乎逐字相同 → 同一通稿原样转发，不另占坑
+      eventKeyOf.set(item.id, cluster.key)
+      // 补充判据：与簇代表标题几乎逐字相同 → 同一通稿原样转发，不另占坑。
+      // 这一条是**高置信**的（jaccard≥0.75 意味着标题基本一样），保留降权处理。
       const isVerbatimRepost =
         item.id !== rep.id && jaccard(repTokens, tokenize(item.title)) >= threshold
 
       if (slotsUsed >= maxPerEvent || isVerbatimRepost) {
-        dropped.push(
-          drop(
-            item,
-            isVerbatimRepost
-              ? 'fingerprint:verbatimRepost'
-              : `fingerprint:eventSaturated(>${maxPerEvent})`,
-            isVerbatimRepost
-              ? `与簇代表「${rep.title.slice(0, 40)}」标题 jaccard≥${threshold}，判为同一通稿原样转发`
-              : `同事件报道已达上限 ${maxPerEvent} 条（事件簇 ${cluster.key}，共 ${cluster.items.length} 条），本条被降权剔除`,
-          ),
-        )
-        // 被剔除的也记 eventKey：看板需要知道它们归属哪个事件
-        eventKeyOf.set(item.id, cluster.key)
+        demoted.push(item) // 降权，不丢弃
         continue
       }
       slotsUsed += 1
       kept.push(item)
-      eventKeyOf.set(item.id, cluster.key)
     }
   }
 
-  // kept 重新按分降序：上面是按簇遍历产出的，簇间顺序不等于全局分数顺序
+  // 各自按分降序：上面是按簇遍历产出的，簇间顺序不等于全局分数顺序
   kept.sort((a, b) => b.valueScore - a.valueScore)
+  demoted.sort((a, b) => b.valueScore - a.valueScore)
 
-  return { kept, dropped, eventCount: clusters.length, eventKeyOf }
+  return { kept, demoted, eventCount: clusters.length, eventKeyOf }
 }
 
 function drop(item: RawItem, ruleId: string, reason: string): DropRecord {

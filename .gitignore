@@ -2,6 +2,10 @@ node_modules/
 dist/
 /memory/
 /outbox/
+# 分段批产作业的中间态（collect/edit/review 产物 + 编辑部长时作业的逐批进度）。
+# 不入仓的理由：单份采集快照可达数 MB（含全量候选与事件键映射），且每轮都换，
+# 入仓只会把历史刷成噪音。它们是**可重跑的中间态**，不是审计留档（留档在 evidence/）。
+/staging/
 .env
 *.tsbuildinfo
 .DS_Store

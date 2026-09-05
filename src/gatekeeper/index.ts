@@ -68,8 +68,16 @@ export interface GatekeepResult {
   rejectCounts: Record<string, number>
   backfilled: number
   poolExhausted: boolean
-  /** 事件复检是否触发裁剪（触发说明递补绕过了 capEvents，属异常路径，看板要显式记） */
+  /** 事件复检裁掉的条数（填充感知裁剪下，候选充足时才会 >0） */
   eventTrimmed: number
+  /**
+   * 本轮是否处于「填充模式」：候选不足以在 maxPerEvent 约束下填满 maxItems，
+   * 于是放行同事件超额条目而不是发一个薄包。
+   *
+   * **必须显式暴露**：填充模式意味着本轮的防刷屏能力是降级的。隐式降级正是
+   * DB-03 的老毛病（格式全绿但质量已塌），看板与 CLI 都要能一眼看出来。
+   */
+  eventFillMode: boolean
 }
 
 export function gatekeep(selected: ScoredItem[], pool: ScoredItem[], opts: GatekeepOptions): GatekeepResult {
@@ -77,6 +85,7 @@ export function gatekeep(selected: ScoredItem[], pool: ScoredItem[], opts: Gatek
   const rejected: RejectedRecord[] = []
   const accepted: Array<{ item: ScoredItem; from: 'selected' | 'backfill' }> = []
   const target = opts.persona.maxItems
+  const maxPerEvent = opts.gates.dedupe?.maxPerEvent ?? 2
 
   const judge = (item: ScoredItem): AssertionVerdict[] => {
     // 断言作用于渲染后条目；batch 用「已接受条目的 URL」，使 URL 唯一性断言随集合增长生效
@@ -90,40 +99,74 @@ export function gatekeep(selected: ScoredItem[], pool: ScoredItem[], opts: Gatek
     })
   }
 
-  for (const item of selected) {
-    if (accepted.length >= target) break
+  const eventKeyOfItem = (item: ScoredItem): string => opts.eventKeyOf?.get(item.id) ?? item.id
+  const eventSlots = new Map<string, number>()
+  /**
+   * 事件超额而**暂未接受**的条目（已过十条断言，只是多样性排队）。
+   *
+   * 为何必须单独一档而不是直接拒：词法聚类判别不可靠（见 `capEvents` 的实测说明），
+   * 把超额条目当垃圾拒掉会在候选薄时静默摧毁内容。它们只是**排序靠后**，
+   * 候选充足时自然被 target 截掉，候选薄时再回填（宁发重复不发薄包）。
+   */
+  const deferred: Array<{ item: ScoredItem; from: 'selected' | 'backfill' }> = []
+
+  /**
+   * 尝试接受一条。返回 'accepted' / 'deferred'（事件超额）/ 'rejected'（断言不过）。
+   *
+   * **多样性在接受时就强制**，不是事后裁：旧实现按分数序取满 target 就停，
+   * 于是可能在见到其他事件之前就用同事件条目填满 quota；事后的 trim
+   * 又无法补回从未被接受的条目（实测：maxItems=2 时两条同事件直接占满，多样性零作用）。
+   */
+  const consider = (item: ScoredItem, from: 'selected' | 'backfill'): 'accepted' | 'deferred' | 'rejected' => {
     const verdicts = judge(item)
-    if (isAccepted(verdicts)) {
-      accepted.push({ item, from: 'selected' })
-      continue
+    if (!isAccepted(verdicts)) {
+      const r = rejectionOf(verdicts)!
+      rejected.push({ itemId: item.id, title: item.title, url: item.url, ruleId: r.ruleId, detail: r.detail, from })
+      return 'rejected'
     }
-    const r = rejectionOf(verdicts)!
-    rejected.push({ itemId: item.id, title: item.title, url: item.url, ruleId: r.ruleId, detail: r.detail, from: 'selected' })
+    const key = eventKeyOfItem(item)
+    const used = eventSlots.get(key) ?? 0
+    if (used >= maxPerEvent) {
+      deferred.push({ item, from })
+      return 'deferred'
+    }
+    eventSlots.set(key, used + 1)
+    accepted.push({ item, from })
+    return 'accepted'
   }
 
-  // 递补：主池被否决留下的坑，按分数从候补池补
+  for (const item of selected) {
+    if (accepted.length >= target) break
+    consider(item, 'selected')
+  }
+
+  // 回填一：事件超额但已过断言的条目（进入填充模式）
+  let eventFillMode = false
+  for (const entry of deferred) {
+    if (accepted.length >= target) break
+    accepted.push(entry)
+    eventFillMode = true
+  }
+
+  // 回填二：候补池（被 maxItems 截掉的），按分递补
   const backfill = new BackfillPool(pool)
   let backfilled = 0
   while (accepted.length < target && !backfill.exhausted) {
     const item = backfill.next()
     if (!item) break
-    const verdicts = judge(item)
-    if (isAccepted(verdicts)) {
-      accepted.push({ item, from: 'backfill' })
-      backfilled += 1
-      continue
+    if (consider(item, 'backfill') === 'accepted') backfilled += 1
+  }
+  // 候补递补后可能又有空位（候补被拒），再给事件超额条目一次机会
+  if (!backfill.exhausted || accepted.length < target) {
+    for (const entry of deferred) {
+      if (accepted.length >= target) break
+      if (accepted.some((a) => a.item.id === entry.item.id)) continue
+      accepted.push(entry)
+      eventFillMode = true
     }
-    const r = rejectionOf(verdicts)!
-    rejected.push({ itemId: item.id, title: item.title, url: item.url, ruleId: r.ruleId, detail: r.detail, from: 'backfill' })
   }
 
-  // 事件复检：递补可能把同事件报道补进来，绕过 capEvents 的 maxPerEvent
-  const trimmed = trimOversubscribedEvents(accepted, opts)
-  const eventTrimmed = accepted.length - trimmed.length
-  accepted.length = 0
-  accepted.push(...trimmed)
-
-  // 重编号：id 第三段必须连续无空洞（递补与事件裁剪都改变过集合）
+  // 重编号：id 第三段必须连续无空洞（回填与递补都改变过集合）
   const published = accepted.map((a, index) => renderOne(a.item, index, opts))
 
   const rejectCounts: Record<string, number> = {}
@@ -135,7 +178,9 @@ export function gatekeep(selected: ScoredItem[], pool: ScoredItem[], opts: Gatek
     rejectCounts,
     backfilled,
     poolExhausted: backfill.exhausted,
-    eventTrimmed,
+    // 被降权但本轮未获回填的条数（= 因 target 已满而留在 deferred 里的）
+    eventTrimmed: deferred.filter((d) => !accepted.some((a) => a.item.id === d.item.id)).length,
+    eventFillMode,
   }
 }
 
@@ -148,30 +193,6 @@ function renderOne(item: ScoredItem, index: number, opts: GatekeepOptions) {
     stopwords: opts.stopwords,
     copy: opts.copiesOf?.get(item.id) ?? null,
   })
-}
-
-/**
- * 裁掉超额事件簇里分数最低的条目。
- * 用 valueScore 决定去留：保留的是每个事件里最有价值的那几条，不是先到的那几条。
- */
-function trimOversubscribedEvents(
-  accepted: Array<{ item: ScoredItem; from: 'selected' | 'backfill' }>,
-  opts: GatekeepOptions,
-): Array<{ item: ScoredItem; from: 'selected' | 'backfill' }> {
-  const maxPerEvent = opts.gates.dedupe?.maxPerEvent ?? 2
-  const counts = new Map<string, number>()
-  const out: Array<{ item: ScoredItem; from: 'selected' | 'backfill' }> = []
-
-  // 按分降序遍历：高分先占坑，低分的超额者被裁
-  const sorted = [...accepted].sort((a, b) => b.item.valueScore - a.item.valueScore)
-  for (const entry of sorted) {
-    const key = opts.eventKeyOf?.get(entry.item.id) ?? entry.item.id
-    const used = counts.get(key) ?? 0
-    if (used >= maxPerEvent) continue
-    counts.set(key, used + 1)
-    out.push(entry)
-  }
-  return out
 }
 
 /** 供看板与测试直接复用的事件占位检查（对已渲染产出）。 */

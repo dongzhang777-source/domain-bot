@@ -9,6 +9,13 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "start": "npm run build && node --env-file-if-exists=.env dist/cli.js run --persona=all",
+    "collect": "npm run build && node --env-file-if-exists=.env dist/cli.js collect",
+    "edit": "npm run build && node --env-file-if-exists=.env dist/cli.js edit",
+    "review": "npm run build && node --env-file-if-exists=.env dist/cli.js review",
+    "publish-feed": "npm run build && node --env-file-if-exists=.env dist/cli.js publish",
+    "calibrate": "npm run build && node --env-file-if-exists=.env dist/cli.js calibrate",
+    "ingest": "npm run build && node --env-file-if-exists=.env dist/cli.js ingest",
+    "doctor": "npm run build && node --env-file-if-exists=.env dist/cli.js doctor",
     "snapshot": "node scripts/snapshot-evidence.mjs",
     "probe:events": "npm run build && node scripts/probe-event-cluster.mjs"
   },

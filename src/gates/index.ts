@@ -11,8 +11,9 @@ export {
   capEvents,
   collectCanonicalUrls,
   dedupeByCanonicalUrl,
+  type CapEventsOptions,
 } from './fingerprint.js'
-export { clusterByEntity, entityTokens, eventKeyMap } from './eventCluster.js'
+export { capitalizedTokens, clusterByEntity, entityTokens, eventKeyMap, topicTokens , type ClusterOptions } from './eventCluster.js'
 export { compilePattern, matchesKeyword, toHaystack } from './textMatch.js'
 
 /**

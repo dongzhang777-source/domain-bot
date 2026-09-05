@@ -1,6 +1,10 @@
 import { canonicalUrl } from '../collector/canonicalUrl.js'
 import { BlacklistGate } from '../gates/blacklist.js'
-import { entityTokens } from '../gates/eventCluster.js'
+// 钩子相关性用 topicTokens（大小写无关），**不用 entityTokens**：
+// entityTokens 要求 ASCII 词首字母大写，那是事件聚类专用的专有名词口径。
+// 用它判钩子会自相矛盾——机械兜底的实体词卡片本身就是小写 token 拼的，
+// 永远过不了自己的断言（实测踩过，一次打红 23 个用例）。
+import { topicTokens } from '../gates/eventCluster.js'
 import { PersonaGate } from '../gates/persona.js'
 import { HOOK_LIMITS, MIN_HOOK_CHARS, SUMMARY_MAX, WHY_MAX, isTitlePrefix } from '../render/tuna.js'
 import type { GatesConfig, GatekeeperInput, PersonaConfig } from '../types.js'
@@ -165,13 +169,13 @@ function checkBlacklistRecheck(item: GatekeeperInput, gates: GatesConfig): Asser
  */
 function checkHookEntity(item: GatekeeperInput, gates: GatesConfig): AssertionVerdict {
   const stopwords = new Set(gates.dedupe?.eventStopwords ?? [])
-  const source = entityTokens(`${item.title} ${item.body}`, stopwords)
+  const source = topicTokens(`${item.title} ${item.body}`, stopwords)
   if (source.size === 0) {
     // 原文抽不出任何实体：无法判定相关性。按「宁缺毋滥」否决，交由递补换一条。
     return fail('gk:hookEntity', '原文抽不出任何实体词，无法校验钩子相关性')
   }
   for (const h of item.hooks) {
-    const hookEntities = entityTokens(h, stopwords)
+    const hookEntities = topicTokens(h, stopwords)
     let shared = false
     for (const e of hookEntities) {
       if (source.has(e)) {

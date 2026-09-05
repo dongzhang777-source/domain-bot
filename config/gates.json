@@ -194,6 +194,13 @@
       "pattern": "\\d+\\s*个(神级|案例|技巧|细节|方法|要点|秘密)|这\\s*\\d+\\s*个(细节|技巧|原因)|不是.{0,12}而是这",
       "scope": "title",
       "_why": "清单体标题党（DB-03 #183「真正让 AI Agent 失控的，不是模型，而是这 3 个细节」、#194「38个神级案例一次看完」）：偏观点杂谈与情绪放大，缺乏实证。"
+    },
+    {
+      "id": "damaged:scrapeFragment",
+      "group": "damaged",
+      "pattern": "^\\S+\\s+\\d+(\\.\\d+)?\\s*$|^\\S+\\s+\\d+(\\.\\d+)?%\\s*$",
+      "scope": "title",
+      "_why": "真跑实测（2026-09-04）产出里出现 `llm-gemini 0.34`、`llm-anthropic 0.27` 这类抓取碎片被当成标题发布：它们恰好 15 码点过了 minTitleChars、含 llm 得 3 分过了 relevance。形态是「一个 slug + 一个数值」，是网页抓取把评分/版本号行误当标题，不是内容。"
     }
   ],
   "_eventStopwordsNote": "实体词聚类的通用词表。判据：事件标识必须是专有名词/产品名（Astra、K2 Horizon、FlashInfer），而通用话题词（agent、framework、safety、benchmark）不是——拿话题词聚类必然误并（实测：Microsoft Agent Framework 经 agent 与 Astra 报道撞车）。扩充后必跑 npm run probe:events 与 tests/eventCluster.test.ts 验证召回未退化。",
@@ -542,6 +549,9 @@
       "读懂",
       "指南",
       "手册"
-    ]
+    ],
+    "maxEntityDf": 20,
+    "maxEntityDfRatio": 0.02,
+    "_dfNote": "批内文档频率上限：实体词在本批出现于超过 max(20, 2%*n) 条里即判为通用词，不作聚类连接依据。真跑实测（2026-09-04，1184 条 arXiv/HF）：不加此闸时闸门后 128 条被单链接传递闭包塌缩成 18 个事件、109 条被 eventSaturated 误杀。绝对值与比例取 max——只用比例会坑小批（n=10 时 2%=0.2 连 astra 都剔），只用绝对值拦不住大批塌缩。"
   }
 }

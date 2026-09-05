@@ -54,23 +54,96 @@ function longEnough(token: string): boolean {
 const ASCII_RUN = /[a-z0-9]{3,}/g
 
 /**
- * 从标题抽实体词：tokenize 后剔除通用词与过短 token，并补抽混合 token 里的 ASCII 实体。
+ * 从**原始**标题（未经 normalizeText 小写化）抽出首字母大写的词。
+ *
+ * 为何这是关键信号（2026-09-04 真跑实测）：`normalizeText` 把大小写全抹平，
+ * 于是丢掉了区分「事件标识」与「领域词汇」的唯一强信号：
+ * - 事件标识是**专有名词**，在句 case 标题里首字母大写：Astra / K2 Horizon / FlashInfer / KC-Bench；
+ * - 领域词汇在句 case 标题里是小写：retrieval / inference / benchmark / generation。
+ *
+ * 实测证据：1184 条 arXiv/HF 采集过闸门后剩 126 条，单链接并查集把它们塌缩成
+ * **16 个事件**、误杀 109 条。根因不是阈值没调好，而是**范畴错误**：
+ * 126 篇彼此独立的论文共享技术词汇是因为同属一个领域，不是同一个事件。
+ * 文档频率无法在 n=126 时区分「15 篇同事件报道」与「15 篇都用 retrieval 的论文」
+ *（两者 df 相同），而大小写可以：arXiv 标题是句 case，retrieval 小写；
+ * 新闻报道里 Astra 大写。
+ */
+const CAPITALIZED_WORD = /[A-Z][A-Za-z0-9'\u2019-]*/g
+
+export function capitalizedTokens(original: string): Set<string> {
+  const out = new Set<string>()
+  for (const m of original.match(CAPITALIZED_WORD) ?? []) {
+    // 归一化成与 tokenize 同口径的小写纯字母数字串，才能与它的输出交集
+    const norm = m.toLowerCase().replace(/[^a-z0-9]/g, '')
+    if (norm.length >= MIN_ASCII_LEN) out.add(norm)
+    // 连字/拆号名（KC-Bench、GPT-6）的子段也算：原标题写 KC-Bench，
+    // tokenize 会拆成 kc / bench，两边得对得上
+    for (const part of m.toLowerCase().split(/[^a-z0-9]+/)) {
+      if (part.length >= MIN_ASCII_LEN) out.add(part)
+    }
+  }
+  return out
+}
+
+/**
+ * 从标题抽实体词。
+ *
+ * 三层筛选，缺一不可：
+ * 1. `tokenize()` 分词（复用，不重写——CJK 2-gram 行为在那里）；
+ * 2. 剔除静态通用词表与过短 token；
+ * 3. **ASCII token 额外要求「在原标题里首字母大写」**——这是区分专有名词（事件标识）
+ *    与领域词汇的关键，见 `capitalizedTokens` 的实测依据。
+ *    CJK token 无大小写，不适用本层，交由批内文档频率（df）兼顾。
  *
  * 必须复用 tokenize()（src/collector/dedupe.ts）而不是自己分词——CJK 2-gram 行为在那里，
  * 重写会造成中英文口径分裂（纯中文标题整句变 1 token、jaccard 退化为精确匹配，
  * 这是本项目已修过的 P2-2 缺陷）。
+ *
+ * 另补抽混合 token 里的 ASCII 段：`normalizeText` 只把非 `\p{L}\p{N}` 换成空格，
+ * 而 CJK **属于 `\p{L}`**，所以 `"GPT-6 Astra横空出世"` 会得到 token `astra横空出世`，
+ * 英文实体粘在中文里——这就是 DB-03 里中文 Astra 标题与英文报道聚不拢的根因。
+ */
+/**
+ * 抽**主题词**（大小写无关）：tokenize + 剔除静态通用词与过短 token。
+ *
+ * 用途是「这段文本与那段文本是否谈同一主题」——例如 `gk:hookEntity` 判钩子是否
+ * 命中原文实体、`deriveHooks` 生成实体词卡片。这类判定**不该看大小写**：
+ * 钩子里写 "bench" 与原文的 "KC-Bench" 显然相关。
+ *
+ * 与 `entityTokens` 的区别只有一个：本函数不要求 ASCII token 在原文里首字母大写。
+ */
+export function topicTokens(text: string, stopwords: ReadonlySet<string>): Set<string> {
+  return extractTokens(text, stopwords, false)
+}
+
+/**
+ * 抽**事件实体词**（专有名词口径）：在 topicTokens 基础上，额外要求 ASCII token
+ * 在原标题里首字母大写。
+ *
+ * 用途只有一个：**事件聚类**。大写要求是区分「事件标识」与「领域词汇」的关键信号，
+ * 实测依据见 `capitalizedTokens`。
  */
 export function entityTokens(title: string, stopwords: ReadonlySet<string>): Set<string> {
+  return extractTokens(title, stopwords, true)
+}
+
+function extractTokens(text: string, stopwords: ReadonlySet<string>, requireProperNoun: boolean): Set<string> {
+  const proper = requireProperNoun ? capitalizedTokens(text) : null
   const out = new Set<string>()
-  for (const t of tokenize(title)) {
-    if (!longEnough(t)) continue
-    if (stopwords.has(t)) continue
-    out.add(t)
-    // 混合 token 的 ASCII 段补抽：`astra横空出世` → 额外得到 `astra`。
-    // 根因：normalizeText 只把非 `\p{L}\p{N}` 换成空格，而 CJK **属于 `\p{L}`**，
-    // 所以英文实体会粘在中文里成一个 token，跨语言同事件因此聚不拢。
-    for (const m of t.match(ASCII_RUN) ?? []) {
-      if (m.length >= MIN_ASCII_LEN && !stopwords.has(m)) out.add(m)
+  for (const tok of tokenize(text)) {
+    if (!longEnough(tok)) continue
+    if (stopwords.has(tok)) continue
+    if (HAS_CJK.test(tok)) {
+      // CJK（含 2-gram）无大小写概念，两种口径都直接入选
+      out.add(tok)
+    } else if (proper === null || proper.has(tok)) {
+      // 纯 ASCII：topicTokens 直接入选；entityTokens 要求原标题里首字母大写
+      out.add(tok)
+    }
+    // 混合 token 的 ASCII 段补抽（`astra横空出世` → `astra`），大写要求同上
+    for (const m of tok.match(ASCII_RUN) ?? []) {
+      if (m.length < MIN_ASCII_LEN || stopwords.has(m)) continue
+      if (proper === null || proper.has(m)) out.add(m)
     }
   }
   return out
@@ -81,6 +154,46 @@ export interface EntityCluster<T> {
   items: T[]
   /** 簇标识：簇内第一个条目的 id（稳定，且下游排序/截断/递补后仍可回溯） */
   key: string
+}
+
+/**
+ * 批内文档频率上限：一个实体词在本批出现于超过该数量的条目里，就不可能是事件标识。
+ *
+ * **为何必需（2026-09-04 真跑实测，单测测不出来）**：单链接并查集在小样本上表现很好
+ * （Astra 9/10、K2 5/5、干扰项零误并），但真跑一轮 1184 条 arXiv/HF 采集时，
+ * 闸门后 128 条被塌缩成 **18 个事件**，109 条被 `eventSaturated` 误杀——
+ * 因为传递闭包会把「A 与 B 共享 retrieval、B 与 C 共享 generation」链成 A/B/C 同事件。
+ * 千条级同质语料下，任何中频技术词都会把全批缝成几个巨型簇。
+ *
+ * **阈值取 `max(maxEntityDf, maxEntityDfRatio * n)`，两侧都不能少**：
+ * - 只用比例：小批（n=10）时 2% = 0.2，会把 `astra`（df=8）也当通用词剔掉，小样本全坑；
+ * - 只用绝对值：大批（n=5000）时 20 条共享一个词仍可能是巧合，拦不住塌缩。
+ * 真实事件的上限参考：DB-03 里 GPT-6 Astra 有 15 篇跟风报道，故绝对上限取 20 留有余额。
+ */
+export const DEFAULT_MAX_ENTITY_DF = 20
+export const DEFAULT_MAX_ENTITY_DF_RATIO = 0.02
+
+export interface ClusterOptions {
+  /** 文档频率上限（绝对值），缺省 20 */
+  maxEntityDf?: number
+  /** 文档频率上限（占背景批大小比例），缺省 0.02 */
+  maxEntityDfRatio?: number
+  /**
+   * 背景文档频率表：token → 在**全量采集**（过滤前）里出现的条目数。
+   *
+   * **分母必须是全量采集，不能是过滤后的子集**（2026-09-04 真跑实测）：
+   * 1184 条采集过闸门后只剩 126 条 AI 强相关条目，此时 `language`(df=11)、`multi`(10)、
+   * `learning`(8)、`multimodal`(8)、`embedding`(6) 这些**领域词汇**的相对频率被人为抬高，
+   * 与真事件标识（15 篇同事件报道 df=15）落在同一量级，任何阈值都分不开：
+   * 实测扫 maxEntityDf=2 → 68 簇（真事件也散了），=3 → 46 簇最大簇 66（塌缩），
+   * =20 → 24 簇最大簇 101（全塌）。
+   * 换到全量 1184 条做分母，`language` 的 df 是数百而 `astra` 仍是 15，两者天然可分。
+   *
+   * 缺省时退回用本批自身算 df（小批/单测场景），行为与旧版一致。
+   */
+  backgroundDf?: ReadonlyMap<string, number>
+  /** 背景批大小（与 backgroundDf 配套），缺省取本批 items.length */
+  backgroundSize?: number
 }
 
 /**
@@ -96,11 +209,31 @@ export interface EntityCluster<T> {
 export function clusterByEntity<T extends { id: string; title: string }>(
   items: T[],
   stopwords: ReadonlySet<string>,
+  opts: ClusterOptions = {},
 ): EntityCluster<T>[] {
   const n = items.length
   if (n === 0) return []
 
   const tokens = items.map((it) => entityTokens(it.title, stopwords))
+
+  // 文档频率闸门：把「在背景语料里太常见」的词当领域词汇剔除，不作为事件连接依据。
+  // 这是对静态 eventStopwords 的必要补充：静态词表无法预见每个领域的高频术语，
+  // 而 df 是自调的。分母口径见 ClusterOptions.backgroundDf 的实测说明。
+  // df 表：优先用背景（全量采集）频率，缺省才用本批自身
+  const df: ReadonlyMap<string, number> = opts.backgroundDf ?? (() => {
+    const own = new Map<string, number>()
+    for (const set of tokens) {
+      for (const tok of set) own.set(tok, (own.get(tok) ?? 0) + 1)
+    }
+    return own
+  })()
+  const dfBase = opts.backgroundDf ? (opts.backgroundSize ?? n) : n
+  const dfLimit = Math.max(
+    opts.maxEntityDf ?? DEFAULT_MAX_ENTITY_DF,
+    (opts.maxEntityDfRatio ?? DEFAULT_MAX_ENTITY_DF_RATIO) * dfBase,
+  )
+  const isEventEntity = (tok: string): boolean => (df.get(tok) ?? 0) <= dfLimit
+
   const parent = Array.from({ length: n }, (_, i) => i)
 
   const find = (i: number): number => {
@@ -131,7 +264,8 @@ export function clusterByEntity<T extends { id: string; title: string }>(
       const [small, large] = ti.size <= tj.size ? [ti, tj] : [tj, ti]
       let shared = false
       for (const t of small) {
-        if (large.has(t)) {
+        // 背景高频词＝领域词汇，不作为连接依据（防传递闭包塌缩）
+        if (large.has(t) && isEventEntity(t)) {
           shared = true
           break
         }
@@ -155,9 +289,10 @@ export function clusterByEntity<T extends { id: string; title: string }>(
 export function eventKeyMap<T extends { id: string; title: string }>(
   items: T[],
   stopwords: ReadonlySet<string>,
+  opts: ClusterOptions = {},
 ): Map<string, string> {
   const out = new Map<string, string>()
-  for (const cluster of clusterByEntity(items, stopwords)) {
+  for (const cluster of clusterByEntity(items, stopwords, opts)) {
     for (const it of cluster.items) out.set(it.id, cluster.key)
   }
   return out

@@ -1,14 +1,30 @@
-import { mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { readdirSync, readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import type { DomainConfig, GatesConfig, PersonaConfig, SourceConfig } from './types.js'
-import { runPipeline, type PipelineResult } from './pipeline.js'
+import type { DomainConfig, FetchFn, GatesConfig, PersonaConfig, SourceConfig } from './types.js'
+import { collectStage, runPipeline, type PipelineResult } from './pipeline.js'
 import { appendFingerprints, buildPack, loadFingerprints, writePack } from './publish/pack.js'
 import { formatSyncReport, syncPack } from './publish/sync-tuna.js'
 import { ingestTunaSignals, type IngestReport } from './ingest/tuna-signals.js'
 import { auditBoard, writeBoard } from './gatekeeper/board.js'
 import { acquireLock, releaseLock } from './runtime/lock.js'
 import type { EditorialConfig } from './editorial/provider.js'
-import { EditorialProvider, assessCalibration, formatCalibration, isCalibrated, loadGoldStandard, reviewBatch } from './editorial/index.js'
+import { EditorialProvider, assessCalibration, formatCalibration, isCalibrated, loadGoldStandard, reviewBatch, runEditorial } from './editorial/index.js'
+import {
+  COPY_SCHEMA,
+  STAGE_SCHEMA,
+  VERDICT_SCHEMA,
+  combineStagedEditorial,
+  editorialTargetsOf,
+  findLatestStage,
+  readStageJson,
+  restoreStage,
+  snapshotStage,
+  stagePath,
+  writeStageJson,
+  type CollectStageSnapshot,
+  type CopyStage,
+  type VerdictStage,
+} from './staging.js'
 
 /**
  * CLI 入口。取代旧 `src/index.ts` 的 `runOnce` / `startBot`（每日 6 条摘要 + 常驻 Telegram 轮询）。
@@ -149,40 +165,20 @@ export async function runCommand(opts: RunOptions): Promise<RunOutcome> {
         io.stdout(`[${persona.id}] 候补池耗尽，实发 ${result.published.length} < 上限 ${persona.maxItems}（宁缺毋滥，不凑数）`)
       }
 
-      // 看板自检：fatal 熔断（看板或闸门在骗人），warning 必须打到 stderr 但不阻断发布。
-      // 分级理由：若把「编辑部降级」也当 fatal，端点一抖整轮就废；
-      // 若完全不报，就是 DB-03 的静默降级老毛病（格式全绿但质量已塌回原点）。
-      const audit = auditBoard(result.board)
-      for (const w of audit.warnings) io.stderr(`[${persona.id}] 看板警告: ${w}`)
-      if (audit.fatal.length > 0) {
-        for (const p of audit.fatal) io.stderr(`[${persona.id}] 看板不自洽(熔断): ${p}`)
-        return { results, packPaths, boardPaths, crossPersonaOverlap: [], exitCode: 3 }
-      }
-
-      if (opts.dryRun) {
-        io.stdout(`[${persona.id}] dry-run：不落盘 outbox / evidence / 指纹库`)
-        continue
-      }
-
-      const pack = buildPack(result.published, {
-        digestId: result.digestId,
-        persona: persona.id,
-        personaDisplay: persona.displayName,
-        domain: persona.domain,
-        generatedAt: opts.now ?? Date.now(),
+      const emitted = emitPublished(result, persona, {
+        root,
+        memoryDir,
+        dryRun: opts.dryRun,
+        now: opts.now,
+        tunaRoot: opts.tunaRoot,
+        syncTuna: opts.syncTuna,
+        syncTunaWrite: opts.syncTunaWrite,
+        io,
       })
-      packPaths.push(writePack(pack, join(root, 'outbox/tuna')))
-      boardPaths.push(writeBoard(result.board, join(root, 'evidence')))
-      const added = appendFingerprints(memoryDir, result.published)
-      io.stdout(`[${persona.id}] 发布 ${result.published.length} 条 → ${packPaths[packPaths.length - 1]}（指纹库 +${added}）`)
-
-      // 同步到 tuna：默认只算差异不落盘。人工拷贝是第三道影子工序（实测两仓文件
-      // id 集合 172/172 一致），收编成命令后至少契约会被校验、差异会被看见。
-      if (opts.syncTuna && opts.tunaRoot) {
-        const write = opts.syncTunaWrite === true
-        const sync = syncPack(pack, { tunaRoot: opts.tunaRoot, dryRun: !write })
-        io.stdout(formatSyncReport(sync, persona.displayName))
-        if (!write) io.stdout('[sync-tuna] 确认差异无误后加 --sync-tuna-write 才真写（tuna 侧 commit/rebuild 归督阵会话）')
+      if (emitted.packPath) packPaths.push(emitted.packPath)
+      if (emitted.boardPath) boardPaths.push(emitted.boardPath)
+      if (emitted.exitCode !== 0) {
+        return { results, packPaths, boardPaths, crossPersonaOverlap: [], exitCode: emitted.exitCode }
       }
     }
 
@@ -209,6 +205,70 @@ export async function runCommand(opts: RunOptions): Promise<RunOutcome> {
   }
 }
 
+/**
+ * 发布落盘：看板自检 → dry-run 短路 → 内容包 → 看板 → 指纹库 → 可选同步 tuna。
+ *
+ * `run`（整链）与 `publish`（分段）**共用本函数**。两处各写一遍必然漂移，
+ * 而「发布」正是本项目三道影子工序的第三道（人工拷贝进 tuna 仓，实测两仓
+ * id 集合 172/172 一致）。收编成一个函数后，契约校验与差异打印只有一份实现。
+ */
+export interface EmitOptions {
+  root: string
+  memoryDir: string
+  dryRun?: boolean
+  now?: number
+  tunaRoot?: string
+  syncTuna?: boolean
+  syncTunaWrite?: boolean
+  io: CliIO
+}
+
+export interface EmitOutcome {
+  packPath?: string
+  boardPath?: string
+  exitCode: number
+}
+
+export function emitPublished(result: PipelineResult, persona: PersonaConfig, opts: EmitOptions): EmitOutcome {
+  const io = opts.io
+  // 看板自检：fatal 熔断（看板或闸门在骗人），warning 必须打到 stderr 但不阻断发布。
+  // 分级理由：若把「编辑部降级」也当 fatal，端点一抖整轮就废；
+  // 若完全不报，就是 DB-03 的静默降级老毛病（格式全绿但质量已塌回原点）。
+  const audit = auditBoard(result.board)
+  for (const w of audit.warnings) io.stderr(`[${persona.id}] 看板警告: ${w}`)
+  if (audit.fatal.length > 0) {
+    for (const p of audit.fatal) io.stderr(`[${persona.id}] 看板不自洽(熔断): ${p}`)
+    return { exitCode: 3 }
+  }
+
+  if (opts.dryRun) {
+    io.stdout(`[${persona.id}] dry-run：不落盘 outbox / evidence / 指纹库`)
+    return { exitCode: 0 }
+  }
+
+  const pack = buildPack(result.published, {
+    digestId: result.digestId,
+    persona: persona.id,
+    personaDisplay: persona.displayName,
+    domain: persona.domain,
+    generatedAt: opts.now ?? Date.now(),
+  })
+  const packPath = writePack(pack, join(opts.root, 'outbox/tuna'))
+  const boardPath = writeBoard(result.board, join(opts.root, 'evidence'))
+  const added = appendFingerprints(opts.memoryDir, result.published)
+  io.stdout(`[${persona.id}] 发布 ${result.published.length} 条 → ${packPath}（指纹库 +${added}）`)
+
+  // 同步到 tuna：默认只算差异不落盘。人工拷贝是第三道影子工序，
+  // 收编成命令后至少契约会被校验、差异会被看见。
+  if (opts.syncTuna && opts.tunaRoot) {
+    const write = opts.syncTunaWrite === true
+    const sync = syncPack(pack, { tunaRoot: opts.tunaRoot, dryRun: !write })
+    io.stdout(formatSyncReport(sync, persona.displayName))
+    if (!write) io.stdout('[sync-tuna] 确认差异无误后加 --sync-tuna-write 才真写（tuna 侧 commit/rebuild 归督阵会话）')
+  }
+  return { packPath, boardPath, exitCode: 0 }
+}
+
 export interface CollectOptions {
   root?: string
   persona: string
@@ -219,9 +279,14 @@ export interface CollectOptions {
 }
 
 /**
- * 只采集 + 过闸门，把候选落 `staging/candidates-<persona>-<ts>.json`。
- * 为 DB-05 的分阶段编辑作业（writer/reviewer 长时批产）预留落点：
- * 编辑工序读这个文件，不必重跑采集。
+ * 只跑产线步骤 1-7（采集 → 闸门 → 打分 → 事件聚合），把全部中间态落
+ * `staging/candidates-<persona>-<digestId>.json`，供 `edit` / `review` / `publish` 接手。
+ *
+ * **不跑终审、不写归档、不落观测**：这些全在 `finalizeStage`（由 publish 执行）。
+ * 旧版本此处调的是 `runPipeline`（整链），于是 `collect` 一次就 recordItems +
+ * saveDigest + appendObservation，接着 `publish` 再跑一遍——候选已被记成「已消费」，
+ * 第二轮 dedupe 把它们全屏蔽，观测序列还会多出一份重复轮次。分段命令的前提
+ * 就是每段只做自己那一段的副作用。
  */
 export async function collectCommand(opts: CollectOptions): Promise<{ path: string; count: number; exitCode: number }> {
   const root = opts.root ?? process.cwd()
@@ -240,9 +305,8 @@ export async function collectCommand(opts: CollectOptions): Promise<{ path: stri
   const memoryDir = join(root, 'memory')
   acquireLock(memoryDir)
   try {
-    // 用 maxItems 极大的副本跑闸门：collect 阶段不做截断，把全部合格候选交给编辑工序
-    const result = await runPipeline({
-      persona: { ...persona, maxItems: Number.MAX_SAFE_INTEGER },
+    const stage = await collectStage({
+      persona,
       gates,
       domain,
       sources,
@@ -252,26 +316,269 @@ export async function collectCommand(opts: CollectOptions): Promise<{ path: stri
       now: opts.now,
       knownCanonical: loadFingerprints(memoryDir),
     })
-    const dir = join(root, 'staging')
-    mkdirSync(dir, { recursive: true })
-    const path = join(dir, `candidates-${persona.id}-${result.digestId}.json`)
-    writeFileSync(
-      path,
-      JSON.stringify(
-        {
-          schema: 'domain-bot-candidates-v1',
-          persona: persona.id,
-          digestId: result.digestId,
-          generatedAt: new Date(opts.now ?? Date.now()).toISOString(),
-          funnel: result.funnel,
-          candidates: result.selected,
-        },
-        null,
-        2,
-      ),
+    const path = stagePath(join(root, 'staging'), 'candidates', persona.id, stage.digestId)
+    writeStageJson(path, snapshotStage(stage))
+    const funnel = stage.funnelPrefix.map((f) => `${f.stage}=${f.count}`).join(' → ')
+    io.stdout(
+      `[cli] collect(${persona.id})：${funnel} | 事件 ${stage.eventCount} 簇（降权 ${stage.eventDemoted}）` +
+        ` → ${stage.eventOrdered.length} 条候选 → ${path}`,
     )
-    io.stdout(`[cli] collect(${persona.id})：${result.selected.length} 条候选 → ${path}`)
-    return { path, count: result.selected.length, exitCode: 0 }
+    if (stage.skippedSources.length > 0) io.stdout(`[${persona.id}] 采集失败源: ${stage.skippedSources.join(', ')}`)
+    return { path, count: stage.eventOrdered.length, exitCode: 0 }
+  } finally {
+    releaseLock(memoryDir)
+  }
+}
+
+export interface StageRunOptions {
+  root?: string
+  persona: string
+  /** 缺省接手最近一次 collect 的产物（按 mtime） */
+  digestId?: string
+  io?: CliIO
+  /** 测试注入点：代替真实 HTTP，否则单测会去连本机模型服务 */
+  fetchFn?: FetchFn
+}
+
+/**
+ * 读回 collect 阶段的快照。
+ *
+ * 找不到时给可操作的错误信息而不是静默用空候选跑一遍：后者会产出一个
+ * 完全空的内容包，看上去像是「本轮源没内容」，而不是「你忘了先跑 collect」。
+ */
+function loadStage(
+  root: string,
+  personaId: string,
+  digestId: string | undefined,
+  io: CliIO,
+): { snapshot: CollectStageSnapshot; stagingDir: string } | null {
+  const stagingDir = join(root, 'staging')
+  const path = digestId
+    ? stagePath(stagingDir, 'candidates', personaId, digestId)
+    : findLatestStage(stagingDir, 'candidates', personaId)
+  if (!path) {
+    io.stderr(`[cli] 找不到 ${personaId} 的采集快照（${stagingDir}）；请先跑 collect --persona=${personaId}`)
+    return null
+  }
+  const snapshot = readStageJson<CollectStageSnapshot>(path, STAGE_SCHEMA)
+  if (!snapshot) {
+    io.stderr(`[cli] 采集快照不存在：${path}；请先跑 collect --persona=${personaId}`)
+    return null
+  }
+  return { snapshot, stagingDir }
+}
+
+/** persona 校验（与 runCommand 同口径）。不合法时已打过 stderr。 */
+function resolvePersona(root: string, id: string, io: CliIO): PersonaConfig | null {
+  const available = listPersonaIds(root)
+  if (!available.includes(id)) {
+    io.stderr(`[cli] 未知 persona「${id}」；可选值：${available.join(', ')}`)
+    return null
+  }
+  return loadPersona(root, id)
+}
+
+/**
+ * `edit` 阶段：只跑 writer，产物落 `staging/copy-<persona>-<digestId>.json`。
+ *
+ * 单独成段的理由是实测吞吐：writer 批=3 单批 47.1s，200 条 ≈53 分钟。
+ * 跟采集或发布绑在一个进程里，中途端点抖动就得从头再来。
+ *
+ * **未生效时仍退 0**：降级链的设计意图就是产线不停摆（无 LLM 时走机械兜底）。
+ * 若这里退非零，过夜定时作业会直接中断而永不发布——比文案机械严重得多。
+ * 但必须向 stderr 吐原因，不得只写进文件里等人去挖。
+ */
+export async function editCommand(opts: StageRunOptions): Promise<{ exitCode: number; path?: string }> {
+  const root = opts.root ?? process.cwd()
+  const io = opts.io ?? defaultIO
+  const editorial = loadEditorConfig(root)
+  if (!editorial) {
+    io.stderr('[cli] config/editor.json 不存在，edit 阶段无从执行（阶段一不依赖 LLM，可直接跑 publish 走机械兜底）')
+    return { exitCode: 2 }
+  }
+  const persona = resolvePersona(root, opts.persona, io)
+  if (!persona) return { exitCode: 2 }
+  const loaded = loadStage(root, persona.id, opts.digestId, io)
+  if (!loaded) return { exitCode: 2 }
+
+  const stage = restoreStage(loaded.snapshot)
+  const targets = editorialTargetsOf(stage, persona.maxItems)
+  io.stdout(`[cli] edit(${persona.id})：${targets.length} 条进 writer（批=${editorial.writer.batchSize}，预计 ≈${Math.round((targets.length / editorial.writer.batchSize) * 47.1 / 60)} 分钟）`)
+  const outcome = await runEditorial({
+    config: editorial,
+    persona,
+    candidates: targets,
+    root,
+    now: loaded.snapshot.now,
+    fetchFn: opts.fetchFn,
+    roles: ['writer'],
+    onProgress: (l) => io.stdout(l),
+  })
+
+  const doc: CopyStage = {
+    schema: COPY_SCHEMA,
+    persona: persona.id,
+    digestId: loaded.snapshot.digestId,
+    targetIds: targets.map((t) => t.id),
+    copies: outcome.copies,
+    active: outcome.active,
+    inactiveReason: outcome.inactiveReason,
+    stats: outcome.stats,
+    usage: outcome.usage.writer,
+  }
+  const path = writeStageJson(stagePath(loaded.stagingDir, 'copy', persona.id, loaded.snapshot.digestId), doc)
+  const written = outcome.copies.filter((c) => c !== null).length
+  io.stdout(`[cli] edit(${persona.id})：${written}/${targets.length} 条拿到 LLM 文案 → ${path}`)
+  if (!outcome.active) io.stderr(`[cli] edit(${persona.id}) 未生效，publish 将走机械兜底：${outcome.inactiveReason ?? '未知原因'}`)
+  return { exitCode: 0, path }
+}
+
+/**
+ * `review` 阶段：只跑 reviewer（含金标灵敏度自检），产物落
+ * `staging/verdicts-<persona>-<digestId>.json`。
+ *
+ * 自检报告随产物一起落盘：`publish` 阶段才能复核而不是盲信。
+ * 自检未过时 `runEditorial` 返回的 qualifiedIndices 为 null，于是 reviewer 分数
+ * 不会参与任何排序与判定——这是「打分饱和使验收无读数」前车之鉴的直接防御。
+ */
+export async function reviewCommand(opts: StageRunOptions): Promise<{ exitCode: number; path?: string }> {
+  const root = opts.root ?? process.cwd()
+  const io = opts.io ?? defaultIO
+  const editorial = loadEditorConfig(root)
+  if (!editorial) {
+    io.stderr('[cli] config/editor.json 不存在，review 阶段无从执行')
+    return { exitCode: 2 }
+  }
+  const persona = resolvePersona(root, opts.persona, io)
+  if (!persona) return { exitCode: 2 }
+  const loaded = loadStage(root, persona.id, opts.digestId, io)
+  if (!loaded) return { exitCode: 2 }
+
+  const stage = restoreStage(loaded.snapshot)
+  const targets = editorialTargetsOf(stage, persona.maxItems)
+  io.stdout(`[cli] review(${persona.id})：${targets.length} 条进 reviewer（批=${editorial.reviewer.batchSize}，另需先跑金标自检）`)
+  const outcome = await runEditorial({
+    config: editorial,
+    persona,
+    candidates: targets,
+    root,
+    now: loaded.snapshot.now,
+    fetchFn: opts.fetchFn,
+    roles: ['reviewer'],
+    onProgress: (l) => io.stdout(l),
+  })
+
+  const doc: VerdictStage = {
+    schema: VERDICT_SCHEMA,
+    persona: persona.id,
+    digestId: loaded.snapshot.digestId,
+    targetIds: targets.map((t) => t.id),
+    verdicts: outcome.verdicts,
+    qualifiedIndices: outcome.qualifiedIndices,
+    active: outcome.active,
+    inactiveReason: outcome.inactiveReason,
+    calibration: outcome.calibration,
+    stats: outcome.stats,
+    usage: outcome.usage.reviewer,
+  }
+  const path = writeStageJson(stagePath(loaded.stagingDir, 'verdicts', persona.id, loaded.snapshot.digestId), doc)
+  const answered = outcome.verdicts.filter((v) => v !== null).length
+  io.stdout(
+    `[cli] review(${persona.id})：${answered}/${targets.length} 条拿到判定，达标 ${outcome.qualifiedIndices?.length ?? 0} 条 → ${path}`,
+  )
+  if (outcome.calibration && outcome.calibration.problems.length > 0) {
+    io.stderr(`[cli] review(${persona.id}) 金标自检未过，reviewer 分数本轮不得用于判定：${outcome.calibration.problems.join('；')}`)
+  }
+  if (!outcome.active) io.stderr(`[cli] review(${persona.id}) 未生效：${outcome.inactiveReason ?? '未知原因'}`)
+  return { exitCode: 0, path }
+}
+
+export interface PublishOptions extends StageRunOptions {
+  dryRun?: boolean
+  tunaRoot?: string
+  syncTuna?: boolean
+  syncTunaWrite?: boolean
+}
+
+/**
+ * `publish` 阶段：读回采集快照 + edit/review 产物，跑终审与归档，落内容包。
+ *
+ * **不重跑采集、不调模型端点**：走的是 `runPipeline({ staged, stagedEditorial })`，
+ * 与整链 `run` 共用同一段 `finalizeStage`。不在本函数里另写一份终审与归档——
+ * 两条发布路径必然漂移，那就是影子工序的开端。
+ *
+ * edit/review 产物缺失时不报错，走机械兜底（阶段一的预期行为），但会打到 stderr。
+ */
+export async function publishCommand(opts: PublishOptions): Promise<{ exitCode: number; packPath?: string }> {
+  const root = opts.root ?? process.cwd()
+  const io = opts.io ?? defaultIO
+  const domain = loadJson<DomainConfig>(join(root, 'config/domain.json'))
+  const sources = loadJson<SourceConfig[]>(join(root, 'config/sources.json'))
+  const gates = loadJson<GatesConfig>(join(root, 'config/gates.json'))
+  const persona = resolvePersona(root, opts.persona, io)
+  if (!persona) return { exitCode: 2 }
+  const loaded = loadStage(root, persona.id, opts.digestId, io)
+  if (!loaded) return { exitCode: 2 }
+
+  const { snapshot, stagingDir } = loaded
+  const stage = restoreStage(snapshot)
+  const copyPath = stagePath(stagingDir, 'copy', persona.id, snapshot.digestId)
+  const verdictPath = stagePath(stagingDir, 'verdicts', persona.id, snapshot.digestId)
+  const copy = readStageJson<CopyStage>(copyPath, COPY_SCHEMA)
+  const verdict = readStageJson<VerdictStage>(verdictPath, VERDICT_SCHEMA)
+  if (!copy) io.stderr(`[cli] publish(${persona.id})：无 edit 产物（${copyPath}），文案走机械兜底`)
+  if (!verdict) io.stderr(`[cli] publish(${persona.id})：无 review 产物（${verdictPath}），不做质量排序`)
+
+  // targetIds 传**产物里存的那份**，不是当前重算的：两者不一致时
+  // finalizeStage 的 assertTargetAlignment 才能发现错位。传重算的就等于自己校自己，永不会红。
+  const stagedIds = copy?.targetIds ?? verdict?.targetIds
+  const stagedEditorial =
+    copy || verdict
+      ? {
+          outcome: combineStagedEditorial(copy, verdict, editorialTargetsOf(stage, persona.maxItems).length),
+          targetIds: stagedIds ?? [],
+        }
+      : undefined
+
+  const memoryDir = join(root, 'memory')
+  acquireLock(memoryDir)
+  try {
+    const result = await runPipeline({
+      persona,
+      gates,
+      domain,
+      sources,
+      memoryDir,
+      now: snapshot.now,
+      knownCanonical: loadFingerprints(memoryDir),
+      staged: snapshot,
+      stagedEditorial,
+      root,
+    })
+    const funnel = result.funnel.map((f) => `${f.stage}=${f.count}`).join(' → ')
+    io.stdout(`[${persona.id}] ${funnel} | 事件 ${result.events} | 递补 ${result.gatekeep.backfilled} | 否决 ${result.gatekeep.rejected.length}`)
+    if (result.gatekeep.poolExhausted && result.published.length < persona.maxItems) {
+      io.stdout(`[${persona.id}] 候补池耗尽，实发 ${result.published.length} < 上限 ${persona.maxItems}（宁缺毋滥，不凑数）`)
+    }
+    const emitted = emitPublished(result, persona, {
+      root,
+      memoryDir,
+      dryRun: opts.dryRun,
+      // 内容包盖采集时的时间戳而不是发布时：一夜跑完后早上 publish，
+      // 本期内容属于昨晚那一轮，盖今朝的戳会让时效断言与观测序列对不上。
+      now: snapshot.now,
+      tunaRoot: opts.tunaRoot,
+      syncTuna: opts.syncTuna,
+      syncTunaWrite: opts.syncTunaWrite,
+      io,
+    })
+    return { exitCode: emitted.exitCode, packPath: emitted.packPath }
+  } catch (err) {
+    // 快照/产物不自洽（下标错位、schema 不符、悬空 id）时给可用退出码而不是抛栈：
+    // 分段作业是夜里跑的，早上六点面对一屏堆栈无法处置，而错误文本里已写了该重跑哪一段。
+    const msg = err instanceof Error ? err.message : String(err)
+    io.stderr(`[cli] publish(${persona.id}) 拒绝发布：${msg}`)
+    return { exitCode: 6 }
   } finally {
     releaseLock(memoryDir)
   }
@@ -403,7 +710,36 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
       console.error('[cli] collect 需要 --persona=<id>')
       return 2
     }
-    const r = await collectCommand({ persona, now: flags.has('now') ? Number(flags.get('now')) : undefined })
+    const r = await collectCommand({
+      persona,
+      now: flags.has('now') ? Number(flags.get('now')) : undefined,
+    })
+    return r.exitCode
+  }
+
+  // edit / review / publish 三段共用同一组旗标：--persona 必填，--digest-id 可选
+  // （缺省接手最近一次 collect）。分段跑的意义就在于可以分开排：
+  // 例 collect+review 晚上十点跑，edit（≈53 分钟）夜里跑，publish 早上跑。
+  if (cmd === 'edit' || cmd === 'review' || cmd === 'publish') {
+    const persona = flags.get('persona')
+    if (!persona) {
+      console.error(`[cli] ${cmd} 需要 --persona=<id>`)
+      return 2
+    }
+    const stageOpts = {
+      persona,
+      digestId: flags.get('digest-id'),
+      dryRun: flags.has('dry-run'),
+      tunaRoot: flags.get('tuna-root'),
+      syncTuna: flags.has('sync-tuna'),
+      syncTunaWrite: flags.has('sync-tuna-write'),
+    }
+    const r =
+      cmd === 'edit'
+        ? await editCommand(stageOpts)
+        : cmd === 'review'
+          ? await reviewCommand(stageOpts)
+          : await publishCommand(stageOpts)
     return r.exitCode
   }
 
@@ -435,7 +771,17 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
     return r.exitCode
   }
 
-  console.error(`[cli] 未知命令「${cmd}」；可用：run / collect / calibrate / ingest / doctor`)
+  console.error(
+    `[cli] 未知命令「${cmd}」；可用：run / collect / edit / review / publish / calibrate / ingest / doctor\n` +
+      '  run       整链批产（采集→闸门→编辑部→终审→发布），--persona=all 跑双产线\n' +
+      '  collect   只跑采集+闸门+事件聚合，落 staging 快照（不写归档）\n' +
+      '  edit      只跑 writer（≈每分钟 1.3 条），产物落 staging\n' +
+      '  review    只跑 reviewer + 金标自检，产物落 staging\n' +
+      '  publish   读 staging 产物跑终审与发布（不重跑采集、不调端点）\n' +
+      '  calibrate 单独跑 reviewer 灵敏度自检\n' +
+      '  ingest    摄入 tuna 导出的行为信号（--signals=<path>）\n' +
+      '  doctor    环境与配置体检',
+  )
   return 2
 }
 
