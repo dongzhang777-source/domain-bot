@@ -3,6 +3,7 @@ import type { DomainConfig, FetchFn, RawItem } from '../types.js'
 import { defaultFetch } from '../collector/adapters/rss.js'
 import { TIMEOUTS, timeoutSignal } from '../collector/adapters/fetchUtil.js'
 import { matchesKeyword } from './filter.js'
+import { detectLang } from '../render/tuna.js'
 
 export interface ScoreResult {
   valueScore: number
@@ -32,7 +33,7 @@ export class HeuristicScorer implements Scorer {
       const kwPart = Math.min(1, Math.sqrt(kwHits.length) / Math.sqrt(8))
       const sigPart = Math.min(1, Math.sqrt(sigHits.length) / Math.sqrt(6))
       const valueScore = 0.25 + 0.5 * kwPart + 0.25 * sigPart
-      const reason = humanizeReason(kwHits, sigHits, domain.domain)
+      const reason = humanizeReason(kwHits, sigHits, domain.domain, detectLang(`${item.title}\n${item.body}`))
       return { valueScore, reason }
     })
   }
@@ -40,8 +41,17 @@ export class HeuristicScorer implements Scorer {
 
 /** 启发式打分的「为什么推给你」人话化（tuna packages/brief static-why 同思路：模板拼装、永不抛错、
  *  永不空串）。机械计数（「关键词命中 2」）对用户决策零价值，2026-09-04 老张点评为「毫无吸引力」。
- *  LLM 打分器自带一句话理由，不走此模板。 */
-function humanizeReason(kwHits: string[], sigHits: string[], domain: string): string {
+ *  LLM 打分器自带一句话理由，不走此模板。
+ *  语言随条目（DB-11/D2）：英文帖配中文 why = L2 中英混排，模板按 lang 双语化。 */
+function humanizeReason(kwHits: string[], sigHits: string[], domain: string, lang: 'zh' | 'en'): string {
+  if (lang === 'en') {
+    const kw = kwHits.slice(0, 2).join(', ')
+    const sig = sigHits[0]
+    if (kw && sig) return `Matches your interests in ${kw}, with a strong "${sig}" signal`
+    if (kw) return `Matches your interest in ${kw}`
+    if (sig) return `Strong "${sig}" signal in ${domain}`
+    return `Related to your ${domain} feed`
+  }
   const kw = kwHits.slice(0, 2).map((k) => `「${k}」`).join('')
   const sig = sigHits[0]
   if (kw && sig) return `聚焦你的关注点 ${kw}，并出现强信号「${sig}」`

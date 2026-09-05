@@ -5,8 +5,10 @@ import {
   WHY_MAX,
   deriveHooks,
   detectLang,
+  stripHtml,
   stripMetadata,
   truncateChars,
+  truncateWhy,
 } from '../render/tuna.js'
 import type { WrittenCopy } from '../editorial/writer.js'
 
@@ -39,25 +41,29 @@ export interface RenderContext {
 
 export function renderPost(item: ScoredItem, ctx: RenderContext): GatekeeperInput {
   const lang = detectLang(`${item.title}\n${item.body}`)
-  const cleanBody = stripMetadata(item.body || item.title)
+  // DB-11/D1：tuna local-brief 路径不过 sanitize 闸门，生产端必须交付纯文本——
+  // 标题与正文先剥裸 HTML（<p>/<a href> 等）再进钩子/摘要/底料，注入面在源头拆除。
+  const cleanTitle = stripHtml(item.title)
+  const cleanBody = stripMetadata(stripHtml(item.body || item.title))
 
   // id 第一段用连字符而非冒号：tuna 侧正则 `^[a-z0-9-]+:[a-z0-9]+:\d+$` 只允许两段冒号，
   // 四段式 `domain-bot:<persona>:<digestId>:<index>` 会校验失败。
   const id = `domain-bot-${ctx.persona.id}:${ctx.digestId}:${ctx.index}`
 
   const copy = ctx.copy ?? null
-  const hooks = copy ? copy.hooks : deriveHooks(item.title, cleanBody, ctx.persona.domain, lang, ctx.stopwords)
+  const hooks = copy ? copy.hooks : deriveHooks(cleanTitle, cleanBody, ctx.persona.domain, lang, ctx.stopwords)
   const summary = copy
     ? truncateChars(copy.summary, SUMMARY_MAX[lang])
     : truncateChars(cleanBody.trim(), SUMMARY_MAX[lang])
 
   // why 不得回显内部浮点数（DB-03 §2.4：`"AI深度思想·rss：价值 0.94"` 把打分器调试日志搬上 UI）。
   // 机械兜底期取 scorer 的人话 reason；为空时用 persona+来源模板，永不拼分数。
-  const why = truncateChars(copy ? copy.why : fallbackWhy(item, ctx.persona), WHY_MAX)
+  // 词边界截断（DB-11/D5）：40 码点处不把 benchmark 切成 benchmar…。
+  const why = truncateWhy(copy ? copy.why : fallbackWhy(item, ctx.persona, lang), WHY_MAX)
 
   return {
     id,
-    title: truncateChars(item.title.trim(), 120),
+    title: truncateChars(cleanTitle.trim(), 120),
     hooks,
     summary,
     // L3 底料始终给清洗后的原文：LLM 摘要是 L2，不得拿摘要冒充原文（DB-02 缺口 d）
@@ -81,10 +87,14 @@ export function renderPost(item: ScoredItem, ctx: RenderContext): GatekeeperInpu
  *
  * 优先用 scorer 给的 reason（HeuristicScorer 的 humanizeReason 已是人话模板，
  * LlmScorer 的 reason 是模型写的一句话理由）；为空才退到 persona 模板。
+ * 语言随条目（DB-11/D2）：中文 why 挂英文帖 = L2 中英混排，broken 观感。
  */
-function fallbackWhy(item: ScoredItem, persona: PersonaConfig): string {
+function fallbackWhy(item: ScoredItem, persona: PersonaConfig, lang: 'zh' | 'en'): string {
   const reason = (item.reason ?? '').trim()
   if (reason && !/\d\.\d/.test(reason)) return reason
+  if (lang === 'en') {
+    return `Hand-picked from the ${persona.domain} feed by ${persona.id}`
+  }
   return `${persona.displayName}为你挑的${persona.domain === 'ai-llm' ? ' AI ' : ''}${
     persona.id === 'newsline' ? '新动态' : '深度内容'
   }`

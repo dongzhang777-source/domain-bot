@@ -84,6 +84,12 @@ export function assertPackContract(pack: FeedPack): void {
   if (new Set(ids).size !== ids.length) throw new Error('内容包存在重复 id')
 
   const urls = pack.posts.map((p) => String(p['sourceUrl'] ?? ''))
+  // DB-11/D9：tuna 的「↗ 原文」依赖 sourceUrl，normalizer 对缺失只静默降级（不挂链接），
+  // 产品侧不允许——缺失必须在生产侧熔断，而不是等真机发现 L2 断链。
+  const missingUrl = pack.posts.filter((p) => !String(p['sourceUrl'] ?? '').trim())
+  if (missingUrl.length > 0) {
+    throw new Error(`内容包 ${missingUrl.length} 条缺 sourceUrl（L2「↗ 原文」会静默断链）：${missingUrl.slice(0, 3).map((p) => p['id']).join('、')}`)
+  }
   const canonical = collectCanonicalUrls(urls.map((url) => ({ url })))
   if (new Set(canonical).size !== canonical.length) throw new Error('内容包存在重复规范 URL')
 

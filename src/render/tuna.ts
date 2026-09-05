@@ -65,6 +65,45 @@ export function stripMetadata(text: string): string {
 }
 
 /**
+ * 剥掉 RSS/采集正文里的裸 HTML 标签并还原常见实体（DB-11/D1）。
+ *
+ * 为什么必须在 domain-bot 侧剥：tuna 的 local-brief 路径**不走** RSS 的 sanitize 闸门
+ * （LocalBriefNormalizer 直接采用 p.summary/p.body），裸 `<p>`/`<a href>` 会原样上屏。
+ * 与其要求消费端再补一道闸（两处口径必然漂移），不如生产端交付纯文本。
+ */
+export function stripHtml(text: string): string {
+  return text
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * why 截断：词边界优先（DB-11/D5）。
+ *
+ * truncateChars 是纯码点硬切，英文会在 40 码点处把 `benchmark` 切成 `benchmar…`。
+ * 这里先在 max 内找最后一个词边界（空白/中英标点）切分；找不到（如超长无空格串）
+ * 才退回硬切。zh 文本按码点硬切与词边界等价（CJK 逐字成词），行为不变。
+ */
+export function truncateWhy(text: string, maxChars: number): string {
+  const chars = Array.from(text)
+  if (chars.length <= maxChars) return text
+  const head = chars.slice(0, maxChars - 1).join('')
+  const m = head.match(/^(.*\S)[\s，。、！？·,:;!?–—"'()（）]+$/s)
+  const trimmed = m ? m[1]! : head
+  if (Array.from(trimmed).length >= Math.floor(maxChars / 2)) return `${trimmed}…`
+  return `${head}…`
+}
+
+/**
  * 按中英文句末标点切句，丢弃短于 MIN_HOOK_CHARS 的段（碎片不能当句子用）。
  *
  * 两种标点的切分条件**故意不同**：

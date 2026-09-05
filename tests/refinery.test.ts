@@ -52,7 +52,8 @@ describe('HeuristicScorer', () => {
     const scorer = new HeuristicScorer()
     const ragDomain: DomainConfig = { ...domain, keywords: ['rag'], signalWords: ['beat'] }
     const [res] = await scorer.score([item('cloud storage optimization with upbeat team')], ragDomain)
-    expect(res.reason).toBe('与「ai」相关')
+    // DB-11/D2：reason 语言随条目——英文条目产英文模板（不再是中文兜底）
+    expect(res.reason).toBe('Related to your ai feed')
   })
 
   it('打分不饱和：典型 arXiv 摘要不得触顶，且四个质量档位可区分', async () => {
@@ -147,8 +148,8 @@ describe('LlmScorer', () => {
     )
     expect(res).toHaveLength(6)
     expect(res[0]!.reason).toBe('llm')                    // 批 1 走 LLM
-    expect(res[2]!.reason).toContain('聚焦你的关注点')      // 批 2 降级到启发式（人话化模板）
-    expect(res[3]!.reason).toContain('聚焦你的关注点')      // 同批也降级（整批失败，不是单条）
+    expect(res[2]!.reason).toContain('Matches your interest')  // 批 2 降级到启发式（人话化模板，en 条目产英文）
+    expect(res[3]!.reason).toContain('Matches your interest')  // 同批也降级（整批失败，不是单条）
     expect(res[4]!.reason).toBe('llm')                    // 批 3 仍正常 —— 这才是本测试的重点
   })
 
@@ -165,7 +166,7 @@ describe('LlmScorer', () => {
     // 旧行为是 { valueScore: 0.5, reason: 'llm 输出缺失，取默认分' }。
     expect(res[1]!.valueScore).not.toBe(0.5)
     expect(res[1]!.valueScore).toBeCloseTo(0.6036, 3)   // 实跑值：kw=1, sig=3
-    expect(res[1]!.reason).toContain('聚焦你的关注点')
+    expect(res[1]!.reason).toContain('Matches your interest')
     expect(res[1]!.reason).toContain('llm 漏答')
   })
 })

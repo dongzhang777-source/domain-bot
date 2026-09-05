@@ -50,6 +50,11 @@ const OBJECT_OBJECT = /\[object Object\]/i
 const FRAGMENT_HOOK = /^arxiv:\d+\.?/i
 /** DB-03 §2.4 实测：why 直接回显打分器浮点数 `"AI深度思想·rss：价值 0.94"` */
 const SCORE_ECHO = /(价值|得分|分数|score)\s*[:：]?\s*\d+\.\d|\d\.\d{2}/
+/** DB-11/D1：tuna local-brief 路径不过 sanitize，裸标签会原样上屏 */
+const HTML_TAG = /<\/?(?:p|div|span|br|a|strong|em|b|i|u|ul|ol|li|h[1-6]|img|blockquote|pre|code)\b[^>]*>/i
+/** DB-11/D3：视频/落地页抓取只拿到平台 chrome（「频道 · 1.2万次观看」「123K views」），无实质内容 */
+const VIEWER_CHROME =
+  /频道\s*·\s*[\d,.]+\s*万?\s*次观看|[\d,.]+\s*[KMB]?\s*(?:views|subscribers|plays)|watch\s+later|subscribe\b|share\b|阅读\s*[\d,.]+\s*万?\s*次|次观看|位订阅者/gi
 
 /** 单条终审。返回全部断言结果（不是遇错即停），便于看板按 ruleId 统计否决分布。 */
 export function runAssertions(item: GatekeeperInput, input: AssertionInput): AssertionVerdict[] {
@@ -64,6 +69,8 @@ export function runAssertions(item: GatekeeperInput, input: AssertionInput): Ass
     checkHookEntity(item, input.gates),
     checkTooOld(item, input.persona, input.now),
     checkShape(item),
+    checkHtmlLeak(item),
+    checkHollowSummary(item),
   ]
 }
 
@@ -231,6 +238,46 @@ function checkShape(item: GatekeeperInput): AssertionVerdict {
   if (!item.url) return fail('gk:shapeViolation', 'url 为空，读者无法跳转原文')
 
   return ok('gk:shapeViolation')
+}
+
+/**
+ * 11. 裸 HTML（DB-11/D1）：tuna 的 local-brief 路径不走 RSS 的 sanitize 闸门，
+ * 渲染层漏剥的 `<p>`/`<a href>` 会原样上屏并构成注入面。渲染层（stripHtml）是主防线，
+ * 本断言是交付前的复检——LLM 编辑改写同样可能把标签带回来。
+ */
+function checkHtmlLeak(item: GatekeeperInput): AssertionVerdict {
+  const fields: Array<[string, string | undefined]> = [
+    ['title', item.title],
+    ['summary', item.summary],
+    ['body', item.body],
+    ['why', item.why],
+    ...(item.hooks ?? []).map((h, i) => [`hooks[${i}]`, h] as [string, string]),
+  ]
+  const hit = fields.find(([, v]) => v !== undefined && HTML_TAG.test(v))
+  return hit === undefined
+    ? ok('gk:htmlLeak')
+    : fail('gk:htmlLeak', `「${hit[0]}」含裸 HTML 标签（tuna local-brief 路径无 sanitize，会原样上屏）：${hit[1]?.slice(0, 60)}`)
+}
+
+/**
+ * 12. 空壳内容（DB-11/D3）：视频页/落地页抓取只拿到平台 chrome（「频道 · N 次观看」、
+ * 「123K views」、导航链接），码点限长达标但信息量为零——真机 L2 展开是一张空卡。
+ * 剥掉 URL 与 chrome 后，实质词元（英文单词 + CJK 字符）<5 即否决（纯 chrome 页实测
+ * 0–4 词元，真实最短一条 ≥5）。宁缺毋滥：坑位由候补池递补，不发空卡。
+ */
+function checkHollowSummary(item: GatekeeperInput): AssertionVerdict {
+  const substanceOf = (t: string): number => {
+    const text = t.replace(/https?:\/\/\S+/g, ' ').replace(VIEWER_CHROME, ' ')
+    const latin = text.match(/[A-Za-z]{2,}/g)?.length ?? 0
+    const cjk = text.match(/[\u4e00-\u9fff]/g)?.length ?? 0
+    return latin + cjk
+  }
+  // summary 与 body 分开计、取 max：两字段装同一段 chrome 时不得互相「凑人数」；
+  // 反之 summary 薄但 body 有真底料的条目不算空卡（L3 有内容可展开）。
+  const substance = Math.max(substanceOf(item.summary ?? ''), substanceOf(item.body ?? ''))
+  return substance >= 5
+    ? ok('gk:hollowSummary')
+    : fail('gk:hollowSummary', `剥除平台 chrome 后实质内容仅 ${substance} 词元（<5）：L2/L3 是空卡「${(item.summary ?? '').slice(0, 40)}」`)
 }
 
 /**

@@ -39,7 +39,7 @@ const persona: PersonaConfig = {
 
 const NOW = Date.parse('2026-09-04T12:00:00Z')
 
-/** 一条能通过全部十条断言的合法样本，作为各违例样本的基准（改一个字段造一个违例）。 */
+/** 一条能通过全部十二条断言的合法样本，作为各违例样本的基准（改一个字段造一个违例）。 */
 function good(overrides: Partial<GatekeeperInput> = {}): GatekeeperInput {
   return {
     id: 'domain-bot-newsline:abc1:0',
@@ -83,11 +83,11 @@ function expectRejected(item: GatekeeperInput, ruleId: string, ctx: Partial<Asse
   return verdicts
 }
 
-describe('十条硬断言：违例样本逐个否决', () => {
+describe('十二条硬断言：违例样本逐个否决', () => {
   it('基准样本必须全绿（否则各违例用例测的是别的失败原因）', () => {
     const g = good()
     const verdicts = runAssertions(g, input({ batch: [g] }))
-    expect(verdicts).toHaveLength(10)
+    expect(verdicts).toHaveLength(12)
     expect(isAccepted(verdicts)).toBe(true)
   })
 
@@ -460,5 +460,103 @@ describe('质量看板：漏斗必须可对账', () => {
     const audit = auditBoard(b)
     expect(audit.fatal.some((p) => p.includes('broken:demo'))).toBe(true)
     expect(audit.fatal.some((p) => p.includes('闸门假绿'))).toBe(true)
+  })
+})
+
+// ---------- DB-11 修复回归锁（D1 裸 HTML / D2 why 语言 / D3 空壳 / D5 词边界截断） ----------
+
+import { truncateWhy } from '../src/render/tuna.js'
+import { HeuristicScorer } from '../src/refinery/scorer.js'
+import type { DomainConfig, RawItem } from '../src/types.js'
+import type { WrittenCopy } from '../src/editorial/writer.js'
+
+describe('DB-11 修复回归锁：交付文本必须可直接上屏（tuna local-brief 路径无 sanitize）', () => {
+  /** 与 :241 的 scored 同构（那个 helper 在另一 describe 内，这里自备一份）。 */
+  const mkScored = (id: string, title: string, url: string, score: number, body?: string): ScoredItem => ({
+    id,
+    title,
+    url,
+    body: body ?? title,
+    source: 'rss-1',
+    publishedAt: NOW - 3_600_000,
+    valueScore: score,
+    reason: '',
+    isNew: true,
+  })
+  const copyOf = (why: string): WrittenCopy => ({
+    hooks: ['first hook long enough text', 'second hook long enough text', 'third hook long enough text'],
+    summary: 'A substantive summary of the piece.',
+    why,
+    origin: 'fallback' as const,
+  })
+
+  it('⑪ gk:htmlLeak —— 任意字段含裸 HTML 标签即否决（D1，样例取自 DB-11 报告 newsline#5）', () => {
+    expectRejected(
+      good({ summary: '<p>Article URL: <a href="https://engineering.atspotify.com/x">original</a></p>' }),
+      'gk:htmlLeak',
+    )
+    expectRejected(good({ why: 'why has <strong>bold</strong> inside' }), 'gk:htmlLeak')
+    // 干净样本不得误伤
+    const clean = good()
+    expect(isAccepted(runAssertions(clean, input({ batch: [clean] })))).toBe(true)
+  })
+
+  it('⑫ gk:hollowSummary —— 平台 chrome 空壳（视频观看数/落地页导航）即否决（D3）', () => {
+    // 钩子须与 chrome 实体同源（gk:hookEntity 要求），否则先被 ⑧ 拦下、测不到本断言
+    const ytHooks = ['Subscribe Share 频道订阅与分享数据', '频道 · 订阅 · 分享 数据卡', 'ai-llm｜频道 · subscribe']
+    expectRejected(
+      good({ hooks: ytHooks, summary: '频道 · 1.2万次观看', body: '频道 · 1.2万次观看 Subscribe Share' }),
+      'gk:hollowSummary',
+    )
+    const navHooks = ['Filter and Sort on the Latest News page', 'latest · news · filter · sort', 'ai-llm｜filter · latest']
+    expectRejected(
+      good({ hooks: navHooks, summary: 'Filter Sort Latest News 123K views', body: 'Filter Sort Latest News 123K views' }),
+      'gk:hollowSummary',
+    )
+  })
+
+  it('D1 渲染层：title/body 含裸 HTML 时，渲染产物（标题/钩子/摘要/底料）必须全部纯净', () => {
+    const item = mkScored(
+      'i-html',
+      '<p>Spotify engineering <a href="https://engineering.atspotify.com/x">wrote about LLM serving</a></p>',
+      'https://ex.com/html',
+      0.9,
+      '<strong>Genie</strong> is a benchmark for agentic LLM tool use with 12 sandboxed execution tasks.',
+    )
+    const rendered = renderPost(item, { persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords) })
+    for (const field of [rendered.title, rendered.summary, rendered.body, ...rendered.hooks]) {
+      expect(field).not.toMatch(/<\/?\w+[^>]*>/)
+    }
+    expect(rendered.summary).toContain('Genie is a benchmark')
+    expect(isAccepted(runAssertions(rendered, input({ batch: [rendered] })))).toBe(true)
+  })
+
+  it('D2 why 语言随条目：英文条目产英文 why（HeuristicScorer 与 renderPost 兜底两层）', async () => {
+    const scorer = new HeuristicScorer()
+    const domain: DomainConfig = { domain: 'ai-llm', keywords: ['llm'], clusterThreshold: 0.35 }
+    const rows: RawItem[] = [
+      { id: 'x', source: 'rss', title: 'New LLM inference runtime released', body: 'A new LLM inference runtime outperforms prior kernels', url: 'https://e.com/1', publishedAt: 0 },
+    ]
+    const r = await scorer.score(rows, domain)
+    expect(r[0]!.reason).toMatch(/^Matches your interest/)
+
+    const enItem = mkScored('i-en', 'A Blind Trust When Attacker Controlled Hook Updates Steer AI Agent Harnesses', 'https://ex.com/en', 0.9,
+      'Modern AI agent harnesses expose lifecycle hooks that bind shell commands and steer model behavior.')
+    const rendered = renderPost(enItem, { persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords) })
+    expect(rendered.lang).toBe('en')
+    expect(rendered.why).not.toMatch(/[\u4e00-\u9fff]/)
+  })
+
+  it('D5 why 词边界截断：truncateWhy 不产生 benchmar… 式半词，且不超 WHY_MAX', () => {
+    const longWhy = 'Matches your interests in llm, inference and a strong "benchmark" signal for serving workloads'
+    const cut = truncateWhy(longWhy, WHY_MAX)
+    expect(Array.from(cut).length).toBeLessThanOrEqual(WHY_MAX)
+    expect(cut.endsWith('…')).toBe(true)
+    // 省略号前的英文单词必须是原文里的完整单词（词边界切分），不得是 benchmar 这类残词
+    const lastWord = cut.match(/([A-Za-z]+)…$/)?.[1]
+    if (lastWord) expect(longWhy).toContain(lastWord)
+    // 短文本原样通过；无空格超长串退化为硬切，不无限丢字
+    expect(truncateWhy('短why', WHY_MAX)).toBe('短why')
+    expect(Array.from(truncateWhy('a'.repeat(80), 40)).length).toBeLessThanOrEqual(WHY_MAX)
   })
 })

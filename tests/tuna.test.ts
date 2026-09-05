@@ -9,8 +9,10 @@ import {
   firstSentence,
   isTitlePrefix,
   splitSentences,
+  stripHtml,
   stripMetadata,
   truncateChars,
+  truncateWhy,
 } from '../src/render/tuna.js'
 import { PACK_SCHEMA, TUNA_POST_ID, assertPackContract, buildPack } from '../src/publish/pack.js'
 import type { GatekeeperInput } from '../src/types.js'
@@ -212,3 +214,53 @@ describe('buildPack / assertPackContract（tuna-brief-v1 装配）', () => {
     expect(WHY_MAX).toBe(40)
   })
 })
+
+// ---------- DB-11 修复回归锁 ----------
+
+describe('stripHtml（DB-11/D1：tuna local-brief 路径无 sanitize，生产端必须交纯文本）', () => {
+  it('剥标签、还原常见实体、压平空白', () => {
+    expect(stripHtml('<p>Article URL: <a href="https://x.com/a">original</a></p>')).toBe('Article URL: original')
+    expect(stripHtml('<strong>Genie</strong> &amp; friends &#039;quoted&#039;')).toBe('Genie & friends \'quoted\'')
+    expect(stripHtml('<style>.x{}</style>keep <script>bad()</script>this')).toBe('keep this')
+    expect(stripHtml('plain text stays')).toBe('plain text stays')
+  })
+})
+
+describe('truncateWhy（DB-11/D5：词边界截断）', () => {
+  it('英文在词边界切，不产生 benchmar… 式残词；超长无空格串退化为硬切', () => {
+    const cut = truncateWhy('Matches your interests in llm and a strong benchmark signal', 40)
+    expect(Array.from(cut).length).toBeLessThanOrEqual(40)
+    expect(cut.endsWith('…')).toBe(true)
+    const last = cut.match(/([A-Za-z]+)…$/)?.[1]
+    if (last) expect('Matches your interests in llm and a strong benchmark signal').toContain(last)
+    expect(truncateWhy('很短', 40)).toBe('很短')
+    expect(Array.from(truncateWhy('a'.repeat(60), 40)).length).toBeLessThanOrEqual(40)
+  })
+})
+
+describe('assertPackContract sourceUrl 熔断（DB-11/D9：L2「↗ 原文」不得静默断链）', () => {
+  it('缺 sourceUrl 的包拒绝落盘', () => {
+    const pack = buildPack([postPack()], { digestId: 'abc123', persona: 'newsline', personaDisplay: 'x', domain: 'ai-llm', generatedAt: 1_700_000_000_000 })
+    pack.posts[0]!['sourceUrl'] = ''
+    expect(() => assertPackContract(pack)).toThrow(/sourceUrl/)
+  })
+})
+
+
+/** DB-11/D9 用：独立构造一条合法 GatekeeperInput（buildPack describe 里的 post() 不在此作用域）。 */
+function postPack(): GatekeeperInput {
+  return {
+    id: 'domain-bot-newsline:abc123:9',
+    title: 'A benchmark for knowledge conflict in reasoning models',
+    hooks: ['hook one long enough', 'hook two long enough', 'hook three long enough'],
+    summary: 'A sufficiently long summary for the pack.',
+    body: 'A sufficiently long body for the pack.',
+    why: '聚焦你的关注点「benchmark」',
+    url: 'https://arxiv.org/abs/9',
+    lang: 'en',
+    publishedAt: 1_700_000_000_000,
+    source: 'rss-1',
+    eventKey: 'e9',
+    valueScore: 0.8,
+  }
+}
