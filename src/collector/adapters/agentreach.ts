@@ -1,4 +1,4 @@
-import { contentHash } from '../dedupe.js'
+import { itemId } from '../dedupe.js'
 import type { FetchFn, RawItem, SourceConfig, SpawnFn } from '../../types.js'
 import { defaultFetch } from './rss.js'
 import { isPublicHttpsUrl, TIMEOUTS, timeoutSignal, withSizeLimit } from './fetchUtil.js'
@@ -39,7 +39,7 @@ export function parseExaOutput(output: string, sourceId: string): RawItem[] {
       .trim()
       .slice(0, 1200)
     return {
-      id: contentHash({ title, body: url }),
+      id: itemId(url, title, body),
       source: sourceId,
       title,
       body,
@@ -76,26 +76,34 @@ export async function fetchV2ex(source: SourceConfig, fetchFn: FetchFn = default
   })
   if (!res.ok) throw new Error(`v2ex ${source.id}: HTTP ${res.status}`)
   const topics = JSON.parse(await res.text()) as V2exTopic[]
-  return topics.map((t) => ({
-    id: contentHash({ title: t.title, body: t.url }),
-    source: source.id,
-    title: t.title,
-    body: (t.content ?? '').slice(0, 600) || `节点：${t.node?.title ?? '未知'} · 作者：${t.member?.username ?? '未知'}`,
-    url: t.url,
-    publishedAt: t.created ? t.created * 1000 : 0,
-    raw: t,
-  }))
+  return topics.map((t) => {
+    const body = (t.content ?? '').slice(0, 600) || `节点：${t.node?.title ?? '未知'} · 作者：${t.member?.username ?? '未知'}`
+    return {
+      id: itemId(t.url, t.title, body),
+      source: source.id,
+      title: t.title,
+      body,
+      url: t.url,
+      publishedAt: t.created ? t.created * 1000 : 0,
+      raw: t,
+    }
+  })
 }
 
 /** 组装一条 bili 条目；play 为空/非数字时显示 0。 */
 function finalize(cur: { bvid: string; title: string; author: string; play: string }, sourceId: string): RawItem {
   const playNum = Number(cur.play)
+  const title = cur.title.trim()
+  const body = `${cur.author.trim()} · ${Number.isNaN(playNum) ? '0' : playNum.toLocaleString()} 播放`
+  // bvid 缺失时不拼 URL：否则多条空 bvid 会规范化到同一 canonical URL 而互相误杀，
+  // 留空串让 itemId 回退到内容哈希派生。
+  const url = cur.bvid ? `https://www.bilibili.com/video/${cur.bvid}` : ''
   return {
-    id: contentHash({ title: cur.title, body: cur.bvid }),
+    id: itemId(url, title, body),
     source: sourceId,
-    title: cur.title.trim(),
-    body: `${cur.author.trim()} · ${Number.isNaN(playNum) ? '0' : playNum.toLocaleString()} 播放`,
-    url: `https://www.bilibili.com/video/${cur.bvid}`,
+    title,
+    body,
+    url,
     publishedAt: 0,
     raw: cur,
   }
@@ -167,11 +175,12 @@ export async function fetchYtSearch(source: SourceConfig, spawnFn: SpawnFn = exa
     const publishedAt = typeof entry.upload_date === 'string' && entry.upload_date.length === 8
       ? Date.parse(`${entry.upload_date.slice(0, 4)}-${entry.upload_date.slice(4, 6)}-${entry.upload_date.slice(6, 8)}`) || 0
       : 0
+    const ytBody = `${channel} · ${views} 次观看`
     items.push({
-      id: contentHash({ title, body: url }),
+      id: itemId(url, title, ytBody),
       source: source.id,
       title,
-      body: `${channel} · ${views} 次观看`,
+      body: ytBody,
       url,
       publishedAt,
       raw: entry,
@@ -190,7 +199,7 @@ export function parseFetchedPage(markdown: string, sourceId: string, url: string
   const title = markdown.match(/^#{1,3} (.+)$/m)?.[1]?.trim() || url
   const body = markdown.replace(/^#{1,3} .+$/m, '').replace(/^URL:.*$/m, '').trim().slice(0, 2000)
   return {
-    id: contentHash({ title, body: body.slice(0, 200) }),
+    id: itemId(url, title, body),
     source: sourceId,
     title,
     body,
@@ -232,7 +241,7 @@ export async function fetchJina(source: SourceConfig, fetchFn: FetchFn = default
       const body = text.replace(/^Title:.*$/m, '').replace(/^URL Source:.*$/m, '').trim().slice(0, 2000)
       return [
         {
-          id: contentHash({ title, body: body.slice(0, 200) }),
+          id: itemId(source.url, title, body),
           source: source.id,
           title,
           body,

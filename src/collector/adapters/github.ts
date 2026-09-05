@@ -1,4 +1,4 @@
-import { contentHash } from '../dedupe.js'
+import { itemId } from '../dedupe.js'
 import type { FetchFn, RawItem, SourceConfig } from '../../types.js'
 import { defaultFetch } from './rss.js'
 import { TIMEOUTS, timeoutSignal, withSizeLimit } from './fetchUtil.js'
@@ -32,7 +32,9 @@ export async function fetchGithub(source: SourceConfig, fetchFn: FetchFn = defau
       .filter(Boolean)
       .join(' · ')
     return {
-      id: `gh-${r.id}`,
+      // 与其他适配器统一走规范 URL 派生：旧的 `gh-${r.id}` 虽稳定，但与 exa 抵回的同一仓库
+      // （html_url）id 口径不同，跨渠道 dedupe 失效——DB-03 #158/#171 openai-agents-python 实证。
+      id: itemId(r.html_url, title, body),
       source: source.id,
       title,
       body,

@@ -44,6 +44,16 @@ export interface RunResult {
   }
 }
 
+/**
+ * 旧产线（runOnce / 每日摘要 6 条）的兜底默认值。
+ *
+ * scoreThreshold 与 maxPerDigest 已从 DomainConfig 移入 PersonaConfig（minQualityScore / maxItems），
+ * 本常量只为让尚未重构的 runOnce 继续编译。取值与原 config/domain.json 一致，故行为不变。
+ * pipeline.ts（双产线批产）上线后随 runOnce 一并退役。
+ */
+const LEGACY_SCORE_THRESHOLD = 0.45
+const LEGACY_MAX_PER_DIGEST = 6
+
 /** 单轮流水线：采集 → 去重 → 相关性 → 打分 → 源权重调节 → 聚类 → 记忆 → 推送。 */
 export async function runOnce(opts: RunOptions): Promise<RunResult> {
   const now = opts.now ?? Date.now()
@@ -89,9 +99,10 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
   // 过滤用原始分：源权重只应影响排序，不该把低权源整体挡在候选池外，
   // 否则低权源永远进不了推送 → 永远拿不到反馈 → 权重再也回不来（反馈死锁）。
   const passed: Array<{ item: RawItem; raw: number; reason: string }> = []
+  const scoreThreshold = opts.domain.scoreThreshold ?? LEGACY_SCORE_THRESHOLD
   for (let i = 0; i < relevant.length; i++) {
     const s = scores[i]!
-    if (s.valueScore >= opts.domain.scoreThreshold) passed.push({ item: relevant[i]!, raw: s.valueScore, reason: s.reason })
+    if (s.valueScore >= scoreThreshold) passed.push({ item: relevant[i]!, raw: s.valueScore, reason: s.reason })
   }
 
   // 排序用加权分 + 新颖性因子；原始分并行携带，供观测（rawP50/rawTop1/saturation）使用。
@@ -103,7 +114,8 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
   })
   ranked.sort((a, b) => b.entry.valueScore - a.entry.valueScore)
   // 每源配额：arXiv 类关键词密集源不得霸占全部推送位，保证渠道多样性
-  const perSourceCap = Math.max(2, Math.ceil(opts.domain.maxPerDigest / 2))
+  const maxPerDigest = opts.domain.maxPerDigest ?? LEGACY_MAX_PER_DIGEST
+  const perSourceCap = Math.max(2, Math.ceil(maxPerDigest / 2))
   const perSourceCount = new Map<string, number>()
   const pushedRanked: typeof ranked = []
   for (const r of ranked) {
@@ -111,7 +123,7 @@ export async function runOnce(opts: RunOptions): Promise<RunResult> {
     if (used >= perSourceCap) continue
     perSourceCount.set(r.entry.source, used + 1)
     pushedRanked.push(r)
-    if (pushedRanked.length >= opts.domain.maxPerDigest) break
+    if (pushedRanked.length >= maxPerDigest) break
   }
   // 全量候选（阈值过滤后、配额截断前）= candidates；配额截断后 = pushed。
   const candidates = ranked.map((r) => r.entry)

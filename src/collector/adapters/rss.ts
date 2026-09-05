@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser'
-import { contentHash } from '../dedupe.js'
+import { itemId } from '../dedupe.js'
 import type { FetchFn, RawItem, SourceConfig } from '../../types.js'
 
 import { TIMEOUTS, timeoutSignal, withSizeLimit } from './fetchUtil.js'
@@ -61,12 +61,15 @@ export async function fetchRss(source: SourceConfig, fetchFn: FetchFn = defaultF
     const title = text(e.title)
     const body = text(e.description) || text(e.summary) || text(e['content:encoded']) || ''
     const publishedAt = Date.parse(text(e.pubDate ?? e.updated ?? e.published ?? e['dc:date'])) || 0
+    const url = linkOf(e)
     return {
-      id: contentHash({ title, body }),
+      // 规范 URL 派生（非内容哈希）：同一篇报道经 rss 与 exa 双渠道抓回时正文略异，
+      // 内容派生会得到两个 id → dedupe 放行 → DB-03 实测 12 条完全重复。
+      id: itemId(url, title, body),
       source: source.id,
       title,
       body,
-      url: linkOf(e),
+      url,
       publishedAt,
       raw: e,
     }

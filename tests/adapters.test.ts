@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { fetchRss } from '../src/collector/adapters/rss.js'
 import { fetchGithub } from '../src/collector/adapters/github.js'
+import { itemId } from '../src/collector/dedupe.js'
 import type { SourceConfig } from '../src/types.js'
 
 const rssSource: SourceConfig = { id: 'rss-1', type: 'rss', url: 'http://example/rss', weight: 0.5, enabled: true }
@@ -75,9 +76,22 @@ describe('github adapter', () => {
     })
     const source: SourceConfig = { id: 'gh-1', type: 'github', url: 'https://api.github.com/search', weight: 0.5, enabled: true }
     const items = await fetchGithub(source, mockFetch(body))
-    expect(items[0].id).toBe('gh-42')
+    // id 契约已从 `gh-${r.id}` 改为规范 URL 派生（itemId）。
+    // 根因：同一仓库经 github 与 exa 双渠道抓回时，旧口径两边 id 不同 → 跨渠道 dedupe 失效
+    //（DB-03 #158/#171 openai-agents-python 实证）。故此处断言「派生自 URL」而非写死哈希值。
+    expect(items[0].id).toBe(itemId('https://github.com/foo/llm-kit', items[0].title, items[0].body))
+    expect(items[0].id.startsWith('u-')).toBe(true)
     expect(items[0].title).toBe('foo/llm-kit')
     expect(items[0].body).toContain('120 stars')
     expect(items[0].body).toContain('inference')
+  })
+
+  it('id 对跟踪参数与 www 前缀不敏感：跨渠道同一仓库必得同一 id', () => {
+    // 这条是本次契约变更的真正目的，比上一条的格式断言更承重
+    const a = itemId('https://github.com/foo/llm-kit', 'foo/llm-kit', 'Toolkit for local LLM inference')
+    const b = itemId('https://github.com/foo/llm-kit?utm_source=newsletter&tab=readme-ov-file', 'foo/llm-kit', '完全不同的正文')
+    const c = itemId('https://www.github.com/foo/llm-kit/', 'foo/llm-kit', 'yet another body')
+    expect(b).toBe(a)
+    expect(c).toBe(a)
   })
 })
