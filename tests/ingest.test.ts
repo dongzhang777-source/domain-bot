@@ -167,7 +167,10 @@ describe('ingestTunaSignals：把 tuna 行为喂回记忆库', () => {
     const r = await publishOnce(dir)
     const target = r.published[0]!
     const path = signalsFile(dir, [], [{ postId: target.id, ts: Date.parse('2026-09-04T13:00:00Z') }])
-    const report = ingestTunaSignals(path, { memoryDir: join(dir, 'memory'), sources })
+    // now 必须与 runPipeline 的模拟时钟同时代：省略时回落到真实时钟，会令
+    // already 发布 24h 的记录被 settleStaleExposures 结算「曝光未展开」的弱负证据，
+    // 恰好把收藏的正信号稀释回先验 1/3（2026-09-05 实测：00:39 绿、12:00 红，纯时间错位）
+    const report = ingestTunaSignals(path, { memoryDir: join(dir, 'memory'), sources, now: Date.parse('2026-09-04T13:30:00Z') })
     expect(report.favorites).toBe(1)
     expect(report.interestBySource[target.source]!).toBeGreaterThan(1 / 3)
   })
@@ -178,9 +181,9 @@ describe('ingestTunaSignals：把 tuna 行为喂回记忆库', () => {
     const target = r.published[0]!
     const path = signalsFile(dir, [{ postId: target.id, dwellMs: 9000, dismissed: true, reaction: 'satisfied' }])
 
-    const first = ingestTunaSignals(path, { memoryDir: join(dir, 'memory'), sources })
-    const second = ingestTunaSignals(path, { memoryDir: join(dir, 'memory'), sources })
-    const third = ingestTunaSignals(path, { memoryDir: join(dir, 'memory'), sources })
+    const first = ingestTunaSignals(path, { memoryDir: join(dir, 'memory'), sources, now: Date.parse('2026-09-04T13:30:00Z') })
+    const second = ingestTunaSignals(path, { memoryDir: join(dir, 'memory'), sources, now: Date.parse('2026-09-04T13:31:00Z') })
+    const third = ingestTunaSignals(path, { memoryDir: join(dir, 'memory'), sources, now: Date.parse('2026-09-04T13:32:00Z') })
 
     // views 按 digestId 去重、feedback 按 digestId+itemId+signal 去重 → 第二三次为 0
     expect(first.views).toBe(1)

@@ -8,6 +8,9 @@ import { defaultFetch } from '../collector/adapters/rss.js'
  * 起因是老张口述的 `http://192.168.100.1:8002/v1` + `deepseek-v4-flash` 经实测不存在
  * （`.1` 是本机雷雳桥地址且服务只 bind 127.0.0.1，8002 无服务，该模型名不在任何本地清单）。
  * 把地址写进代码就等于把一次口误固化成架构。
+ * 订正（2026-09-05）：老张指令以 `~/start_ds4.sh` 启动 ds4-server 双机推理后，
+ * `192.168.100.1:8002/v1` 已真实可用（model id = `deepseek-v4-flash`），并已配为 reviewer
+ * 主端点（见 config/editor.json）。走配置不写死代码的裁决不变。
  *
  * 降级链的必要性（不是装饰）：本机 8052 是免费档云端转发（有限流与 OAuth 刷新依赖），
  * 8080 是本地 llama-server（与 Claude Code 共用 8082 代理会抢资源）。任一端点抖动都不该
@@ -24,6 +27,14 @@ export interface EndpointConfig {
   modelEnv?: string
   modelDefault?: string
   timeoutMs: number
+  /**
+   * 逐端点透传的额外请求体字段（如 {"reasoning_effort":"low"}）。
+   * 背景：思考型模型的 reasoning 会吃掉 max_tokens——ds4 的 DeepSeek-V4-Flash 实测
+   * max_tokens=1500 时 70%+ 被 reasoning 消耗、批 10 条金标的 JSON 没写完就截断，
+   * calibrate 漏答率高达 63.8%（金标自检硬闸正常拦下）。reasoning_effort:low
+   * 实测让可见输出完整出 JSON（calibrate 由此可过）。
+   */
+  extraBody?: Record<string, unknown>
 }
 
 export interface ResolvedEndpoint {
@@ -32,6 +43,7 @@ export interface ResolvedEndpoint {
   apiKey?: string
   model: string
   timeoutMs: number
+  extraBody?: Record<string, unknown>
 }
 
 export interface Usage {
@@ -86,6 +98,7 @@ export function resolveEndpoint(cfg: EndpointConfig, env: NodeJS.ProcessEnv = pr
     apiKey: cfg.apiKeyEnv ? env[cfg.apiKeyEnv] : undefined,
     model: (cfg.modelEnv && env[cfg.modelEnv]) || cfg.modelDefault || '',
     timeoutMs: cfg.timeoutMs,
+    extraBody: cfg.extraBody,
   }
 }
 
@@ -166,6 +179,7 @@ export class EditorialProvider {
           messages: [{ role: 'user', content: prompt }],
           max_tokens: opts?.maxTokens ?? this.role.maxTokens,
           temperature: opts?.temperature ?? this.role.temperature,
+          ...(ep.extraBody ?? {}),
         }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status ?? '?'}`)

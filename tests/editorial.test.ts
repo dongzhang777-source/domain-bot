@@ -94,6 +94,33 @@ describe('resolveEndpoint / resolveChain：端点不绑定，全部走配置', (
     const chain = resolveChain(role([{ id: 'a', baseUrlDefault: 'http://a/v1' }, { id: 'b', baseUrlDefault: 'http://b/v1' }]), {} as NodeJS.ProcessEnv)
     expect(chain.map((c) => c.id)).toEqual(['a', 'b'])
   })
+
+  it('extraBody 解析透传且进入请求体（ds4 补 reasoning_effort:low 的实测必需件）', async () => {
+    const ep = resolveEndpoint(
+      { id: 'ds4', baseUrlDefault: 'http://a/v1', modelDefault: 'deepseek-v4-flash', timeoutMs: 1000, extraBody: { reasoning_effort: 'low' } },
+      {} as NodeJS.ProcessEnv,
+    )
+    expect(ep!.extraBody).toEqual({ reasoning_effort: 'low' })
+
+    const s = scriptedFetch([{ body: okBody('ok') }])
+    const p = new EditorialProvider(
+      {
+        batchSize: 3,
+        maxTokens: 6000,
+        temperature: 0.3,
+        chain: [{ id: 'ds4', baseUrlDefault: 'http://a/v1', modelDefault: 'deepseek-v4-flash', timeoutMs: 1000, extraBody: { reasoning_effort: 'low' } }],
+      },
+      {} as NodeJS.ProcessEnv,
+      s.fn,
+    )
+    await p.chat('hi')
+    expect(s.calls[0]!.body).toMatchObject({ model: 'deepseek-v4-flash', reasoning_effort: 'low' })
+    // 未配 extraBody 的端点不得自带该字段（降级链上的普通端点不受污染）
+    const s2 = scriptedFetch([{ body: okBody('ok') }])
+    const p2 = new EditorialProvider(role([{ id: 'plain', baseUrlDefault: 'http://b/v1' }]), {} as NodeJS.ProcessEnv, s2.fn)
+    await p2.chat('hi')
+    expect((s2.calls[0]!.body as Record<string, unknown>).reasoning_effort).toBeUndefined()
+  })
 })
 
 describe('EditorialProvider：自动降级链', () => {
@@ -508,33 +535,38 @@ describe('runJob：长时批产的进度落盘与断点续跑', () => {
 })
 
 describe(' EditorialConfig 契约', () => {
-  it('config/editor.json 可解析，且 writer/reviewer 默认走不同端点（写与评分离）', () => {
+  it('config/editor.json 可解析，且 writer/reviewer 首端点异族分离（写与评分离）', () => {
     const cfg = JSON.parse(readFileSync(join(process.cwd(), 'config/editor.json'), 'utf8')) as EditorialConfig
     expect(cfg.writer.batchSize).toBe(3) // 实测：批再大会撞 max_tokens
     expect(cfg.writer.maxTokens).toBe(6000)
     expect(cfg.reviewer.batchSize).toBe(10) // 实测：reviewer 输出短，批可大
-    expect(cfg.reviewer.maxTokens).toBe(1500)
-    // 老张裁决 4：写与评分离。两端点若相同，同一模型既写又评构成循环
-    const w = cfg.writer.chain[0]!.baseUrlDefault
-    const r = cfg.reviewer.chain[0]!.baseUrlDefault
-    expect(w).not.toBe(r)
+    expect(cfg.reviewer.maxTokens).toBe(3000) // 2026-09-05：ds4 (reasoning_effort:low) 下批 10 需 3000 才装得下 JSON
+    // 老张裁决 4：写与评分离。两端点若相同，同一模型既写又评构成循环。id 与地址双校验，
+    // 防未来有人把两端点配回同一个 id（id 相同时地址必然相配，故 id 不同是更强的守卫）
+    const w = cfg.writer.chain[0]!
+    const r = cfg.reviewer.chain[0]!
+    expect(w.id).not.toBe(r.id)
+    expect(w.baseUrlDefault).not.toBe(r.baseUrlDefault)
     // 老张裁决 3：端点不绑定——必须有 env 覆盖位
-    expect(cfg.writer.chain[0]!.baseUrlEnv).toBeTruthy()
-    expect(cfg.reviewer.chain[0]!.baseUrlEnv).toBeTruthy()
-    // 老张口述的 192.168.100.1:8002 + deepseek-v4-flash 经实测不存在，
-    // 不得出现在**任何端点配置**里（_note 字段里作为"不要用"的记录是允许的）
-    const endpoints = [...cfg.writer.chain, ...cfg.reviewer.chain]
-    for (const ep of endpoints) {
-      expect(JSON.stringify(ep)).not.toContain('192.168.100.1')
-      expect(JSON.stringify(ep)).not.toContain(':8002')
-      expect(JSON.stringify(ep)).not.toContain('deepseek-v4-flash')
+    expect(w.baseUrlEnv).toBeTruthy()
+    expect(r.baseUrlEnv).toBeTruthy()
+    for (const ep of [...cfg.writer.chain, ...cfg.reviewer.chain]) {
       expect(ep.baseUrlDefault).toMatch(/^https?:\/\//)
     }
+    // 历史条款（2026-09-04）曾禁止 192.168.100.1:8002/deepseek-v4-flash 出现在任何端点配置，
+    // 依据是「老张口述该端点经实测不存在」。2026-09-05 老张指令以 ~/start_ds4.sh 落地后，
+    // 该端点已真实可用并配为 reviewer 主端点（ds4-local），条款被事实推翻而移除；
+    // 「不硬编码进代码、只走配置」的裁决不变（见 src/editorial/provider.ts 头部注释订正）。
   })
 
-  it('默认 enabled=false：没配端点时产线仍能跑（走机械兜底），不报错', () => {
+  it('enabled 为布尔；全部端点缺省 env 也能解析（回落 default，产线不会因少配 env 而炸）', () => {
     const cfg = JSON.parse(readFileSync(join(process.cwd(), 'config/editor.json'), 'utf8')) as EditorialConfig
-    expect(cfg.enabled).toBe(false)
+    expect(typeof cfg.enabled).toBe('boolean')
+    for (const role of [cfg.writer, cfg.reviewer]) {
+      const resolved = resolveChain(role, {} as NodeJS.ProcessEnv)
+      expect(resolved.length).toBe(role.chain.length) // env 全缺仍全部落到 default
+      for (const ep of resolved) expect(ep.baseUrl).toMatch(/^https?:\/\//)
+    }
   })
 })
 

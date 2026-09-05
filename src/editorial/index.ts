@@ -1,3 +1,5 @@
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { FetchFn, PersonaConfig, ScoredItem } from '../types.js'
 import { EditorialProvider, type EditorialConfig, type Usage } from './provider.js'
@@ -320,8 +322,12 @@ async function reviewGold(
     persona,
     items: inputs,
     batchSize: config.reviewer.batchSize,
-    // 校准作业不落进度文件：它是自检而非生产，续跑语义在此无意义且会污染 staging
-    stagingDir: join(process.cwd(), '.tmp-calibration'),
+    // 校准作业**不得**续跑：jobId 固定为 calibrate-<persona>，若落固定 staging，
+    // runJob 的 resumable 判据（同 jobId+同 totalItems/batchSize）会把上一次的完成态
+    // 无限复用——2026-09-05 实测：改完 reviewer 配置（reasoning_effort:low / maxTokens
+    // 3000）重跑整链，calibrate 仍精确返回旧结果（34.0%/63.8%），新配置根本没生效。
+    // 每次用唯一临时目录，无 prior 可续，自检必然真实重跑。
+    stagingDir: mkdtempSync(join(tmpdir(), 'dbot-calibrate-')),
     runBatch: async (batch) => {
       const r = await reviewBatch(provider, batch, persona, { maxTokens: config.reviewer.maxTokens })
       return { results: r.verdicts, usage: r.usage, truncated: r.truncated, error: r.error }
