@@ -52,6 +52,13 @@ export interface BoardInput {
   skippedSources: string[]
   /** 采集成功但零相关产出的源（I-3 盲区：skippedSources 口径下不可见） */
   zeroYieldSources: string[]
+  /**
+   * 宽通道（DB-08）本轮实况。缺省 = 未启用或无待定池。
+   * poolSize=待定池条数、included=LLM 判定捞回数；排除数从 dropped 里 gate==='recall' 归算。
+   * **必须在看板显式暴露**：宽通道的「捞回」与「不捞」都影响候选池构成，静默运行
+   * 会重演「看板读起来像已建成的机制，实际另有来源」的 D-09 漂移。
+   */
+  recall?: { poolSize: number; included: number }
   publishedFingerprintCount: number
   /** 配置正则编译失败清单。非空即说明有规则实际未生效，必须显式暴露 */
   compileErrors: Array<{ gate: GateId; ruleId: string; error: string }>
@@ -110,6 +117,8 @@ export interface QualityBoard extends BoardInput {
   perSourcePublished: Record<string, number>
   /** 派生统计：语言分布 */
   langDistribution: Record<string, number>
+  /** 宽通道（DB-08）汇总：待定/捞回/排除与口径说明。recall 未启用时为 undefined */
+  recall?: { poolSize: number; included: number; excluded: number; note: string }
 }
 
 const NOTE_INACTIVE =
@@ -132,6 +141,14 @@ export function buildBoard(
   }
   const active = signalCounts.views + signalCounts.engagements + signalCounts.feedback > 0
 
+  const recall = input.recall
+    ? {
+        ...input.recall,
+        excluded: input.dropped.filter((d) => d.gate === 'recall' && !d.ruleId.startsWith('recall:ineligible') && !d.ruleId.startsWith('recall:poolOverflow')).length,
+        note: '宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。',
+      }
+    : undefined
+
   return {
     ...input,
     schema: 'domain-bot-quality-board-v1',
@@ -141,6 +158,7 @@ export function buildBoard(
     qualityYieldRatio: collected === 0 ? 0 : published.length / collected,
     perSourcePublished,
     langDistribution,
+    recall,
   }
 }
 

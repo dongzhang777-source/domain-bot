@@ -26,6 +26,9 @@ export interface RoundInput {
   telegram?: 'sent' | 'failed' | 'skipped-empty' | 'disabled'
   /** 本轮 Telegram 实际送达条数（sent 时为 pushed.length，failed/disabled 时为 0） */
   pushedDelivered?: number
+  /** 宽通道（DB-08）：待定池大小 / LLM 判定 include 数。单独存档——recall 不改变 candidates 口径，判定线 I 线读数不受影响（拍板点 3：判据暂冻结） */
+  recallPoolSize?: number
+  recallIncluded?: number
 }
 
 export interface RoundObservation {
@@ -67,6 +70,9 @@ export interface RoundObservation {
   telegram?: 'sent' | 'failed' | 'skipped-empty' | 'disabled'
   /** 本轮 Telegram 实际成功送达条数（I-2 真实分母） */
   pushedDelivered?: number
+  /** 宽通道（DB-08）观测：不并入 candidates/relevant 口径，判据读数不变 */
+  recallPoolSize?: number
+  recallIncluded?: number
 }
 
 function round3(n: number): number {
@@ -130,6 +136,8 @@ export function observeRound(input: RoundInput): RoundObservation {
     // 终审 P0-1（cbc 线）：回写该轮 enabled 源全量清单，gen-evidence I-3 分母按轮取它的 length。
     // 缺它则真实观测恒走 nodata（假阴性通道）——分子含 skippedSources，故分母须是全量而非非 skipped 子集。
     enabledSourceIds: input.enabledSourceIds ?? [],
+    recallPoolSize: input.recallPoolSize,
+    recallIncluded: input.recallIncluded,
     telegram: input.telegram,
     pushedDelivered: input.pushedDelivered ?? (input.telegram === 'sent' ? pushed.length : 0),
   }

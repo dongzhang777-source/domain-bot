@@ -493,3 +493,76 @@ describe('runGates 编排', () => {
     expect(r.dropped.map((d) => d.ruleId)).toContain('fingerprint:alreadyPublished')
   })
 })
+
+// ---------- DB-08 宽通道（recall widening） ----------
+
+describe('runGates 宽通道：relevance 降为快通道，漏网条目进待定池而非词表一票否决', () => {
+  // 标题与正文刻意避开本文件词表夹具的全部命中词（core/ecosystem 均零命中）——
+  // 这类条目在旧语义下会被 relevance:belowMinPoints 一票否决（词表=边界的结构性屏蔽）。
+  const leaky = (title: string, body = 'Governance and economics roundup with policy analysis notes.') =>
+    item({ title, body, url: `https://e.com/${encodeURIComponent(title.slice(0, 12))}` })
+
+  it('recall 启用时未过 relevance 但预筛达标的条目进 recallPool，不计入 dropped', () => {
+    const r = runGates([leaky('Model Economics: The Real Cost Of Serving Machines')], {
+      persona,
+      gates,
+      now: NOW,
+      recall: { maxPerRound: 5 },
+    })
+    expect(r.passed).toHaveLength(0)
+    expect(r.recallPool).toHaveLength(1)
+    expect(r.dropped.filter((d) => d.gate === 'relevance')).toHaveLength(0)
+  })
+
+  it('recall 未启用时保持旧语义：relevance:belowMinPoints 直接丢弃（现状回归锁）', () => {
+    const r = runGates([leaky('Model Economics: The Real Cost Of Serving Machines')], {
+      persona,
+      gates,
+      now: NOW,
+    })
+    expect(r.recallPool ?? []).toHaveLength(0)
+    expect(r.dropped.map((d) => d.ruleId).some((id) => id.startsWith('relevance:belowMinPoints'))).toBe(true)
+  })
+
+  it('预筛不达标（正文空洞）进 recall:ineligible 而不是待定池', () => {
+    const r = runGates([leaky('Model Economics: The Real Cost Of Serving Machines', 'too short')], {
+      persona,
+      gates,
+      now: NOW,
+      recall: { maxPerRound: 5 },
+    })
+    expect(r.recallPool).toHaveLength(0)
+    expect(r.dropped.map((d) => d.ruleId)).toContain('recall:ineligible')
+  })
+
+  it('池按 relevance 积分降序截断到 maxPerRound，超出部分落 recall:poolOverflow（漏斗恒可复算）', () => {
+    // 两条零命中（0 分）、一条仅正文命中 ecosystem 词（body-only 降为 0 分但计入 hits 排序同分），
+    // 另一条正文命中 ecosystem 且标题无关——验证排序与截断，三条全部 body ≥ 30 字符过预筛
+    const zeroA = leaky('Policy Watch: Governance Roundup Weekly Edition', 'policy governance discussion notes.')
+    const zeroB = leaky('Hardware Watch: Accelerator Economics Quarterly', 'hardware economics discussion notes.')
+    // onePt 标题命中本地夹具 ecosystem 词 'prompt'（标题命中拿满 1 分）> 零分条目 → 降序后先进池
+    const onePt = item({
+      title: 'Prompt Store: A Weekly Briefing On Deployment Stories',
+      body: 'this week in open source deployment stories and updates.',
+      url: 'https://e.com/one-pt',
+    })
+    const r = runGates([zeroA, zeroB, onePt], { persona, gates, now: NOW, recall: { maxPerRound: 2 } })
+    expect(r.recallPool).toHaveLength(2)
+    expect(r.recallPool!.map((it) => it.id)).toContain(onePt.id)
+    expect(r.recallPool!.map((it) => it.id)).not.toContain(zeroB.id)
+    expect(r.dropped.filter((d) => d.ruleId === 'recall:poolOverflow')).toHaveLength(1)
+  })
+
+  it('黑名单命中不得进待定池（黑名单在 relevance 之前，宽通道不得绕过质量底线）', () => {
+    const gatesWithHiring: GatesConfig = {
+      ...gates,
+      blacklist: [...gates.blacklist, { id: 'ad:recruitEn', group: 'adRecruit', pattern: 'hiring|join our team', scope: 'title' }],
+    }
+    const r = runGates(
+      [item({ title: 'Join our team: platform engineers wanted', url: 'https://e.com/hiring' })],
+      { persona, gates: gatesWithHiring, now: NOW, recall: { maxPerRound: 5 } },
+    )
+    expect(r.recallPool).toHaveLength(0)
+    expect(r.dropped.map((d) => d.ruleId)).toContain('ad:recruitEn')
+  })
+})

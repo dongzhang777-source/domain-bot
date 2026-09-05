@@ -33,5 +33,11 @@
       "id": "listicleClickbait",
       "pattern": "不是.{0,12}而是|真正的.{0,10}不是|这\\s*\\d+\\s*个|\\d+\\s*个细节|\\d+\\s*个技巧"
     }
-  ]
+  ],
+  "recall": {
+    "enabled": true,
+    "maxPerRound": 20,
+    "minAgreementRate": 0.7,
+    "_note": "DB-08 宽通道（2026-09-05 老张批）：关键词积分闸门降为快通道，relevance 未过但预筛达标的条目进待定池，由 reviewer 做二元判定（不打分、不做终审）捞回词表漏网内容。校准未过（一致率<0.7）或 24h 校准缓存失败时 fail-safe 全不召回。质量底线（黑名单+十条断言）不放松。"
+  }
 }

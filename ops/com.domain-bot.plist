@@ -37,16 +37,31 @@
          改用 StartCalendarInterval：定时触发，跑完就结束，不重拉。 -->
     <key>RunAtLoad</key>
     <false/>
-    <!-- 每日 03:00 跑一轮过夜批产。老张 2026-09-04 认可「过夜批产（1 小时级）」；
-         启用 AI 编辑部后 writer 实测 ≈53 分钟，03:00 起跑能在早上前结束。
-         改时只需改 Hour/Minute；要改频率就改成数组形式多组时间点。 -->
+    <!-- 多时段批产（DB-08 Phase 3，2026-09-05 老张批）：03:00 吃隔夜积累高峰（主轮），
+         12:00 / 19:00 补采欧美/亚洲时段增量。宽通道（recall）启用后单轮时长增加
+         （校准 24h 缓存 + 待定池 ≤20 条判定），ExitTimeOut 仍留 2 小时宽限。
+         三轮各自独立，指纹库防重放保证不重发内容。 -->
     <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key>
-        <integer>3</integer>
-        <key>Minute</key>
-        <integer>0</integer>
-    </dict>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>3</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>12</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>19</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
     <!-- 单次作业上限：启用编辑部后正常在 1 小时内，给到 2 小时宽限。
          超时被杀会残留 memory/.lock（信号清理钩子对 SIGKILL 无效），
          而 acquireLock 对**活 PID** 一律拒绝——下次定时会直接失败。

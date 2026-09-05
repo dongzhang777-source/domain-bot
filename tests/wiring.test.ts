@@ -212,6 +212,15 @@ describe('单一发布路径守卫：不得再长出第二条产线', () => {
     expect(occurrences, `emitPublished 应被两条路径共用（定义+两个调用），实际 ${occurrences} 处`).toBe(3)
   })
 
+  it('宽通道判定（DB-08）只有一个注入工厂：makeRecallJudge 定义 1 次、run/collect 各注入 1 次', () => {
+    const occurrences = cliSrc.split('makeRecallJudge(').length - 1
+    // 定义 1 次 + runCommand 1 次 + collectCommand 1 次；publish 走 staged 快照不注入
+    expect(occurrences, `makeRecallJudge 应为「定义+两个调用」共 3 处，实际 ${occurrences} 处`).toBe(3)
+    // 管线本体不得直接感知 recall 的 LLM 实现（判定只经回调注入，保持可测与分段契约）
+    const pipelineSrc = readFileSync(join(SRC, 'pipeline.ts'), 'utf8')
+    expect(pipelineSrc).not.toMatch(/EditorialProvider|judgeRecallPool|calibrateRecall/)
+  })
+
   it('publishCommand 不得自己调 gatekeep / runGates（终审属于 finalizeStage）', () => {
     const publishBody = cliSrc.slice(cliSrc.indexOf('export async function publishCommand'))
     expect(publishBody.indexOf('gatekeep(')).toBe(-1)

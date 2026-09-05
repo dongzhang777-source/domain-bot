@@ -16,7 +16,7 @@ import { fetchRss } from './collector/adapters/rss.js'
 import { fetchGithub } from './collector/adapters/github.js'
 import { fetchBili, fetchExa, fetchJina, fetchV2ex, fetchYtSearch } from './collector/adapters/agentreach.js'
 import { resolveSourceUrl } from './collector/urlTemplate.js'
-import { capEvents, collectCanonicalUrls, entityTokens, runGates } from './gates/index.js'
+import { buildFunnel, capEvents, collectCanonicalUrls, entityTokens, runGates } from './gates/index.js'
 import { makeScorerFromEnv } from './refinery/scorer.js'
 import { MemoryStore } from './memory/store.js'
 import { applyNovelty, applySourceWeight } from './memory/evolve.js'
@@ -85,6 +85,14 @@ export interface PipelineOptions {
   staged?: CollectStageSnapshot
   /** 分阶段作业：已由 `edit` / `review` 跑好的编辑部产物（给了就不再调端点） */
   stagedEditorial?: StagedEditorial
+  /**
+   * 宽通道召回判定回调（DB-08）。persona.recall.enabled 且闸门产生待定池时被调用。
+   * 返回 include 的条目（并入候选走统一打分/事件聚合/终审）与 exclude 的落账记录。
+   * 由 cli 注入真实实现（读 editor.json 构造 reviewer provider + 金标校准落盘）；
+   * 测试注入 mock。管线本体不感知 LLM 端点。判定发生在 collect 阶段内——
+   * staging 快照即最终候选集，分段契约（分段跑 == 整链跑）不被破坏。
+   */
+  recallJudge?: (pool: RawItem[]) => Promise<{ included: RawItem[]; excluded: DropRecord[] }>
 }
 
 /** 分阶段作业传入的编辑部产物。targetIds 用于硬校验下标对齐（见 assertTargetAlignment）。 */
@@ -166,6 +174,7 @@ export async function collectStage(opts: PipelineOptions): Promise<CollectStageR
     gates: opts.gates,
     now,
     knownCanonical: opts.knownCanonical,
+    recall: opts.persona.recall?.enabled ? { maxPerRound: opts.persona.recall.maxPerRound } : undefined,
   })
   // 4. 配置正则写错必须熔断，不得静默跳过——一条失效规则等于该规则不存在，闸门会假绿
   if (gateOutcome.compileErrors.length > 0) {
@@ -177,6 +186,20 @@ export async function collectStage(opts: PipelineOptions): Promise<CollectStageR
   const relevant = gateOutcome.passed
   const sourceRelevant: Record<string, number> = {}
   for (const it of relevant) sourceRelevant[it.source] = (sourceRelevant[it.source] ?? 0) + 1
+
+  // 3.5 宽通道判定（DB-08）：词表漏网条目交 LLM 二元判定，include 的并入候选。
+  // 与快通道共用同一条打分/事件聚合/终审链——质量底线不因召回加宽而放松。
+  // exclude/漏答的落账记录并入 dropped（gate: 'recall'），漏斗恒可复算。
+  const recallPool = gateOutcome.recallPool ?? []
+  let recallIncluded = 0
+  if (recallPool.length > 0 && opts.recallJudge) {
+    const judged = await opts.recallJudge(recallPool)
+    relevant.push(...judged.included)
+    for (const it of judged.included) sourceRelevant[it.source] = (sourceRelevant[it.source] ?? 0) + 1
+    gateOutcome.dropped.push(...judged.excluded)
+    gateOutcome.funnel = buildFunnel(gateOutcome.dropped)
+    recallIncluded = judged.included.length
+  }
 
   // 5. 打分。env 未配 LLM 时自动走 HeuristicScorer——这是 DB-05 之前的预期行为
   const scorer = makeScorerFromEnv()
@@ -255,6 +278,8 @@ export async function collectStage(opts: PipelineOptions): Promise<CollectStageR
       sourceRelevant,
       skippedSourceIds: skipped.map((s) => s.id),
       enabledSourceIds: enabled.map((s) => s.id),
+      recallPoolSize: recallPool.length,
+      recallIncluded,
     },
   }
 }
@@ -418,6 +443,8 @@ export async function finalizeStage(stage: CollectStageResult, opts: FinalizeOpt
     sourceAfterDedupe: stage.observed.sourceAfterDedupe,
     sourceRelevant: stage.observed.sourceRelevant,
     enabledSourceIds: stage.observed.enabledSourceIds,
+    recallPoolSize: stage.observed.recallPoolSize,
+    recallIncluded: stage.observed.recallIncluded,
     telegram: 'disabled',
     pushedDelivered: 0,
   })
@@ -441,6 +468,10 @@ export async function finalizeStage(stage: CollectStageResult, opts: FinalizeOpt
       eventFillMode: gatekeepResult.eventFillMode,
       skippedSources: stage.skippedSources,
       zeroYieldSources: stage.zeroYieldSources,
+      recall:
+        stage.observed.recallPoolSize > 0 || stage.observed.recallIncluded > 0
+          ? { poolSize: stage.observed.recallPoolSize, included: stage.observed.recallIncluded }
+          : undefined,
       publishedFingerprintCount: collectCanonicalUrls(gatekeepResult.published).length,
       compileErrors: [],
       editorial: editorialBoard(editorial, gatekeepResult.published, [...selected, ...backfillPool], copiesOf),

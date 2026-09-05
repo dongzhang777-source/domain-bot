@@ -38,6 +38,12 @@ export interface RunGatesOptions {
   now: number
   /** 跨产线共享的已发布指纹库；命中即一票否决 */
   knownCanonical?: ReadonlySet<string>
+  /**
+   * 宽通道（DB-08）：给出即启用。relevance 未过的条目不再直接 drop，而是——
+   * 预筛达标 → 进 recallPool（待 LLM 二元判定）；预筛不达标或超出池上限 → drop
+   * （ruleId: recall:ineligible / recall:poolOverflow），保证漏斗恒可复算。
+   */
+  recall?: { maxPerRound: number }
 }
 
 export interface RunGatesResult extends GateOutcome {
@@ -45,8 +51,22 @@ export interface RunGatesResult extends GateOutcome {
   compileErrors: Array<{ gate: GateId; ruleId: string; error: string }>
 }
 
+/** 宽通道预筛：relevance 未过的条目要进待定池，至少得是「可读的一条内容」。
+ *  黑名单已在更早一步把结构性垃圾拦掉，这里只挡「标题过短/正文空洞」的残次品——
+ *  刻意不做相关性判断（那正是宽通道要交给 LLM 的事）。 */
+export function recallEligible(item: RawItem, gates: GatesConfig): boolean {
+  const title = (item.title ?? '').trim()
+  if (title.length < gates.minTitleChars) return false
+  const body = (item.body ?? '').trim()
+  // 纯符号/纯大写噪音标题（如 "!!!..." "ASDF ASDF"）没有判定价值
+  const alpha = title.replace(/[^\p{L}\p{N}]/gu, '')
+  if (alpha.length < Math.max(4, Math.floor(gates.minTitleChars / 2))) return false
+  // RSS 无正文是常态（bili/jina 部分条目），正文存在但空洞（<30 字符）才算不合格
+  return body.length === 0 || body.length >= 30
+}
+
 export function runGates(items: RawItem[], opts: RunGatesOptions): RunGatesResult {
-  const { persona, gates, now, knownCanonical } = opts
+  const { persona, gates, now, knownCanonical, recall } = opts
   const personaGate = new PersonaGate(persona)
   const blacklistGate = new BlacklistGate(gates)
   const relevanceGate = new RelevanceGate(gates)
@@ -77,12 +97,46 @@ export function runGates(items: RawItem[], opts: RunGatesOptions): RunGatesResul
   }
   stage = afterBlacklist
 
-  // 3. 门禁 2：相关性积分
+  // 3. 门禁 2：相关性积分。DB-08 起它只是**快通道**：未过的条目若宽通道开启且预筛
+  //    达标，进 recallPool 交 LLM 二元判定，而不是被词表一票否决——词表是召回信号，
+  //    不是入选标准（老张 2026-09-05 批「用关键词搜索内容会限制信息渠道」）。
   const afterRelevance: RawItem[] = []
+  const recallScored: Array<{ item: RawItem; points: number }> = []
   for (const item of stage) {
     const v = relevanceGate.check(item)
-    if (v.passed) afterRelevance.push(item)
-    else dropped.push(relevanceDrop(item, v, gates.minPoints))
+    if (v.passed) {
+      afterRelevance.push(item)
+      continue
+    }
+    if (!recall) {
+      dropped.push(relevanceDrop(item, v, gates.minPoints))
+      continue
+    }
+    if (!recallEligible(item, gates)) {
+      dropped.push({
+        itemId: item.id, title: item.title, source: item.source, url: item.url,
+        gate: 'recall', ruleId: 'recall:ineligible',
+        reason: `宽通道预筛不达标（${v.reason}）`,
+      })
+      continue
+    }
+    recallScored.push({ item, points: v.score.points })
+  }
+  // 池按积分降序（2 分的比 0 分的更接近相关），同分保持采集顺序。上限截断的进 dropped
+  // （recall:poolOverflow），任何不进 passed 的条目都有去处，漏斗恒可复算。
+  const recallPool: RawItem[] = recallScored
+    .sort((a, b) => b.points - a.points)
+    .slice(0, recall?.maxPerRound ?? 0)
+    .map((r) => r.item)
+  if (recall) {
+    const overflow = recallScored.length - recallPool.length
+    if (overflow > 0) {
+      dropped.push({
+        itemId: '(batch)', title: `${overflow} 条宽通道候选超池上限`, source: '(multiple)', url: '',
+        gate: 'recall', ruleId: 'recall:poolOverflow',
+        reason: `待定池上限 ${recall.maxPerRound}，按积分降序截断 ${overflow} 条`,
+      })
+    }
   }
   stage = afterRelevance
 
@@ -90,7 +144,7 @@ export function runGates(items: RawItem[], opts: RunGatesOptions): RunGatesResul
   const { kept, dropped: dupDropped } = dedupeByCanonicalUrl(stage, knownCanonical)
   dropped.push(...dupDropped)
 
-  return { passed: kept, dropped, funnel: buildFunnel(dropped), compileErrors }
+  return { passed: kept, dropped, funnel: buildFunnel(dropped), compileErrors, recallPool }
 }
 
 /** 逐层漏斗计数：看板必须能复算 1396→750→703→… 的每一跳，否则漏斗只是修辞。 */

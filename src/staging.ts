@@ -89,6 +89,9 @@ export interface StageObserved {
    * 两者相差的恰好就是 skipped 源——而观测序列靠它区分「源挂掉」与「源没内容」。
    */
   enabledSourceIds: string[]
+  /** 宽通道（DB-08）：本轮待定池大小与 LLM 判定 include 数（recall 关闭时双 0） */
+  recallPoolSize: number
+  recallIncluded: number
 }
 
 /** `CollectStageResult` 的 JSON 形态（Map → entries，eventOrdered → id 序列）。 */
@@ -225,6 +228,8 @@ export function restoreStage(s: CollectStageSnapshot): CollectStageResult {
       sourceRelevant: s.observed?.sourceRelevant ?? {},
       skippedSourceIds: s.observed?.skippedSourceIds ?? [],
       enabledSourceIds: s.observed?.enabledSourceIds ?? [],
+      recallPoolSize: s.observed?.recallPoolSize ?? 0,
+      recallIncluded: s.observed?.recallIncluded ?? 0,
     },
   }
 }

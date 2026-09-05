@@ -1,13 +1,14 @@
-import { readdirSync, readFileSync, existsSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, renameSync, existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { DomainConfig, FetchFn, GatesConfig, PersonaConfig, SourceConfig } from './types.js'
-import { collectStage, runPipeline, type PipelineResult } from './pipeline.js'
+import { collectStage, runPipeline, type PipelineOptions, type PipelineResult } from './pipeline.js'
 import { appendFingerprints, buildPack, loadFingerprints, writePack } from './publish/pack.js'
 import { formatSyncReport, syncPack } from './publish/sync-tuna.js'
 import { ingestTunaSignals, type IngestReport } from './ingest/tuna-signals.js'
 import { auditBoard, writeBoard } from './gatekeeper/board.js'
 import { acquireLock, releaseLock } from './runtime/lock.js'
 import type { EditorialConfig } from './editorial/provider.js'
+import { calibrateRecall, judgeRecallPool } from './editorial/recall.js'
 import { EditorialProvider, assessCalibration, formatCalibration, isCalibrated, loadGoldStandard, reviewBatch, runEditorial } from './editorial/index.js'
 import {
   COPY_SCHEMA,
@@ -108,6 +109,102 @@ export function printBanner(personas: PersonaConfig[], gates: GatesConfig, io: C
   )
 }
 
+const RECALL_CALIBRATION_TTL_MS = 24 * 60 * 60 * 1000
+
+interface RecallCalibrationCache {
+  calibratedAt: number
+  agreementRate: number
+  passed: boolean
+  problems: string[]
+}
+
+/**
+ * DB-08 宽通道判定回调工厂（docs/plan-recall-widening-2026-09-05.md Phase 2）。
+ *
+ * persona.recall 未启用、editor.json 缺失或 reviewer 端点不可解析时返回 undefined
+ * （宽通道关闭，走词表闸门原语义）。校准结果落盘 `<memoryDir>/recall-calibration.json`
+ * 并缓存 24h——通过与否都缓存：失败的校准每轮重跑只会重复烧钱，24h 后自然重试。
+ * 校准口径与质量打分是两回事（剔除→exclude、其余→include），未过标 fail-safe 全不召回。
+ */
+export function makeRecallJudge(
+  root: string,
+  persona: PersonaConfig,
+  memoryDir: string,
+  io: CliIO,
+  fetchFn?: FetchFn,
+): NonNullable<PipelineOptions['recallJudge']> | undefined {
+  if (!persona.recall?.enabled) return undefined
+  const editorial = loadEditorConfig(root)
+  if (!editorial) {
+    io.stderr(`[${persona.id}] recall.enabled 但 config/editor.json 缺失，宽通道关闭（走词表闸门原语义）`)
+    return undefined
+  }
+  const provider = new EditorialProvider(editorial.reviewer, process.env, fetchFn)
+  if (!provider.available) {
+    io.stderr(`[${persona.id}] recall.enabled 但 reviewer 降级链无端点，宽通道关闭`)
+    return undefined
+  }
+  const goldPath = editorial.calibration?.goldStandardPath ?? 'tests/fixtures/gold-standard.json'
+  const absGold = goldPath.startsWith('/') ? goldPath : join(root, goldPath)
+  let gold: ReturnType<typeof loadGoldStandard>
+  try {
+    gold = loadGoldStandard(absGold)
+  } catch (err) {
+    io.stderr(`[${persona.id}] recall 金标读取失败 ${absGold}：${err instanceof Error ? err.message : err}，宽通道关闭`)
+    return undefined
+  }
+  const minRate = persona.recall.minAgreementRate ?? 0.7
+  const maxTokens = editorial.reviewer.maxTokens
+  const cachePath = join(memoryDir, 'recall-calibration.json')
+
+  return async (pool) => {
+    let cal: RecallCalibrationCache | null = null
+    try {
+      if (existsSync(cachePath)) cal = JSON.parse(readFileSync(cachePath, 'utf8')) as RecallCalibrationCache
+    } catch {
+      cal = null // 坏缓存当作没有，重跑校准并覆盖
+    }
+    if (!cal || Date.now() - cal.calibratedAt > RECALL_CALIBRATION_TTL_MS) {
+      const report = await calibrateRecall(provider, gold, persona, { maxTokens, minAgreementRate: minRate })
+      cal = {
+        calibratedAt: Date.now(),
+        agreementRate: report.agreementRate,
+        passed: report.passed,
+        problems: report.problems,
+      }
+      mkdirSync(memoryDir, { recursive: true })
+      const tmp = `${cachePath}.tmp-${process.pid}`
+      writeFileSync(tmp, JSON.stringify(cal, null, 2))
+      renameSync(tmp, cachePath)
+      io.stdout(
+        `[${persona.id}] [recall] 金标校准：${report.judgedCount}/${report.sampleCount} 判定、漏答 ${report.missingCount}、` +
+          `一致率 ${(report.agreementRate * 100).toFixed(1)}% → ${report.passed ? '宽通道启用' : '回退关闭'}`,
+      )
+      for (const p of report.problems) io.stdout(`[${persona.id}] [recall] 校准问题: ${p}`)
+    }
+    if (!cal.passed) {
+      return {
+        included: [],
+        excluded: pool.map((it) => ({
+          itemId: it.id,
+          title: it.title,
+          source: it.source,
+          url: it.url,
+          gate: 'recall' as const,
+          ruleId: 'recall:calibrationFailed',
+          reason: '宽通道判定校准未通过（见 memory/recall-calibration.json），fail-safe 不召回',
+        })),
+      }
+    }
+    const judged = await judgeRecallPool(provider, pool, persona, { maxTokens })
+    io.stdout(
+      `[${persona.id}] [recall] 待定 ${pool.length} 条 → 捞回 ${judged.included.length}、排除 ${judged.excluded.length}` +
+        `${judged.missing > 0 ? `（漏答 ${judged.missing}）` : ''}${judged.error ? ` ⚠ ${judged.error}` : ''}`,
+    )
+    return judged
+  }
+}
+
 export async function runCommand(opts: RunOptions): Promise<RunOutcome> {
   const root = opts.root ?? process.cwd()
   const io = opts.io ?? defaultIO
@@ -154,6 +251,7 @@ export async function runCommand(opts: RunOptions): Promise<RunOutcome> {
         knownCanonical,
         editorial: editorial ?? undefined,
         root,
+        recallJudge: makeRecallJudge(root, persona, memoryDir, io, opts.fetchFn),
       })
       results.push(result)
 
@@ -315,6 +413,7 @@ export async function collectCommand(opts: CollectOptions): Promise<{ path: stri
       spawnFn: opts.spawnFn,
       now: opts.now,
       knownCanonical: loadFingerprints(memoryDir),
+      recallJudge: makeRecallJudge(root, persona, memoryDir, io, opts.fetchFn),
     })
     const path = stagePath(join(root, 'staging'), 'candidates', persona.id, stage.digestId)
     writeStageJson(path, snapshotStage(stage))

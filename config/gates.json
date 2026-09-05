@@ -74,7 +74,26 @@
         "agi",
         "astra",
         "gpt-6",
-        "gpt-5"
+        "gpt-5",
+        "agents",
+        "agentic",
+        "model context protocol",
+        "context window",
+        "context engineering",
+        "distillation",
+        "蒸馏",
+        "rlhf",
+        "rlaif",
+        "scaling law",
+        "vector database",
+        "vector db",
+        "alignment",
+        "jailbreak",
+        "prompt injection",
+        "generative ai",
+        "foundation model",
+        "基础模型",
+        "nvidia"
       ]
     },
     {
@@ -100,7 +119,24 @@
         "机器学习",
         "深度学习",
         "神经网络",
-        "强化学习"
+        "强化学习",
+        "safety",
+        "guardrail",
+        "governance",
+        "regulation",
+        "compliance",
+        "copyright",
+        "licensing",
+        "open weights",
+        "open-weight",
+        "inference cost",
+        "energy consumption",
+        "evals",
+        "diffusion",
+        "agent framework",
+        "training data",
+        "gpu",
+        "算力"
       ]
     },
     {
@@ -201,6 +237,11 @@
       "pattern": "^\\S+\\s+\\d+(\\.\\d+)?\\s*$|^\\S+\\s+\\d+(\\.\\d+)?%\\s*$",
       "scope": "title",
       "_why": "真跑实测（2026-09-04）产出里出现 `llm-gemini 0.34`、`llm-anthropic 0.27` 这类抓取碎片被当成标题发布：它们恰好 15 码点过了 minTitleChars、含 llm 得 3 分过了 relevance。形态是「一个 slug + 一个数值」，是网页抓取把评分/版本号行误当标题，不是内容。"
+    },
+    {
+      "id": "spam:sdkVariant",
+      "pattern": "[\\w.-]+_(python|nodejs|node|typescript|golang|java|cpp|cxx|csharp|swift|kotlin|dart|php|ruby|rust)(\\s|:|\\)|$)",
+      "_note": "DB-03 db03-072 同质化刷屏：同款项目多语言 SDK（montycat_python/node/rust...）。2026-09-05 DB-08 Phase 1 词表加宽后此类条目可经 core 词（vector database 等）入快通道，收编为黑名单模式。误伤面：repo 名以 _<语言> 结尾的独立项目——dropped 可审计，且此类命名以绑定变体为主。"
     }
   ],
   "_eventStopwordsNote": "实体词聚类的通用词表。判据：事件标识必须是专有名词/产品名（Astra、K2 Horizon、FlashInfer），而通用话题词（agent、framework、safety、benchmark）不是——拿话题词聚类必然误并（实测：Microsoft Agent Framework 经 agent 与 Astra 报道撞车）。扩充后必跑 npm run probe:events 与 tests/eventCluster.test.ts 验证召回未退化。",
@@ -553,5 +594,6 @@
     "maxEntityDf": 20,
     "maxEntityDfRatio": 0.02,
     "_dfNote": "批内文档频率上限：实体词在本批出现于超过 max(20, 2%*n) 条里即判为通用词，不作聚类连接依据。真跑实测（2026-09-04，1184 条 arXiv/HF）：不加此闸时闸门后 128 条被单链接传递闭包塌缩成 18 个事件、109 条被 eventSaturated 误杀。绝对值与比例取 max——只用比例会坑小批（n=10 时 2%=0.2 连 astra 都剔），只用绝对值拦不住大批塌缩。"
-  }
+  },
+  "_wideningNote": "2026-09-05 DB-08 Phase 1 词表增补（老张批评「用关键词搜索内容会限制信息渠道」）：core +19 / ecosystem +17，覆盖 AI 安全与治理（safety/alignment/guardrail/governance/jailbreak/prompt injection）、硬件与算力（nvidia/gpu/算力）、蒸馏与 scaling（distillation/rlhf/scaling law）、上下文工程（context window/context engineering/model context protocol）、生态经济（open weights/inference cost/copyright/licensing）。⚠️ 词表仍是召回边界而非解——结构性整改（宽通道 recall）见 docs/plan-recall-widening-2026-09-05.md Phase 2。generic 层不增词（0 分词不贡献入选）。"
 }

@@ -169,11 +169,26 @@ export interface PersonaConfig {
   clusterThreshold: number
   /** persona 特有淘汰红线，叠加在全局黑名单之上 */
   rejectRules: PersonaRejectRule[]
+  /**
+   * 宽通道召回（DB-08，老张 2026-09-05 批「用关键词搜索内容会限制信息渠道」整改）。
+   * 关键词积分闸门是召回边界而非质量判断——词表外内容结构性不可见。开启后，
+   * relevance 未过但预筛达标的条目进待定池，由 reviewer 做二元判定（include/exclude，
+   * 不打分、不做终审）捞回词表漏网的高价值内容。质量底线（黑名单/十条断言）不放松。
+   */
+  recall?: RecallConfig
+}
+
+export interface RecallConfig {
+  enabled: boolean
+  /** 每轮进入 LLM 判定的条目上限（成本护栏，不设会随采集量线性膨胀） */
+  maxPerRound: number
+  /** 判定与金标期望的一致率下限（trash→exclude、其余→include）。低于则宽通道自动回退关闭 */
+  minAgreementRate?: number
 }
 
 // ---------- 闸门产出 ----------
 
-export type GateId = 'blacklist' | 'relevance' | 'fingerprint' | 'persona' | 'gatekeeper'
+export type GateId = 'blacklist' | 'relevance' | 'fingerprint' | 'persona' | 'gatekeeper' | 'recall'
 
 /** 被拦条目：必须带 gate + ruleId + reason，否则看板无法归因、漏斗无法复算。 */
 export interface DropRecord {
@@ -191,6 +206,12 @@ export interface GateOutcome {
   dropped: DropRecord[]
   /** 逐层漏斗计数，按 gate 归组 */
   funnel: Array<{ gate: GateId; ruleId: string; count: number }>
+  /**
+   * 宽通道待定池（DB-08）：relevance 未过但预筛达标、待 LLM 二元判定的条目。
+   * 仅当 persona.recall.enabled 时非空；这些条目**不算被丢弃**（不在 dropped 里），
+   * 由 pipeline 的 recallJudge 回调判定后并入或不并入候选。空池 = 宽通道未启用或无漏网。
+   */
+  recallPool?: RawItem[]
 }
 
 /** 相关性积分明细：可解释字段，供看板与调试。 */
