@@ -1,0 +1,244 @@
+{
+  "persona": "newsline",
+  "personaDisplay": "AI时事快线",
+  "digestId": "newslinemtphcg8e",
+  "generatedAt": 1788679086638,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 48
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 28
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 16
+    },
+    {
+      "stage": "afterGates",
+      "count": 1
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 1
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 1
+    },
+    {
+      "stage": "published",
+      "count": 0
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-81d665f9e86a6f59e4b4",
+      "title": "v3.1.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.1.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-52346d0708da30e3fe18",
+      "title": "v3.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-8934f03a8efd86771b22",
+      "title": "mpaymenremora/CacheCraft: Semantic cache strategy bench: replay recorded request traces through candidate caching policies and measure which one actually pays off.",
+      "source": "github-new-llm-tools",
+      "url": "https://github.com/mpaymenremora/CacheCraft",
+      "gate": "recall",
+      "ruleId": "recall:endpointFailed",
+      "reason": "宽通道端点失败，fail-safe 不召回：编辑部降级链全部失败（2 个端点）：ds4-local: fetch failed | nous-proxy: 响应无 content（端点可能改写了请求或模型未加载）"
+    },
+    {
+      "itemId": "u-fbaa403a36b2901485ac",
+      "title": "Cloud in a Bottle: making self-hosting accessible to everyone",
+      "source": "hn-frontpage",
+      "url": "https://cloudinabottle.org/blog/launch-post",
+      "gate": "recall",
+      "ruleId": "recall:endpointFailed",
+      "reason": "宽通道端点失败，fail-safe 不召回：编辑部降级链全部失败（2 个端点）：ds4-local: fetch failed | nous-proxy: 响应无 content（端点可能改写了请求或模型未加载）"
+    },
+    {
+      "itemId": "u-5a28257a7646a740f65d",
+      "title": "Chrome again exempts Google from user site data settings",
+      "source": "hn-frontpage",
+      "url": "https://lapcatsoftware.com/articles/2026/9/1.html",
+      "gate": "recall",
+      "ruleId": "recall:endpointFailed",
+      "reason": "宽通道端点失败，fail-safe 不召回：编辑部降级链全部失败（2 个端点）：ds4-local: fetch failed | nous-proxy: 响应无 content（端点可能改写了请求或模型未加载）"
+    },
+    {
+      "itemId": "u-f22b7f9b64e24b6c552b",
+      "title": "The revolt of the reader",
+      "source": "hn-frontpage",
+      "url": "https://bcantrill.dtrace.org/2026/09/05/the-revolt-of-the-reader/",
+      "gate": "recall",
+      "ruleId": "recall:endpointFailed",
+      "reason": "宽通道端点失败，fail-safe 不召回：编辑部降级链全部失败（2 个端点）：ds4-local: fetch failed | nous-proxy: 响应无 content（端点可能改写了请求或模型未加载）"
+    },
+    {
+      "itemId": "u-68c8814ad49d89711745",
+      "title": "Private German rocket makes history, reaches orbit from European soil",
+      "source": "hn-frontpage",
+      "url": "https://www.space.com/space-exploration/launches-spacecraft/isar-aerospace-second-launch-norway-andoya-spaceport-spectrum-rocket",
+      "gate": "recall",
+      "ruleId": "recall:endpointFailed",
+      "reason": "宽通道端点失败，fail-safe 不召回：编辑部降级链全部失败（2 个端点）：ds4-local: fetch failed | nous-proxy: 响应无 content（端点可能改写了请求或模型未加载）"
+    },
+    {
+      "itemId": "u-b6a75cdb30da14a9acb6",
+      "title": "LLMs as a Cognitive Virus",
+      "source": "hn-frontpage",
+      "url": "https://arxiv.org/abs/2609.03344",
+      "gate": "recall",
+      "ruleId": "recall:endpointFailed",
+      "reason": "宽通道端点失败，fail-safe 不召回：编辑部降级链全部失败（2 个端点）：ds4-local: fetch failed | nous-proxy: 响应无 content（端点可能改写了请求或模型未加载）"
+    },
+    {
+      "itemId": "u-48bf78e14a071f51ef6c",
+      "title": "Learn Programming with OCaml",
+      "source": "hn-frontpage",
+      "url": "https://usr.lmf.cnrs.fr/lpo/",
+      "gate": "recall",
+      "ruleId": "recall:endpointFailed",
+      "reason": "宽通道端点失败，fail-safe 不召回：编辑部降级链全部失败（2 个端点）：ds4-local: fetch failed | nous-proxy: 响应无 content（端点可能改写了请求或模型未加载）"
+    },
+    {
+      "itemId": "u-aaafcecdd919b79ff0ac",
+      "title": "The \"$60 Gaming PC\" – AMD BC-250 (2025)",
+      "source": "hn-frontpage",
+      "url": "https://devquasar.com/hardware/the-60-gaming-pc-amd-bc-250/",
+      "gate": "recall",
+      "ruleId": "recall:endpointFailed",
+      "reason": "宽通道端点失败，fail-safe 不召回：编辑部降级链全部失败（2 个端点）：ds4-local: fetch failed | nous-proxy: 响应无 content（端点可能改写了请求或模型未加载）"
+    },
+    {
+      "itemId": "u-0fa6201892d006a7293f",
+      "title": "Visualizing Rust's Vtables: How dyn Trait Works In Memory",
+      "source": "hn-frontpage",
+      "url": "https://sofiabelen.github.io/projects/visualizing-rusts-vtables-how-dyn-trait-works-in-memory/",
+      "gate": "recall",
+      "ruleId": "recall:endpointFailed",
+      "reason": "宽通道端点失败，fail-safe 不召回：编辑部降级链全部失败（2 个端点）：ds4-local: fetch failed | nous-proxy: 响应无 content（端点可能改写了请求或模型未加载）"
+    },
+    {
+      "itemId": "u-813ac4f5ee788f9db588",
+      "title": "Terpstra Keyboard",
+      "source": "hn-frontpage",
+      "url": "http://terpstrakeyboard.com/",
+      "gate": "recall",
+      "ruleId": "recall:endpointFailed",
+      "reason": "宽通道端点失败，fail-safe 不召回：编辑部降级链全部失败（2 个端点）：ds4-local: fetch failed | nous-proxy: 响应无 content（端点可能改写了请求或模型未加载）"
+    },
+    {
+      "itemId": "u-f541ae83479eee827e23",
+      "title": "Nitter has more working instances than before the takedowns",
+      "source": "hn-frontpage",
+      "url": "https://codeberg.org/mv12star/shitter/wiki/Instances",
+      "gate": "recall",
+      "ruleId": "recall:endpointFailed",
+      "reason": "宽通道端点失败，fail-safe 不召回：编辑部降级链全部失败（2 个端点）：ds4-local: fetch failed | nous-proxy: 响应无 content（端点可能改写了请求或模型未加载）"
+    },
+    {
+      "itemId": "u-0bd764270a92f584d48b",
+      "title": "Actively exploited sandbox RCE in all Chromium versions",
+      "source": "hn-frontpage",
+      "url": "https://nvd.nist.gov/vuln/detail/cve-2026-85046",
+      "gate": "recall",
+      "ruleId": "recall:endpointFailed",
+      "reason": "宽通道端点失败，fail-safe 不召回：编辑部降级链全部失败（2 个端点）：ds4-local: fetch failed | nous-proxy: 响应无 content（端点可能改写了请求或模型未加载）"
+    },
+    {
+      "itemId": "u-b1524059422a2cc01eaf",
+      "title": "Statichost.eu – European static site hosting",
+      "source": "hn-frontpage",
+      "url": "https://www.statichost.eu/",
+      "gate": "recall",
+      "ruleId": "recall:endpointFailed",
+      "reason": "宽通道端点失败，fail-safe 不召回：编辑部降级链全部失败（2 个端点）：ds4-local: fetch failed | nous-proxy: 响应无 content（端点可能改写了请求或模型未加载）"
+    }
+  ],
+  "rejected": [
+    {
+      "itemId": "u-ae0c2e3335c6768ed24d",
+      "title": "GPT-6 Astra on robot arms",
+      "url": "https://openai.robocurve.org/gpt-6-astra/",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「Bridging the sim-to-real gap: does LLM reasoning translate to safe physical actuation?」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    }
+  ],
+  "rejectCounts": {
+    "gk:hookEntity": 1
+  },
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 0,
+  "eventCount": 1,
+  "eventDemoted": 0,
+  "eventFillMode": false,
+  "skippedSources": [],
+  "zeroYieldSources": [
+    "github-new-llm-tools",
+    "exa-agent-releases"
+  ],
+  "recall": {
+    "poolSize": 13,
+    "included": 0,
+    "excluded": 13,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 0,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 0,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "writer",
+        "endpointId": "nous-proxy",
+        "calls": 1,
+        "failures": 0,
+        "reasoningTokens": 5197,
+        "elapsedMs": 92059
+      },
+      {
+        "role": "reviewer",
+        "endpointId": "nous-proxy",
+        "calls": 1,
+        "failures": 0,
+        "reasoningTokens": 755,
+        "elapsedMs": 29529
+      }
+    ],
+    "llmCopyCount": 0
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0,
+  "perSourcePublished": {},
+  "langDistribution": {}
+}
