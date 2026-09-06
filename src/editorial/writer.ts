@@ -1,5 +1,5 @@
 import type { PersonaConfig, ScoredItem } from '../types.js'
-import { HOOK_LIMITS, SUMMARY_MAX, WHY_MAX, truncateChars } from '../render/tuna.js'
+import { HOOK_LIMITS, SUMMARY_MAX, SUMMARY_MIN, WHY_MAX, truncateChars } from '../render/tuna.js'
 import { EditorialProvider, extractJsonArray, renderItemsBlock, type Usage } from './provider.js'
 
 /**
@@ -57,9 +57,11 @@ export function buildWriterPrompt(items: Array<{ title: string; body: string }>,
     `目标读者画像：${persona.displayName}（${persona.id === 'newsline' ? '72 小时内的重大发布、突破与突发风险' : '模型机理、系统架构、评测反思、范式演进'}）`,
     ``,
     `对下列每条输出 JSON 数组，格式严格如下（不要任何解释文字、不要 markdown 围栏）：`,
-    `[{"index":0,"hooks":["钩子1","钩子2","钩子3"],"summary":"150-250字摘要","why":"≤${WHY_MAX}字推荐理由"}]`,
+    `[{"index":0,"hooks":["钩子1","钩子2","钩子3"],"summary":"篇幅达标的摘要","why":"≤${WHY_MAX}字推荐理由"}]`,
     ``,
-    `长度上限（码点）：钩子 zh≤${hl.zh} / en≤${hl.en}；摘要 zh≤${SUMMARY_MAX.zh} / en≤${SUMMARY_MAX.en}；why≤${WHY_MAX}。`,
+    // 篇幅区间双约束（2026-09-06 老张「篇幅有要求，要满足」）：下限不达标会被终审
+    // gk:summaryBelowFloor 拒收（薄稿直接不发布），prompt 不写区间=白烧一轮。
+    `长度（码点，硬性区间）：钩子 zh≤${hl.zh} / en≤${hl.en}；摘要 zh ${SUMMARY_MIN.zh}–${SUMMARY_MAX.zh}、en ${SUMMARY_MIN.en}–${SUMMARY_MAX.en}（低于下限直接作废）；why≤${WHY_MAX}。`,
     ``,
     renderItemsBlock(items),
   ].join('\n')

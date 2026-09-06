@@ -609,7 +609,7 @@ describe('runJob：长时批产的进度落盘与断点续跑', () => {
 describe(' EditorialConfig 契约', () => {
   it('config/editor.json 可解析，且 writer/reviewer 首端点异族分离（写与评分离）', () => {
     const cfg = JSON.parse(readFileSync(join(process.cwd(), 'config/editor.json'), 'utf8')) as EditorialConfig
-    expect(cfg.writer.batchSize).toBe(3) // 实测：批再大会撞 max_tokens
+    expect(cfg.writer.batchSize).toBe(2) // DB-17 续三（d101864）：3→2，进一步降 max_tokens 撞顶概率
     expect(cfg.writer.maxTokens).toBe(6000)
     expect(cfg.reviewer.batchSize).toBe(10) // 实测：reviewer 输出短，批可大
     expect(cfg.reviewer.maxTokens).toBe(3000) // 实测：批 10 的 JSON 在 reasoning_effort:low 下需 3000 才装得下（ds4 定，8082 沿用同量级）

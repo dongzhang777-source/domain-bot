@@ -189,9 +189,9 @@ describe('runPipeline 集成：recallJudge 捞回的条目与快通道共用同�
   }
 
   const feed = `<?xml version="1.0"?><rss><channel>
-  <item><title>LLM inference benchmark released for serving workloads</title><description>llm inference benchmark transformer serving quantization release outperform open source</description><link>https://a.com/1</link></item>
-  <item><title>Model Economics: What Compute Budgets Mean For Labs</title><description>governance and economics policy analysis with cost breakdowns and market notes</description><link>https://a.com/2</link></item>
-  <item><title>Join our team: we are hiring platform engineers now</title><description>hiring join our team career opportunity for engineers</description><link>https://a.com/3</link></item>
+  <item><title>LLM inference benchmark released for serving workloads</title><description>llm inference benchmark transformer serving quantization release outperform open source This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.</description><link>https://a.com/1</link></item>
+  <item><title>Model Economics: What Compute Budgets Mean For Labs</title><description>governance and economics policy analysis with cost breakdowns and market notes This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.</description><link>https://a.com/2</link></item>
+  <item><title>Join our team: we are hiring platform engineers now</title><description>hiring join our team career opportunity for engineers This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.</description><link>https://a.com/3</link></item>
 </channel></rss>`
 
   it('快通道条目与宽通道捞回条目都能发布，黑名单垃圾即使被 judge include 也进不了产出', async () => {

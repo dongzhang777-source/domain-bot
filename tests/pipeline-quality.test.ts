@@ -77,9 +77,26 @@ function rssOf(samples: GoldSample[]): string {
   return `<?xml version="1.0"?><rss><channel><title>DB-03 gold standard replay</title>${items}</channel></rss>`
 }
 
+/**
+ * DB-03 金标样本的正文是片段化的（多数低于 tuna 概要下限 zh200/en300 码点）。
+ * 2026-09-06 篇幅令后「短正文」本身构成合法拒收（gk:summaryBelowFloor），会让
+ * 本文件全部回归用例退化为「全灭也是绿」。垫足正文使篇幅维度不再干扰：
+ * 这些用例测的是其余闸门对真实垃圾的拦截力与对合格内容的放行力。
+ */
+function padBody(s: GoldSample): GoldSample {
+  const isZh = /[\u4e00-\u9fff]/.test(s.title)
+  const floor = isZh ? 210 : 310
+  let body = s.body ?? ''
+  const pad = isZh
+    ? '同时官方公开了完整的评测方法、硬件配置与复现指南，便于独立团队在自有集群上复核各项指标，再决定是否在生产环境中采纳这一方案，对相关方向的工程团队尤其值得跟进。'
+    : ' The release also documents benchmark methodology, harness configuration, hardware setup, and reproducibility notes so independent teams can verify the numbers on their own clusters before adoption.'
+  while (Array.from(body).length < floor) body += pad
+  return { ...s, body }
+}
+
 async function runSamples(samples: GoldSample[], overrides: Partial<PersonaConfig> = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'dbot-quality-'))
-  const xml = rssOf(samples)
+  const xml = rssOf(samples.map(padBody))
   return runPipeline({
     persona: persona(overrides),
     gates,
@@ -171,8 +188,8 @@ describe('内容质量回归：DB-03 的真实垃圾必须一条都进不了产�
     // 故意注入同一 URL 的跟踪参数变体与逐字重复标题
     const dupes: GoldSample[] = [
       // 标题含 core 词（openai/llm），否则会被 relevance 闸门拦掉，测不到 URL 去重那一层
-      { id: 'dup-a', title: 'Corporate America is getting hooked on open-source LLM models', body: 'NYT investigation on enterprise adoption of open LLM inference stacks.', humanScore: 8, humanDecision: '保留' },
-      { id: 'dup-b', title: 'Corporate America is getting hooked on open-source LLM models', body: 'NYT investigation on enterprise adoption of open LLM inference stacks.', humanScore: 0, humanDecision: '剔除' },
+      { id: 'dup-a', title: 'Corporate America is getting hooked on open-source LLM models', body: 'NYT investigation on enterprise adoption of open LLM inference stacks. This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.', humanScore: 8, humanDecision: '保留' },
+      { id: 'dup-b', title: 'Corporate America is getting hooked on open-source LLM models', body: 'NYT investigation on enterprise adoption of open LLM inference stacks. This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.', humanScore: 0, humanDecision: '剔除' },
     ]
     const dir = mkdtempSync(join(tmpdir(), 'dbot-quality-dup-'))
     const xml = rssOf(dupes).replace('https://db03.example/dup-b', 'https://db03.example/dup-a?utm_source=newsletter&fbclid=xyz')
@@ -204,7 +221,7 @@ describe('内容质量回归：DB-03 的真实垃圾必须一条都进不了产�
     ].map((title, i) => ({
       id: `astra-${i}`,
       title,
-      body: 'OpenAI 发布新一代模型，具备更强的自主推理与电脑操作能力，业界关注其安全审查机制。',
+      body: 'OpenAI 发布新一代模型，具备更强的自主推理与电脑操作能力，业界关注其安全审查机制，同时公开了完整的评测方法、硬件配置与复现指南，便于独立团队在自有集群上复核各项指标，再决定是否在生产环境中采纳这一方案，对检索增强方向的工程团队尤其值得跟进。',
       humanScore: 7,
       humanDecision: '保留' as const,
     }))
@@ -235,7 +252,7 @@ describe('内容质量回归：DB-03 的真实垃圾必须一条都进不了产�
     const astraOnly: GoldSample[] = Array.from({ length: 5 }, (_, i) => ({
       id: `astra-only-${i}`,
       title: `OpenAI Astra rollout wave ${['european', 'asian', 'enterprise', 'developer', 'regulatory'][i]} for LLM serving`,
-      body: 'OpenAI 发布新一代 LLM，具备更强推理与工具调用能力，业界关注安全审查机制。',
+      body: 'OpenAI 发布新一代 LLM，具备更强推理与工具调用能力，业界关注安全审查机制，同时公开了完整的评测方法、硬件配置与复现指南，便于独立团队在自有集群上复核各项指标，再决定是否在生产环境中采纳这一方案，对检索增强方向的工程团队尤其值得跟进。',
       humanScore: 7,
       humanDecision: '保留' as const,
     }))

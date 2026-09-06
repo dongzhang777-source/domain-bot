@@ -20,8 +20,8 @@ import type { DomainConfig, GatesConfig, PersonaConfig, SourceConfig } from '../
  */
 
 const RSS_XML = `<?xml version="1.0"?><rss><channel>
-  <item><title>New LLM inference benchmark released by the lab</title><description>open source release, outperform SOTA on transformer serving</description><link>https://e.com/1</link></item>
-  <item><title>Another LLM inference benchmark released today</title><description>open source release, outperform SOTA on transformer serving</description><link>https://e.com/2</link></item>
+  <item><title>New LLM inference benchmark released by the lab</title><description>open source release, outperform SOTA on transformer serving This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.</description><link>https://e.com/1</link></item>
+  <item><title>Another LLM inference benchmark released today</title><description>open source release, outperform SOTA on transformer serving This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.</description><link>https://e.com/2</link></item>
   <item><title>chocolate cake recipe for beginners</title><description>delicious and easy</description><link>https://e.com/3</link></item>
 </channel></rss>`
 
@@ -30,7 +30,7 @@ const GH_JSON = JSON.stringify({
     {
       id: 7,
       full_name: 'foo/llm-kit',
-      description: 'local LLM inference toolkit with transformer serving benchmarks',
+      description: 'local LLM inference toolkit with transformer serving benchmarks This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.',
       html_url: 'https://github.com/foo/llm-kit',
       // 必须落在 newsline 的 72h 时效窗内（now = 2026-09-04T12:00Z）。
       // 旧值 2026-08-30 距今 120h，会被 persona 时效闸拦下 → 不入候选 → 不入归档，
@@ -182,13 +182,13 @@ describe('e2e: 采集 → 闸门 → 事件聚合 → 主编终审 → 归档观
     const flood = `<?xml version="1.0"?><rss><channel>${astraTitles
       .map(
         (t, i) =>
-          `<item><title>${t}</title><description>llm inference benchmark transformer serving dispatch ${i}</description><link>https://e.com/a${i}</link></item>`,
+          `<item><title>${t}</title><description>llm inference benchmark transformer serving dispatch ${i} This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.</description><link>https://e.com/a${i}</link></item>`,
       )
       .join('')}${[
       // 两条独立事件：标题必须含至少一个 core 词，否则会被门禁2 的标题加权规则
       // 正确拦下（仅正文命中 core 词只得 1 分/词），那不是本用例要测的东西
-      '<item><title>FlashInfer kernels speed up transformer serving dramatically</title><description>llm inference benchmark open source release</description><link>https://e.com/f1</link></item>',
-      '<item><title>KC-Bench: a benchmark for knowledge conflict in LLM reasoning</title><description>llm benchmark evaluation dataset release</description><link>https://e.com/k1</link></item>',
+      '<item><title>FlashInfer kernels speed up transformer serving dramatically</title><description>llm inference benchmark open source release This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.</description><link>https://e.com/f1</link></item>',
+      '<item><title>KC-Bench: a benchmark for knowledge conflict in LLM reasoning</title><description>llm benchmark evaluation dataset release This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.</description><link>https://e.com/k1</link></item>',
     ].join('')}</channel></rss>`
     const fetchFn = async (url: string) => ({
       ok: true,
@@ -225,7 +225,7 @@ describe('e2e: 采集 → 闸门 → 事件聚合 → 主编终审 → 归档观
     ]
       .map(
         (t, i) =>
-          `<item><title>${t}</title><description>llm inference benchmark transformer serving open source variant ${i}</description><link>https://e.com/m${i}</link></item>`,
+          `<item><title>${t}</title><description>llm inference benchmark transformer serving open source variant ${i} This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.</description><link>https://e.com/m${i}</link></item>`,
       )
       .join('')}</channel></rss>`
     const fetchFn = async (url: string) => ({

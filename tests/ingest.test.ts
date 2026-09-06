@@ -42,8 +42,8 @@ const persona: PersonaConfig = {
 /** 两个源各出 2 条互不相关的内容，便于验证权重按源分化。 */
 function feedFor(url: string, sourceTag: string) {
   return `<?xml version="1.0"?><rss><channel>
-  <item><title>${sourceTag} alpha LLM inference benchmark released</title><description>llm inference benchmark transformer serving open source release outperform</description><link>${url}/1</link></item>
-  <item><title>${sourceTag} beta LLM serving quantization study</title><description>llm inference quantization transformer benchmark open source release</description><link>${url}/2</link></item>
+  <item><title>${sourceTag} alpha LLM inference benchmark released</title><description>llm inference benchmark transformer serving open source release outperform This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.</description><link>${url}/1</link></item>
+  <item><title>${sourceTag} beta LLM serving quantization study</title><description>llm inference quantization transformer benchmark open source release This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.</description><link>${url}/2</link></item>
 </channel></rss>`
 }
 

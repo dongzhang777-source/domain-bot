@@ -50,7 +50,8 @@ function good(overrides: Partial<GatekeeperInput> = {}): GatekeeperInput {
       'kc · bench · reasoning 三个维度上的评测结果',
       'ai-llm｜kc · bench · reasoning',
     ],
-    summary: 'KC-Bench 是首个评估 LLM 智能体动态知识冲突的交互基准，覆盖九款前沿模型。',
+    summary:
+      'KC-Bench 是首个评估 LLM 智能体动态知识冲突的交互基准，覆盖九款前沿模型。实验设计上，基准把「参数知识」与「检索上下文」同时喂给模型，再测量其在两类信息打架时的判断质量，从而暴露 RAG 系统最常见的隐性失败模式。这一失败模式在检索增强生成（RAG）系统里尤为常见，工程团队需要专门的评测手段来定位。评测结论对 nine-model 对比表的解读也有提示：冲突越大，检索质量的边际收益越低。',
     body: 'KC-Bench 是首个评估 LLM 智能体动态知识冲突的交互基准，覆盖九款前沿模型。实验显示参数知识与检索上下文冲突时性能明显退化。',
     why: '聚焦你的关注点「benchmark」',
     url: 'https://arxiv.org/abs/2609.03884',
@@ -88,7 +89,7 @@ describe('十二条硬断言：违例样本逐个否决', () => {
   it('基准样本必须全绿（否则各违例用例测的是别的失败原因）', () => {
     const g = good()
     const verdicts = runAssertions(g, input({ batch: [g] }))
-    expect(verdicts).toHaveLength(12)
+    expect(verdicts).toHaveLength(13)
     expect(isAccepted(verdicts)).toBe(true)
   })
 
@@ -174,6 +175,16 @@ describe('十二条硬断言：违例样本逐个否决', () => {
     expect(noTitle.find((v) => v.ruleId === 'gk:shapeViolation')!.ok).toBe(false)
   })
 
+  it('⑪ gk:summaryBelowFloor —— 概要低于下限（zh<200 / en<300 码点）拒收（2026-09-06 老张篇幅令）', () => {
+    // 基准 fixture summary 已加长至 zh 区间内；这里造一条低于下限的薄稿
+    expectRejected(good({ summary: '太短的概要。' }), 'gk:summaryBelowFloor')
+    // en 下限 300：一条 250 码点的英文概要同样拒收
+    expectRejected(good({ lang: 'en', summary: 'x'.repeat(250) }), 'gk:summaryBelowFloor')
+    // zh 区间内（200–300）放行、恰好等于下限放行（闭区间）
+    const atFloor = good({ summary: '知'.repeat(200) })
+    expect(isAccepted(runAssertions(atFloor, input({ batch: [atFloor] })))).toBe(true)
+  })
+
   it('限长常量取自 src/render/tuna.ts，终审不得另立一套数字（tuna 5fca284 刚同步 zh70/en95）', () => {
     // zh 上限 70：70 码点通过、71 码点否决。两边都用含实体词的钩子，避开 gk:hookEntity 干扰。
     const at70 = '知识冲突'.repeat(17) + '知识' // 70 码点
@@ -241,7 +252,10 @@ describe('BackfillPool：候补池按分递补，耗尽即停', () => {
 describe('gatekeep 编排：渲染 → 断言 → 递补 → 事件复检 → 重编号', () => {
   const scored = (id: string, title: string, url: string, score: number, body?: string): ScoredItem => ({
     id, source: 'rss-1', title,
-    body: body ?? 'KC-Bench 是首个评估 LLM 智能体动态知识冲突的交互基准，覆盖九款前沿模型。实验显示冲突时性能退化。',
+    // body 须 ≥ zh 概要下限 200 码点：概要过短时渲染层 ensureSummaryFloor 从 body 补句，
+    // body 无料可补则触发 gk:summaryBelowFloor 拒收（2026-09-06 篇幅令）。此文本实测 201 码点。
+    body: body ??
+      'KC-Bench 是首个评估 LLM 智能体动态知识冲突的交互基准，覆盖九款前沿模型。实验设计上，基准把「参数知识」与「检索上下文」同时喂给模型，再测量其在两类信息打架时的判断质量，从而暴露 RAG 系统最常见的隐性失败模式。这一失败模式在检索增强生成（RAG）系统里尤为常见，工程团队需要专门的评测手段来定位。评测结论对 nine-model 对比表的解读也有提示：冲突越大，检索质量的边际收益越低。',
     url, publishedAt: NOW - 3_600_000, valueScore: score, isNew: true,
     reason: '聚焦你的关注点「benchmark」',
   })
@@ -316,7 +330,7 @@ describe('gatekeep 编排：渲染 → 断言 → 递补 → 事件复检 → �
     // renderPost 用 deriveHooks 生成钩子；断言作用于渲染产物而非 ScoredItem。
     // 若顺序颠倒（先断言 ScoredItem），机械截断/碎片钩子/浮点回显 三类缺陷全都测不到。
     const item = scored('i1', 'A Blind Trust the Bloody Thrust When Attacker Controlled Hook Updates Steer AI Agent Harnesses', 'https://ex.com/1', 0.9,
-      'arXiv:2609.03884v1 Announce Type: cross Abstract: Modern AI agent harnesses expose lifecycle hooks that bind shell commands.')
+      'arXiv:2609.03884v1 Announce Type: cross Abstract: Modern AI agent harnesses expose lifecycle hooks that bind shell commands. These results highlight how evaluation design shapes reported capability gaps across model families, harness implementations, and retrieval configurations in practice. Benchmark coverage spans tool selection, parameter passing, and error recovery under sandboxed execution, which is where real deployments fail first.')
     const rendered = renderPost(item, { persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords) })
     // arXiv 元数据必须被 stripMetadata 清掉，不得出现在 summary 或钩子里
     expect(rendered.summary).not.toContain('arXiv:2609')
@@ -334,7 +348,9 @@ describe('gatekeep 编排：渲染 → 断言 → 递补 → 事件复检 → �
       'https://ex.com/1',
       0.9,
       'Neuronto Agentic Resource Discovery (ARD) Index. Federated search across every public ARD registry, ' +
-        'plus a verified tool index read from each MCP server. Hybrid lexical and semantic retrieval, and ARD-Bench.',
+        'plus a verified tool index read from each MCP server. Hybrid lexical and semantic retrieval, and ARD-Bench. ' +
+        'These results highlight how evaluation design shapes reported capability gaps across model families, ' +
+        'harness implementations, and retrieval configurations in practice.',
     )
     const rendered = renderPost(item, { persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords) })
     expect(rendered.hooks).toHaveLength(3)
@@ -595,7 +611,7 @@ describe('DB-11 修复回归锁：交付文本必须可直接上屏（tuna local
       '<p>Spotify engineering <a href="https://engineering.atspotify.com/x">wrote about LLM serving</a></p>',
       'https://ex.com/html',
       0.9,
-      '<strong>Genie</strong> is a benchmark for agentic LLM tool use with 12 sandboxed execution tasks.',
+      '<strong>Genie</strong> is a benchmark for agentic LLM tool use with 12 sandboxed execution tasks. These results highlight how evaluation design shapes reported capability gaps across model families, harness implementations, and retrieval configurations in practice. Benchmark coverage spans tool selection, parameter passing, and error recovery under sandboxed execution.',
     )
     const rendered = renderPost(item, { persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords) })
     for (const field of [rendered.title, rendered.summary, rendered.body, ...rendered.hooks]) {

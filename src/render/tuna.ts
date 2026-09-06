@@ -24,6 +24,13 @@ import { tokenize } from '../collector/dedupe.js'
  */
 export const HOOK_LIMITS: Record<'zh' | 'en', number> = { zh: 70, en: 95 }
 export const SUMMARY_MAX: Record<'zh' | 'en', number> = { zh: 300, en: 450 }
+/**
+ * L2 概要下限（2026-09-06 老张指令「tuna 对三级信息流的篇幅有要求，要满足」）：
+ * 对齐 tuna `packages/feeds/normalizers.ts` 的 SUMMARY_LIMITS——中文 200–300 码点、
+ * 英文 300–450 码点。此前 bot 侧只截上限不设下限，过短概要（薄稿）可直达 L2。
+ * **改动必须双侧同步**：这里改数值须同步 tuna SUMMARY_LIMITS，反之亦然。
+ */
+export const SUMMARY_MIN: Record<'zh' | 'en', number> = { zh: 200, en: 300 }
 /** why 限长，对齐 tuna BriefItem.MAX_WHY_CHARS */
 export const WHY_MAX = 40
 /** 钩子最短码点数。DB-03 §2.4 实测 `"arXiv:2609."` 为 11 字符，故门槛取 12。 */
@@ -54,6 +61,32 @@ export function firstSentence(text: string, maxChars: number): string {
   const match = clean.match(/^[^。！？.!?]*[。！？.!?]/)
   const sentence = match ? match[0] : clean
   return truncateChars(sentence.trim(), maxChars)
+}
+
+/**
+ * 概要篇幅补足（2026-09-06 老张指令「tuna 对三级信息流的篇幅有要求，要满足」）：
+ * summary 低于 SUMMARY_MIN（zh 200 / en 300 码点）时从正文按句拼接补足到下限以上，
+ * 最终仍受 SUMMARY_MAX 截断。薄稿（一两句话的概要）是「垃圾」判定的形态之一，
+ * 但一刀切拒收会把产出打到近零——故渲染层自动补足，终审 `gk:summaryBelowFloor`
+ * 只作最后防线（正文也无料可补时才触发）。
+ *
+ * 补句去重：summary 通常已是正文首句，逐句跳过 summary 已包含的句子，避免 L2 首句复读。
+ */
+export function ensureSummaryFloor(summary: string, body: string, lang: 'zh' | 'en'): string {
+  const capped = truncateChars(summary.trim(), SUMMARY_MAX[lang])
+  const floor = SUMMARY_MIN[lang]
+  if (Array.from(capped).length >= floor) return capped
+  const merged = [capped]
+  let n = Array.from(capped).length
+  for (const sentence of splitSentences(stripMetadata(body))) {
+    const s = sentence.trim()
+    if (!s) continue
+    if (capped.includes(s) || merged.some((m) => m.includes(s))) continue
+    merged.push(s)
+    n += Array.from(s).length + 1
+    if (n >= floor) break
+  }
+  return truncateChars(merged.join(' '), SUMMARY_MAX[lang])
 }
 
 /** 剥掉采集带回的元数据行（DB-03 §2.4：`arXiv:2609.03884v1 Announce Type: cross` 混入 summary）。 */

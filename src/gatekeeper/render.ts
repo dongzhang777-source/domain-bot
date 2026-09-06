@@ -5,6 +5,7 @@ import {
   WHY_MAX,
   deriveHooks,
   detectLang,
+  ensureSummaryFloor,
   stripHtml,
   stripMetadata,
   truncateChars,
@@ -52,9 +53,13 @@ export function renderPost(item: ScoredItem, ctx: RenderContext): GatekeeperInpu
 
   const copy = ctx.copy ?? null
   const hooks = copy ? copy.hooks : deriveHooks(cleanTitle, cleanBody, ctx.persona.domain, lang, ctx.stopwords)
-  const summary = copy
-    ? truncateChars(copy.summary, SUMMARY_MAX[lang])
-    : truncateChars(cleanBody.trim(), SUMMARY_MAX[lang])
+  // 篇幅达标（2026-09-06 老张指令）：低于 SUMMARY_MIN 的薄稿在渲染层自动从正文补句，
+  // writer 文案与机械兜底走同一条补足路径；终审 gk:summaryBelowFloor 只兜最后防线。
+  const summary = ensureSummaryFloor(
+    copy ? copy.summary : cleanBody.trim(),
+    cleanBody,
+    lang,
+  )
 
   // why 不得回显内部浮点数（DB-03 §2.4：`"AI深度思想·rss：价值 0.94"` 把打分器调试日志搬上 UI）。
   // 机械兜底期取 scorer 的人话 reason；为空时用 persona+来源模板，永不拼分数。

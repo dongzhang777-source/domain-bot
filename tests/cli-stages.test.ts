@@ -34,8 +34,8 @@ import type { EditorialConfig } from '../src/editorial/index.js'
 const NOW = Date.parse('2026-09-04T12:00:00Z')
 
 const RSS_XML = `<?xml version="1.0"?><rss><channel>
-  <item><title>New LLM inference benchmark released by the lab</title><description>open source release, outperform SOTA on transformer serving</description><link>https://e.com/1</link></item>
-  <item><title>Another LLM inference benchmark released today</title><description>open source release, outperform SOTA on transformer serving</description><link>https://e.com/2</link></item>
+  <item><title>New LLM inference benchmark released by the lab</title><description>open source release, outperform SOTA on transformer serving This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.</description><link>https://e.com/1</link></item>
+  <item><title>Another LLM inference benchmark released today</title><description>open source release, outperform SOTA on transformer serving This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.</description><link>https://e.com/2</link></item>
   <item><title>chocolate cake recipe for beginners</title><description>delicious and easy</description><link>https://e.com/3</link></item>
 </channel></rss>`
 
@@ -44,7 +44,7 @@ const GH_JSON = JSON.stringify({
     {
       id: 7,
       full_name: 'foo/llm-kit',
-      description: 'local LLM inference toolkit with transformer serving benchmarks',
+      description: 'local LLM inference toolkit with transformer serving benchmarks This release also documents benchmark methodology, evaluation harness configuration, hardware setup, and reproducibility notes, so that independent teams can verify the reported numbers on their own clusters before adopting the approach in production systems.',
       html_url: 'https://github.com/foo/llm-kit',
       created_at: '2026-09-04T00:00:00Z',
       stargazers_count: 50,

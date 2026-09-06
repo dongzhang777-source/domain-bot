@@ -6,7 +6,7 @@ import { BlacklistGate } from '../gates/blacklist.js'
 // 永远过不了自己的断言（实测踩过，一次打红 23 个用例）。
 import { topicTokens } from '../gates/eventCluster.js'
 import { PersonaGate } from '../gates/persona.js'
-import { HOOK_LIMITS, MIN_HOOK_CHARS, SUMMARY_MAX, WHY_MAX, isTitlePrefix } from '../render/tuna.js'
+import { HOOK_LIMITS, MIN_HOOK_CHARS, SUMMARY_MAX, SUMMARY_MIN, WHY_MAX, isTitlePrefix } from '../render/tuna.js'
 import type { GatesConfig, GatekeeperInput, PersonaConfig } from '../types.js'
 
 /**
@@ -75,7 +75,19 @@ export function runAssertions(item: GatekeeperInput, input: AssertionInput): Ass
     checkShape(item),
     checkHtmlLeak(item),
     checkHollowSummary(item),
+    // 下限闸放链尾（2026-09-06 老张「篇幅有要求，要满足」）：概要低于 SUMMARY_MIN 的
+    // 薄稿拒收。渲染层 ensureSummaryFloor 已先补足，此处兜「正文也无料可补」的最后
+    // 一手；放链尾让内容类违例优先报错，不抢前置断言的指名位置。
+    checkSummaryFloor(item),
   ]
+}
+
+/** 概要篇幅下限：低于即薄稿，拒收（补足逻辑在渲染层 ensureSummaryFloor）。 */
+function checkSummaryFloor(item: GatekeeperInput): AssertionVerdict {
+  const sumMin = SUMMARY_MIN[item.lang]
+  const sumN = Array.from(item.summary ?? '').length
+  if (sumN < sumMin) return fail('gk:summaryBelowFloor', `summary 仅 ${sumN} 码点，低于 ${item.lang} 下限 ${sumMin}`)
+  return { ok: true, ruleId: 'gk:summaryBelowFloor', detail: '' }
 }
 
 /** 全部通过才算过审。 */
