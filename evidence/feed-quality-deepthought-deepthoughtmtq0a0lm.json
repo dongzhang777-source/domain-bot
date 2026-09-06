@@ -1,0 +1,664 @@
+{
+  "persona": "deepthought",
+  "personaDisplay": "AI深度思想",
+  "digestId": "deepthoughtmtq0a0lm",
+  "generatedAt": 1788710885770,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 1365
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 532
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 386
+    },
+    {
+      "stage": "afterGates",
+      "count": 163
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 163
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 163
+    },
+    {
+      "stage": "published",
+      "count": 120
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-75afc6b7941cf74266ce",
+      "title": "Clean Engineering, Unstable Measurement: A Preregistered Reliability Failure of Black-Box LLM Observers on Shared Endpoints",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.04198v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-a3e5ba214a98af79b03a",
+      "title": "ESPO: Error-Structured Prompt Optimization via Diagnose, Diversify, and Stabilize",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.04197v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-b75aa495927266a46c98",
+      "title": "Free Pause Tokens",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.03807v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-c7305061c6ea334bd71d",
+      "title": "Rethinking World Models for Safety-Critical Embodied Systems",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.03774v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-6b0835b17105c087ae44",
+      "title": "How Far Can Synthetic Data Take Thai OCR?",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.03595v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-210ad6e62cf9e073c1e0",
+      "title": "It's the Problem, Not the Path: Budget and Difficulty Confounds in LLM Reasoning Trajectories",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.03436v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-ca41ad6246e0df05b660",
+      "title": "Legibility is Not Interpretability: Comparing Judged and Actual Importance in Chain-Of-Thought Reasoning",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.04194v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-f16fb1d79df668e7cba1",
+      "title": "IchthyoNoma: Nomenclature and Context Sensitivity of Zero-Shot Biological Vision--Language Models for Bangladeshi Freshwater Fish Recognition",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.03985v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-057491a02451447df2a5",
+      "title": "VestigeKV: The NoPE-MLA KV Cache Carries Its Own Eviction Signal in a Vestigial Branch",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.03949v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-9392d71643372664a53e",
+      "title": "What Do CAE Simulation Agents Really Need Beyond a Generic Harness?",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.03718v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-526b552c624a6138618d",
+      "title": "LLMs Learn Better In-Context from Rules than from Examples",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.03213v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-d1f26b5f8897359c6e47",
+      "title": "User Feedback Provides a Unique Signal that LLMs Can not Detect",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.02859v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-7baf89609c5d22739565",
+      "title": "Choosing a PEFT Variant for Per-Patient Dysarthric ASR: A Single-Speaker Case Study on Two ASR Bases",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.02735v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-c601a4d40e9b91024fde",
+      "title": "WinoQueer-NL: Assessing Bias in Dutch Language Models toward LGBTQ+ Identities",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.02651v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-56e408c30d269f4d2995",
+      "title": "SCX Router: Streaming Zero-Shot Model Selection with a Decoder-KV Classifier and a Real-World Task Ontology",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.02292v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-bccac4de3d945e0679aa",
+      "title": "Do Large Language Models Capture the Diversity in their Training Data?",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.02275v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-e8af4f5db6d2962dcd9d",
+      "title": "Do Cantonese-Adapted Language Models Better Predict Cantonese Reading? A Cross-Model Eye-Tracking Evaluation",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.02163v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-f859ed7e604f894e03e4",
+      "title": "RobustSeiz: An Open-Source Framework for Benchmarking the Robustness of EEG Seizure Detection Models",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.04007v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-852f9aaf19f01517bcdd",
+      "title": "Comparing Retrieval Methods for Academic Advisor Discovery: A Six-Method Study of 768 CS Faculty Profiles Across 9 US Universities",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.03901v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-4e042c34aa9730c2e736",
+      "title": "Projected Riemannian Gradient Descent for the Bures-Wasserstein Barycenter: Dimension-Independent Linear Convergence at Unit Step Size",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.03762v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-af410c1d828a477f7569",
+      "title": "Neural-Network Maxent: a general extension with learned nonlinearity, applied to time-series for Desert Locust distribution modelling",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.03603v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-14f24ff6bc88cc907163",
+      "title": "Mind the Gap: Robustness Risks in PII Detection Systems",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.03464v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-9dced588417529ff4153",
+      "title": "Efficient Constant Optimization for Symbolic Regression with GPU-Accelerated Tree-Based Genetic Programming",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.03352v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-41fa4e1303014a15d132",
+      "title": "What is Smoothness?",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.03246v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:nameExplainer",
+      "reason": "命中 deepthought 淘汰红线 nameExplainer"
+    },
+    {
+      "itemId": "u-27336140a929b17fc11c",
+      "title": "Generative Nested Sampling of Atomistic Thermodynamic Landscapes",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.03193v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-219fd60bfc1d59e41a92",
+      "title": "The Gradient Does Not See Rank: Rank-Indifference in Matrix-CODI on ProsQA",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.03090v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-0e0a28d0130f277a123c",
+      "title": "Claude Fable 5.1 made me a really nice animated pelican",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/1/claude-fable-5-1/",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-4bd66ccd76835faa80fa",
+      "title": "Alpha-Park/genpark-maximal-marginal-relevance-mmr-reranker-skill: GenPark AI Agent Skill - Maximal Marginal Relevance (MMR) diversity-aware vector reranker balancing query relevance vs intra-result redundancy.",
+      "source": "github-rag",
+      "url": "https://github.com/Alpha-Park/genpark-maximal-marginal-relevance-mmr-reranker-skill",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-cd1dd7a1283e722b3eab",
+      "title": "alphaparkinc/genpark-maximal-marginal-relevance-mmr-reranker-skill: GenPark AI Agent Skill - Maximal Marginal Relevance (MMR) diversity-aware vector reranker balancing query relevance vs intra-result redundancy.",
+      "source": "github-rag",
+      "url": "https://github.com/alphaparkinc/genpark-maximal-marginal-relevance-mmr-reranker-skill",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-4eb7b4aeeef0e3e18e38",
+      "title": "AI Agents vs. LLMs: Choosing the Right Tool for AI Tasks",
+      "source": "yt-llm",
+      "url": "https://www.youtube.com/watch?v=I9z-nrk9cw0",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-d7b11e7817581777769d",
+      "title": "GPT‑6 Astra",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/3/gpt6-astra/",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 11 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-43c216d63c8bd92a013d",
+      "title": "llm-gemini 0.34",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/2/llm-gemini/",
+      "gate": "blacklist",
+      "ruleId": "damaged:scrapeFragment",
+      "reason": "命中负向模式 damaged:scrapeFragment（damaged）"
+    },
+    {
+      "itemId": "u-1a5adf2188977d1fd9fe",
+      "title": "datasette-mcp 0.2",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/1/datasette-mcp/",
+      "gate": "blacklist",
+      "ruleId": "damaged:scrapeFragment",
+      "reason": "命中负向模式 damaged:scrapeFragment（damaged）"
+    },
+    {
+      "itemId": "u-cce482eca04d192569a8",
+      "title": "llm-anthropic 0.27",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Aug/24/llm-anthropic/",
+      "gate": "blacklist",
+      "ruleId": "damaged:scrapeFragment",
+      "reason": "命中负向模式 damaged:scrapeFragment（damaged）"
+    },
+    {
+      "itemId": "(batch)",
+      "title": "188 条宽通道候选超池上限",
+      "source": "(multiple)",
+      "url": "",
+      "gate": "recall",
+      "ruleId": "recall:poolOverflow",
+      "reason": "待定池上限 20，按积分降序截断 188 条"
+    },
+    {
+      "itemId": "u-34ae267d06dae1b097e7",
+      "title": "Dalek: A Constructive Agent Machine",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.03546v1",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Theoretical von Neumann automata theory, not LLM/AI-adjacent."
+    }
+  ],
+  "rejected": [
+    {
+      "itemId": "u-8fa7aacd2174979d5121",
+      "title": "PatchBench: Evaluating AI Agents for Vulnerability Patching",
+      "url": "https://arxiv.org/abs/2609.04075v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「25%的agent补丁与历史开发者补丁高度相似，这不是修复而是记忆复现」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-3ae7949a8227665741f3",
+      "title": "Last Translation Benchmark",
+      "url": "https://arxiv.org/abs/2609.04173v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「Architects must re-evaluate MT assessment frameworks to find next-gen paradigms breaking satur…」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-e312131397c42d9b5d2f",
+      "title": "FPCO-Dialog: A Multi-Turn False-Premise Benchmark for Correction and Cooperation in Vision-Language Models",
+      "url": "https://arxiv.org/abs/2609.03331v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「构建1080张图像与10800轮对话的基准，专门测试VLM在多轮错误前提下的纠错与合作。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-7dac27c7559e4c6e08a8",
+      "title": "Synthetic Semantic Supervision for Contrastive Code Representation Learning in Small Transformers: An Empirical Study",
+      "url": "https://arxiv.org/abs/2609.03702v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「合成文本监督小模型，代码检索性能逼近人工标注大模型」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-16e5c03b79ea3118e856",
+      "title": "The Analyst in the Prompt: Role, Retrieval, and Memory Biases in LLM Financial Analysis",
+      "url": "https://arxiv.org/abs/2609.03218v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「金融级LLM应用必须隔离角色偏见与证据检索，建立中性检索基线」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-9728f1246eee267926d4",
+      "title": "Two-Stage Reinforcement Learning for Sound and Adversarial Test Generation in Code LLMs",
+      "url": "https://arxiv.org/abs/2609.03955v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「代码LLM开发者可直接借鉴这一动态对抗生成范式，用求解器自身的失败驱动测试集扩展，取代昂贵且易过时的人工标注流程，适用于鲁棒性迭代调优」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-fc50f6c0dd88a5942d1b",
+      "title": "CORE: Improving Compositional Reasoning in MLLM Embedding via Reranker Distillation",
+      "url": "https://arxiv.org/abs/2609.04083v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「组合检索中嵌入模型容易混淆概念相同但绑定不同的场景，导致错误的高相似度；蒸馏排名的细粒度信条可能丢失，需构造覆盖五级组合匹配的候选列表来逼近重排序器的判断」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-9742bc74ab52bfc9ba4e",
+      "title": "KC-Bench: A Dynamic Interactive Benchmark for Evaluating Knowledge Conflicts in LLM Agents",
+      "url": "https://arxiv.org/abs/2609.03588v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「测试框架同时引入用户模拟器、有状态工具与环境断言，能精准定位冲突归因失败发生在记忆检索还是动作规划环节」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-586591724cb45d9c9878",
+      "title": "When Users Don't Ask: Benchmarking Context-Driven Memory Retrieval in Conversational Agents",
+      "url": "https://arxiv.org/abs/2609.03467v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「现有记忆评测多依赖显式问题，而隐式、反事实与复合查询暴露了记忆系统在无用户主动询问时的上下文调用短板」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-4e4a490d8e57f3877772",
+      "title": "Beyond Shallow Alignment: How Post-Training Methods Determine Refusal Circuits And Steering Robustness",
+      "url": "https://arxiv.org/abs/2609.03887v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「训练方法而非数据，重塑了模型内部拒绝计算机制。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-91d7c63c11f60b79eb00",
+      "title": "Flip, Don't Shuffle: Watermarking LLMs at the Speed of Inference",
+      "url": "https://arxiv.org/abs/2609.03844v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「将绿名单成员判定复杂度降至O(1)，实现单核零中间分配执行。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-358b5634358947e35b88",
+      "title": "A Case Study on Emergent Cheating and Whistleblowing in Autonomous Research Swarms",
+      "url": "https://arxiv.org/abs/2609.04170v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「共享通信工具在多智能体系统中成为不良行为的传染基质，研究集群暴露集体作弊风险」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-55d9f5495e4887e81902",
+      "title": "HalluPeer: A Taxonomy-driven Benchmark for Detecting Hallucinations in Scientific Peer Reviews",
+      "url": "https://arxiv.org/abs/2609.03580v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「标注三粒度对齐数据，LLM审稿幻觉检测基准的检出率与定位精度如何量化？」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-217b957e67a9c52c0a0f",
+      "title": "No country for old linguists: LLM-brain alignment underdetermines neural computation",
+      "url": "https://arxiv.org/abs/2609.03160v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「LLM与大脑表征高度对齐，却依然无法锁定具体的神经计算机制」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-9eb154a318ce6f08b2ee",
+      "title": "Adapting to Evolving Requirements: Agentic AI for Retail Supply Chain Operations",
+      "url": "https://arxiv.org/abs/2609.03860v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「将需求变化建模为图约束下的干预路由与模块变更联合选择，直接适配异构管线的动态演化」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-00fcfa076a7b71734f30",
+      "title": "Incremental Pooled LLM Evaluation for Cost-Effective Retrieval Model Selection",
+      "url": "https://arxiv.org/abs/2609.02745v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「在4个基准11个系统上验证，增量池化LLM评估仅评判新文档即可复用历史判断，大幅降低评测成本。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-436bd21217e8f1a21704",
+      "title": "Chiaroscuro for Emotions: A Contrastive Emotion Benchmark Grounded in Appraisal Theory",
+      "url": "https://arxiv.org/abs/2609.03394v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「现有情感基准仅预测单一情感，严重忽视现实场景中同一事件引发对立情感的风险与复杂性。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-6ea4e2b5c89a0b510c04",
+      "title": "What Else Needs Fixing? Exploring Cost-Effective Test-Time Compute for Revision Propagation in Artifacts Generated Through Conversation",
+      "url": "https://arxiv.org/abs/2609.03254v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「For engineers building conversational co-editing tools, this work maps when to spend extra tes…」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-aca061dda38a9590ea58",
+      "title": "The Dice Roll Method: A Standardized Protocol for Repeated-Query Auditing of Large Language Model Brand Recommendations",
+      "url": "https://arxiv.org/abs/2609.04047v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「将LLM品牌推荐的总方差分解为采样、提示措辞、运行间与模型版本四部分」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-8963b0a492df78b24e0f",
+      "title": "Contextual Tamil Spelling and Grammar Correction Using Progressively Fine-Tuned Sequence-to-Sequence Transformers",
+      "url": "https://arxiv.org/abs/2609.03273v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「低资源黏着语的上下文纠错，必须放弃混合流水线转向端到端架构」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-e43bcd8d25b3d8c8c597",
+      "title": "RACE-AIMC: Selective Inference for Heterogeneous Analog In-Memory Accelerators at the Edge",
+      "url": "https://arxiv.org/abs/2609.03149v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「面对一批工艺漂移的存算芯片，你是全用求和求稳，还是只挑可靠的算？本文给出可落地的风险控制框架」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-74802b8a1a6d94d075dd",
+      "title": "Alpha-Park/genpark-hierarchical-navigable-small-world-hnsw-graph-skill: GenPark AI Agent Skill - Hierarchical Navigable Small World (HNSW) multi-layer vector index, greedy beam routing, and nearest neighbor search.",
+      "url": "https://github.com/Alpha-Park/genpark-hierarchical-navigable-small-world-hnsw-graph-skill",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 238 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-298dd51ed75b43badb63",
+      "title": "alphaparkinc/genpark-hierarchical-navigable-small-world-hnsw-graph-skill: GenPark AI Agent Skill - Hierarchical Navigable Small World (HNSW) multi-layer vector index, greedy beam routing, and nearest neighbor search.",
+      "url": "https://github.com/alphaparkinc/genpark-hierarchical-navigable-small-world-hnsw-graph-skill",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 238 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-4cbe8063e8fbfd926aca",
+      "title": "Investigating the Ability of Large Language Models to Analyze Recipes for Diabetes",
+      "url": "https://arxiv.org/abs/2609.03967v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「糖尿病食谱适切性判断难在隐式分解与指南匹配，本实验揭示模型在成分拆解和烹饪方法解析上的典型失效模式。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-82e3f6523d43667431bb",
+      "title": "DNative-Twin: Decision Graphs and Digital Twins for Reconstructable Agentic Decisions",
+      "url": "https://arxiv.org/abs/2609.03787v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「将智能体决策从黑盒输出转化为可重放、可审计的类型化轨迹」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-52b8be4c1cdf4121f66e",
+      "title": "From Prior-Guided Heuristics to Deployable Agents: Accelerating Demonstration-Driven Reinforcement Learning for Deadline-Constrained Network Control",
+      "url": "https://arxiv.org/abs/2609.03590v1",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「融合先验启发式与演示驱动强化学习，大幅加速截止时间约束下的网络控制训练」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    }
+  ],
+  "rejectCounts": {
+    "gk:hookEntity": 24,
+    "gk:summaryBelowFloor": 2
+  },
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 17,
+  "eventCount": 12,
+  "eventDemoted": 149,
+  "eventFillMode": true,
+  "skippedSources": [],
+  "zeroYieldSources": [
+    "simonwillison",
+    "yt-llm"
+  ],
+  "recall": {
+    "poolSize": 20,
+    "included": 19,
+    "excluded": 1,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 120,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 31,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "writer",
+        "endpointId": "deepseek-byok",
+        "calls": 39,
+        "failures": 3,
+        "reasoningTokens": 114560,
+        "elapsedMs": 1142673
+      },
+      {
+        "role": "writer",
+        "endpointId": "nous-proxy",
+        "calls": 10,
+        "failures": 0,
+        "reasoningTokens": 30927,
+        "elapsedMs": 628871
+      },
+      {
+        "role": "writer",
+        "endpointId": "nvidia-nim",
+        "calls": 7,
+        "failures": 2,
+        "reasoningTokens": 0,
+        "elapsedMs": 526050
+      },
+      {
+        "role": "writer",
+        "endpointId": "unknown",
+        "calls": 26,
+        "failures": 26,
+        "reasoningTokens": 0,
+        "elapsedMs": 0
+      },
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 17,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 1854443
+      }
+    ],
+    "llmCopyCount": 65
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.08791208791208792,
+  "perSourcePublished": {
+    "arxiv-cs-cl": 48,
+    "arxiv-cs-lg": 11,
+    "arxiv-cs-ai": 61
+  },
+  "langDistribution": {
+    "en": 120
+  }
+}

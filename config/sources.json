@@ -237,5 +237,30 @@
     "weight": 0.4,
     "enabled": true,
     "numResults": 20
+  },
+  {
+    "id": "twitter-feed",
+    "type": "twitter",
+    "url": "feed",
+    "weight": 0.9,
+    "enabled": true,
+    "numResults": 30,
+    "note": "小号 dongzhang585 首页时间线;follow 名单即 Twitter 版策展白名单"
+  },
+  {
+    "id": "anysearch-local-llm",
+    "type": "anysearch",
+    "url": "on-device LLM inference engine framework release 2026",
+    "weight": 0.7,
+    "enabled": true,
+    "numResults": 8
+  },
+  {
+    "id": "anysearch-agent-bench",
+    "type": "anysearch",
+    "url": "AI agent harness benchmark evaluation released this week",
+    "weight": 0.7,
+    "enabled": true,
+    "numResults": 8
   }
 ]

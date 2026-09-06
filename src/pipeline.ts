@@ -15,6 +15,8 @@ import { dedupe } from './collector/dedupe.js'
 import { fetchRss } from './collector/adapters/rss.js'
 import { fetchGithub } from './collector/adapters/github.js'
 import { fetchBili, fetchExa, fetchJina, fetchV2ex, fetchYtSearch } from './collector/adapters/agentreach.js'
+import { fetchTwitter } from './collector/adapters/twitter.js'
+import { fetchAnysearch } from './collector/adapters/anysearch.js'
 import { resolveSourceUrl } from './collector/urlTemplate.js'
 import { buildFunnel, capEvents, collectCanonicalUrls, entityTokens, runGates } from './gates/index.js'
 import { makeScorerFromEnv } from './refinery/scorer.js'
@@ -631,5 +633,10 @@ async function collectSource(source: SourceConfig, fetchFn?: FetchFn, spawnFn?: 
       return fetchYtSearch(source, spawnFn)
     case 'jina':
       return fetchJina(source, fetchFn, process.env.DOMAIN_BOT_JINA_API_KEY || undefined, spawnFn)
+    // 扩源 T3/T1（2026-09-06 老张拍板）：Twitter feed（cookies 走 env）与 anysearch 主动搜索（key 通道）
+    case 'twitter':
+      return fetchTwitter(source, spawnFn)
+    case 'anysearch':
+      return fetchAnysearch(source)
   }
 }

@@ -47,7 +47,7 @@ export interface ViewRecord {
 export interface SourceConfig {
   id: string
   /** exa 的 url 字段放搜索词；bili/ytsearch 同理；jina 放目标网页 URL */
-  type: 'rss' | 'github' | 'exa' | 'v2ex' | 'bili' | 'ytsearch' | 'jina'
+  type: 'rss' | 'github' | 'exa' | 'v2ex' | 'bili' | 'ytsearch' | 'jina' | 'twitter' | 'anysearch'
   url: string
   weight: number
   enabled: boolean
