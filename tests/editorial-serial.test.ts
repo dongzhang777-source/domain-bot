@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
+import { isAbsolute } from 'node:path'
 import { join } from 'node:path'
 import { auditBoard, buildBoard } from '../src/gatekeeper/board.js'
 import type { EditorialConfig, PersonaConfig, ScoredItem } from '../src/types.js'
+
+// vitest 下 os.tmpdir() 可能解析为相对路径（TMPDIR 被改写），强制绝对——
+// 否则临时目录会落进仓库根（工具产物零容忍违规，2026-09-05 实测）。
+const tmpBase = (): string => (isAbsolute(tmpdir()) ? tmpdir() : '/tmp')
 
 /**
  * DB-14 编辑部同端点串行修复 + 运行时撞车告警（2026-09-05 小巴审查 P1-1）。
@@ -34,7 +39,7 @@ describe('DB-14 同端点串行：请求区间两两不重叠', () => {
 
   const mkCfg = (writerBase: string, reviewerBase: string): EditorialConfig => ({
     enabled: true,
-    stagingDir: join(mkdtempSync(join(tmpdir(), 'dbot-db14-')), 'jobs'),
+    stagingDir: join(mkdtempSync(join(tmpBase(), 'dbot-db14-')), 'jobs'),
     writer: { batchSize: 2, maxTokens: 100, temperature: 0, chain: [{ id: 'w', baseUrlDefault: writerBase, modelDefault: 'm', timeoutMs: 5000 }] },
     reviewer: { batchSize: 2, maxTokens: 100, temperature: 0, chain: [{ id: 'r', baseUrlDefault: reviewerBase, modelDefault: 'm', timeoutMs: 5000 }] },
   })

@@ -2,11 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { isAbsolute } from 'node:path'
 import { join } from 'node:path'
 import { makeJobId } from '../src/editorial/job.js'
 import { runEditorial } from '../src/editorial/index.js'
 import { runAssertions } from '../src/gatekeeper/index.js'
 import type { EditorialConfig, GatekeeperInput, PersonaConfig } from '../src/types.js'
+
+// vitest 下 os.tmpdir() 可能解析为相对路径（TMPDIR 被改写），强制绝对——
+// 否则临时目录会落进仓库根（工具产物零容忍违规，2026-09-05 实测）。
+const tmpBase = (): string => (isAbsolute(tmpdir()) ? tmpdir() : '/tmp')
 
 /**
  * DB-13 五项微缺陷清扫（2026-09-05 小巴审查 P2 级）。
@@ -30,7 +35,7 @@ describe('DB-13 微缺陷清扫', () => {
   it('② 校准临时目录用后即删：跑一次 runEditorial（带金标自检）后 tmpdir 无新增 dbot-calibrate-*', async () => {
     const tmp = tmpdir()
     const before = new Set(readdirSync(tmp).filter((d) => d.startsWith('dbot-calibrate-')))
-    const root = mkdtempSync(join(tmpdir(), 'dbot-db15-'))
+    const root = mkdtempSync(join(tmpBase(), 'dbot-db15-'))
     // 最小金标集：2 条（剔除/保留各一），reviewer 全答 include=false → 一致率 50% < 阈值
     // → 校准不通过、编辑部不生效——但校准作业本身必须已执行且目录已清理
     writeFileSync(join(root, 'gold.json'), JSON.stringify({

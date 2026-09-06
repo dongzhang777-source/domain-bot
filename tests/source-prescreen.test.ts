@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
+import { isAbsolute } from 'node:path'
 import { join } from 'node:path'
 import { runPipeline } from '../src/pipeline.js'
 import type { DomainConfig, GatesConfig, PersonaConfig, SourceConfig } from '../src/types.js'
+
+// vitest 下 os.tmpdir() 可能解析为相对路径（TMPDIR 被改写），强制绝对——
+// 否则临时目录会落进仓库根（工具产物零容忍违规，2026-09-05 实测）。
+const tmpBase = (): string => (isAbsolute(tmpdir()) ? tmpdir() : '/tmp')
 
 /**
  * DB-13 源级时效预筛（2026-09-05 小巴审查 P0-1）。
@@ -43,7 +48,7 @@ describe('DB-13 源级时效预筛：记账生效 + publishedAt=0 不误伤', ()
       gates,
       domain,
       sources,
-      memoryDir: join(mkdtempSync(join(tmpdir(), 'dbot-db13-')), 'memory'),
+      memoryDir: join(mkdtempSync(join(tmpBase(), 'dbot-db13-')), 'memory'),
       fetchFn: (async (url: string) => ({
         ok: true,
         status: 200,
