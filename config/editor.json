@@ -17,7 +17,10 @@
         "apiKeyEnv": "DEEPSEEK_API_KEY",
         "modelEnv": "DEEPSEEK_WRITER_MODEL",
         "modelDefault": "deepseek-v4-flash",
-        "timeoutMs": 180000
+        "timeoutMs": 180000,
+        "extraBody": {
+          "reasoning_effort": "low"
+        }
       },
       {
         "id": "nous-proxy",
