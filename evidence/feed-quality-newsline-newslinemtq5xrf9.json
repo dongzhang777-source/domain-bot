@@ -1,0 +1,490 @@
+{
+  "persona": "newsline",
+  "personaDisplay": "AI时事快线",
+  "digestId": "newslinemtq5xrf9",
+  "generatedAt": 1788720391701,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 272
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 142
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 111
+    },
+    {
+      "stage": "afterGates",
+      "count": 85
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 85
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 85
+    },
+    {
+      "stage": "published",
+      "count": 60
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-a8e8f9dc895a026b51bb",
+      "title": "An Alien Mind",
+      "source": "hn-frontpage",
+      "url": "https://openai.com/index/an-alien-mind/",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 13 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-53e7c3dd78e15afb8a07",
+      "title": "Scino/fstack",
+      "source": "github-mcp-tools",
+      "url": "https://github.com/Scino/fstack",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 12 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-81d665f9e86a6f59e4b4",
+      "title": "v3.1.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.1.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-52346d0708da30e3fe18",
+      "title": "v3.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-e426bb385fd6a5910632",
+      "title": "6.3.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.3.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-56852fbf1855a1cf7d72",
+      "title": "v1.17.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/langgenius/dify/releases/tag/1.17.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 7 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-7eebfa572638476abeaf",
+      "title": "6.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "(batch)",
+      "title": "10 条宽通道候选超池上限",
+      "source": "(multiple)",
+      "url": "",
+      "gate": "recall",
+      "ruleId": "recall:poolOverflow",
+      "reason": "待定池上限 20，按积分降序截断 10 条"
+    },
+    {
+      "itemId": "u-8ddfb98b6861e5744b25",
+      "title": "Show HN: Kadō – open-source habit tracker, with non-binary habit score, for iOS",
+      "source": "hn-frontpage",
+      "url": "https://github.com/scastiel/kado",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Habit tracker app, unrelated to AI/LLM"
+    },
+    {
+      "itemId": "u-10da54c7425a7edc2424",
+      "title": "Following legal advice, the Nitter project will continue",
+      "source": "hn-frontpage",
+      "url": "https://github.com/zedeus/nitter",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Nitter Twitter frontend; unrelated to AI/LLM."
+    },
+    {
+      "itemId": "u-e91c9bec111838a12006",
+      "title": "Research carried out using NetBSD",
+      "source": "hn-frontpage",
+      "url": "https://www.netbsd.org/gallery/research.html",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：NetBSD research gallery; unrelated to AI/LLM."
+    },
+    {
+      "itemId": "u-f7f9058dd4784a263e54",
+      "title": "NetBSD 9.5 released and EOL for NetBSD-9",
+      "source": "hn-frontpage",
+      "url": "https://blog.netbsd.org/tnf/entry/netbsd_9_5_released_and",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：NetBSD OS release; unrelated to AI/LLM."
+    },
+    {
+      "itemId": "u-bd0fa233af77bb222ada",
+      "title": "Asahi Linux Now Officially Supports Apple M3 Macs – With Caveats",
+      "source": "hn-frontpage",
+      "url": "https://www.phoronix.com/news/Asahi-Linux-Official-M3",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Linux on Apple hardware; unrelated to AI/LLM."
+    },
+    {
+      "itemId": "u-71c5bda183543acda382",
+      "title": "The many mysteries and lessons of the Bayeux tapestry",
+      "source": "hn-frontpage",
+      "url": "https://economist.com/interactive/culture/2026/09/03/the-many-mysteries-and-lessons-of-the-bayeux-tapestry",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Historical/culture topic; unrelated to AI/LLM."
+    },
+    {
+      "itemId": "u-652de82a1473808d698b",
+      "title": "QBittorrent breaks out of sandbox to commit crimes",
+      "source": "hn-frontpage",
+      "url": "https://beige.party/@intransitivelie/117057396732763183",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Torrent client security bug; unrelated to AI/LLM."
+    },
+    {
+      "itemId": "u-c0064992db5789de7a6b",
+      "title": "I'm teaching an introductory 12 week course on Quantum Oracle Engineering",
+      "source": "hn-frontpage",
+      "url": "https://shukla.io/quantum-oracle-engineering/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Quantum computing course; unrelated to AI/LLM."
+    },
+    {
+      "itemId": "u-7c623299c01e6306bb8b",
+      "title": "The pencil case model of creativity",
+      "source": "hn-frontpage",
+      "url": "https://dub.uu.nl/en/column/pencil-case-model-creativity",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Creativity theory; unrelated to AI/LLM."
+    }
+  ],
+  "rejected": [
+    {
+      "itemId": "u-3d7852f20bba12d4391c",
+      "title": "Sapient open-sources HRM-Text model, advancing recurrent reasoning on a $1,500 budget",
+      "url": "https://cryptobriefing.com/sapient-open-sources-hrm-text-recurrent-reasoning/",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「For resource-limited teams, adopt as a baseline, but validate its latency and robustness on yo…」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-78d0e656b0c45189d237",
+      "title": "PillCrew/deedchain: Benchmark of report fidelity for browser agents: does the agent's final report tell the truth about what it actually did?",
+      "url": "https://github.com/PillCrew/deedchain",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 228 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-f542c666d677373c025f",
+      "title": "AI & LLM Benchmarks 2026: Rankings, Scores & Results",
+      "url": "https://llm-stats.com/benchmarks",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「模型评测数据污染与分数虚标成常态，独立验证机制能否终结基准信任危机？」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-5bac8e78b9297e0c7898",
+      "title": "NVIDIA says new optimizations make local agents up to 1.9x faster",
+      "url": "https://runtimewire.com/article/nvidia-local-agent-inference-llama-cpp-vllm-blackwell",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「端侧部署成本骤降，重新评估本地Agent与云端API的架构选型平衡点。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-4e7f53e109f9557a3dab",
+      "title": "Recreating Minecraft Is Not a Benchmark",
+      "url": "https://kuber.studio/blog/Reflections/Recreating-Minecraft-is-Not-a-Benchmark",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 176 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-fd3208099b40794a1e13",
+      "title": "We monitor internal coding agents for misalignment",
+      "url": "https://openai.com/index/how-we-monitor-internal-coding-agents-misalignment/",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 175 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-0498b51fcf17c84c3942",
+      "title": "K2 Horizon AI models: MBZUAI launches six open models",
+      "url": "https://tbreak.com/mbzuai-k2-horizon-ai-models/",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「Full open training data and methodology enable auditability and reproduction, yet require stri…」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-7b24c296dbcd70b4995d",
+      "title": "truespar/paddock: Native Rust inference server for open models on NVIDIA GPUs. OpenAI- and Anthropic-compatible APIs, GGUF + safetensors, FP8/NVFP4/MXFP4/Q8/Q4, built-in Studio",
+      "url": "https://github.com/truespar/paddock",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 274 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-60f1faaa55cb29553859",
+      "title": "K2 Horizon Ships Six Open Models With Training Data — The Quantum Dispatch",
+      "url": "https://thequantumdispatch.com/articles/k2-horizon-fully-open-models-training-data",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「训练数据与中间检查点的全量公开，是否暴露了数据污染与模型坍塌的潜在风险」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-3d098aabb2681d37f3f1",
+      "title": "Datura-ai/lium-localmaxxing: Reproduce Lium's LocalMaxxing leaderboard runs (7 boards, 20 Verified) on a rented Lium GPU in one script — vLLM/llama.cpp recipes, measured cost per million tokens",
+      "url": "https://github.com/Datura-ai/lium-localmaxxing",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 238 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-59ac4377405c755ad220",
+      "title": "OpenAI Unveils Appless Phone With Real-Time AI Interfaces - xix.ai",
+      "url": "https://www.xix.ai/ainews/openai-unveils-appless-phone-with-realtime-ai-interfaces.html",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「If every screen is an inference output, how do you handle errors, offline mode, and security?」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-140a761a6a2004b62a38",
+      "title": "seehiong/polyphon-ai: Local, identity-aware speech transcription and diarization engine — turns multi-speaker audio into structured, named intelligence, 100% offline.",
+      "url": "https://github.com/seehiong/polyphon-ai",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「需高隐私合规的会议记录场景，可优先评估此本地化方案以规避数据出境风险。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-e54c086e2972e58ea772",
+      "title": "The frontier AI models, right now - Mungomash LLC",
+      "url": "https://mungomash.com/ai/models/",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「To stay resilient, AI architects must maintain multi-vendor model redundancy and build hot-swa…」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-19672c4832d4c9bc0fd3",
+      "title": "Research acceleration: The view inside OpenAI",
+      "url": "https://openai.com/index/research-acceleration-view-inside-openai",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 164 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-7737bba1b986b4d29e3a",
+      "title": "A/I shuts down – Stay human",
+      "url": "https://keepitfree.ai/announcements/a/i-shuts-down-stay-human/",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 163 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-6536b08f5fbc2ad56bc4",
+      "title": "Alpha-Park/genpark-weight-quantization-kquants-block-packer-skill: GenPark AI Agent Skill - Simulates k-quants block compression (Q4_K_M, Q8_0) packing FP16 weights into quantized blocks with scale factors.",
+      "url": "https://github.com/Alpha-Park/genpark-weight-quantization-kquants-block-packer-skill",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 264 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-04bd52f896889cc4fa43",
+      "title": "alphaparkinc/genpark-paged-attention-kv-cache-block-allocator-skill: GenPark AI Agent Skill - Simulates vLLM PagedAttention non-contiguous virtual memory block table allocation for dynamic KV-cache management.",
+      "url": "https://github.com/alphaparkinc/genpark-paged-attention-kv-cache-block-allocator-skill",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「非连续虚拟内存模拟可能掩盖真实显存碎片化的崩溃行为——验证不足会让边缘部署带上隐患。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-ba891abaab803617d3a6",
+      "title": "Alpha-Park/genpark-speculative-decoding-draft-acceptance-evaluator-skill: GenPark AI Agent Skill - Rejection sampling and logit verification engine for speculative decoding acceleration.",
+      "url": "https://github.com/Alpha-Park/genpark-speculative-decoding-draft-acceptance-evaluator-skill",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「草稿模型与目标模型分布偏差过大时，投机解码可能不升反降——该技能正是用于暴露这类不匹配的验证环节。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-c2c835788c0a30561724",
+      "title": "alphaparkinc/genpark-speculative-decoding-draft-acceptance-evaluator-skill: GenPark AI Agent Skill - Rejection sampling and logit verification engine for speculative decoding acceleration.",
+      "url": "https://github.com/alphaparkinc/genpark-speculative-decoding-draft-acceptance-evaluator-skill",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 237 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-9b3e5309a877aeb3f5e1",
+      "title": "OpenAI's GPT-6 Astra Spawns Armies Of Agents That Run On Local CPUs, Handing Intel And AMD A Demand Windfall",
+      "url": "https://wccftech.com/openais-gpt-6-astra-spawns-armies-of-agents-that-run-on-local-cpus-handing-intel-and-amd-a-demand-windfall/",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「This local-CPU agent flood introduces an orchestration scaling challenge: traditional GPU-cent…」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-c087d8556f68e73df1a4",
+      "title": "dengyie/cnb2api: Expose a CNB cloud-workspace in-network AI endpoint as an OpenAI-compatible API. Zero dependencies, self-healing fixed domain.",
+      "url": "https://github.com/dengyie/cnb2api",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 235 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-fe38fc2f7a49e4fd9491",
+      "title": "Enntity/sparkglm: GLM-5.3-Flash on two DGX Sparks: opinionated vLLM/EXL3 serving, tinyGLM gates, and reproducible inference research.",
+      "url": "https://github.com/Enntity/sparkglm",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 167 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-5e03259209885a9bda77",
+      "title": "Nvidia's Groq 3 LPX Inference Rack Enters Full Production This Week - Startup Fortune",
+      "url": "https://startupfort",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 85 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-a957e189d32a783ecc63",
+      "title": "Anthropic, OpenAI, Meta and Google All Shipped New AI Models in One Week - Startup Fortune",
+      "url": "https://startupfortune.com/anthropic-openai-meta-and-google-all-shipped-new-ai-models-in-one-week/",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「Tech decision-makers should avoid blindly chasing new models, establishing evaluation buffers …」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-daf9b8af551e981b390f",
+      "title": "AMD's new workstation pairs a 96-core Threadripper with 576GB of GPU memory | TechSpot",
+      "url": "https://www.techspot.com/news/113750-amd-new-workstation-pairs-96-core-threadripper-576gb.html",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「Bridging the gap between cloud-scale AI and on-prem workstations: what thermal and memory arch…」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    }
+  ],
+  "rejectCounts": {
+    "gk:hookEntity": 13,
+    "gk:summaryBelowFloor": 12
+  },
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 0,
+  "eventCount": 33,
+  "eventDemoted": 48,
+  "eventFillMode": true,
+  "skippedSources": [],
+  "zeroYieldSources": [],
+  "recall": {
+    "poolSize": 20,
+    "included": 11,
+    "excluded": 9,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 60,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 15,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "writer",
+        "endpointId": "deepseek-byok",
+        "calls": 24,
+        "failures": 4,
+        "reasoningTokens": 50582,
+        "elapsedMs": 546687
+      },
+      {
+        "role": "writer",
+        "endpointId": "unknown",
+        "calls": 10,
+        "failures": 10,
+        "reasoningTokens": 0,
+        "elapsedMs": 0
+      },
+      {
+        "role": "writer",
+        "endpointId": "nous-proxy",
+        "calls": 7,
+        "failures": 0,
+        "reasoningTokens": 22061,
+        "elapsedMs": 457471
+      },
+      {
+        "role": "writer",
+        "endpointId": "nvidia-nim",
+        "calls": 2,
+        "failures": 1,
+        "reasoningTokens": 0,
+        "elapsedMs": 161393
+      },
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 9,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 1002345
+      }
+    ],
+    "llmCopyCount": 39
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.22058823529411764,
+  "perSourcePublished": {
+    "exa-open-weights": 8,
+    "exa-ai-industry": 7,
+    "exa-benchmark-sota": 6,
+    "exa-model-launches": 11,
+    "exa-ondevice-ai": 7,
+    "exa-agent-releases": 1,
+    "github-finetuning": 5,
+    "github-local-llm": 3,
+    "github-mcp-tools": 2,
+    "github-llm-inference": 7,
+    "github-new-llm-tools": 3
+  },
+  "langDistribution": {
+    "en": 60
+  }
+}

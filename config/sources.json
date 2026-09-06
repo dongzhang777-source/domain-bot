@@ -2,21 +2,21 @@
   {
     "id": "arxiv-cs-ai",
     "type": "rss",
-    "url": "http://export.arxiv.org/api/query?search_query=cat:cs.AI&sortBy=submittedDate&sortOrder=descending&max_results=150",
+    "url": "http://export.arxiv.org/api/query?search_query=cat:cs.AI&sortBy=submittedDate&sortOrder=descending&max_results=400",
     "weight": 0.5,
     "enabled": true
   },
   {
     "id": "arxiv-cs-cl",
     "type": "rss",
-    "url": "http://export.arxiv.org/api/query?search_query=cat:cs.CL&sortBy=submittedDate&sortOrder=descending&max_results=150",
+    "url": "http://export.arxiv.org/api/query?search_query=cat:cs.CL&sortBy=submittedDate&sortOrder=descending&max_results=400",
     "weight": 0.5,
     "enabled": true
   },
   {
     "id": "arxiv-cs-lg",
     "type": "rss",
-    "url": "http://export.arxiv.org/api/query?search_query=cat:cs.LG&sortBy=submittedDate&sortOrder=descending&max_results=150",
+    "url": "http://export.arxiv.org/api/query?search_query=cat:cs.LG&sortBy=submittedDate&sortOrder=descending&max_results=400",
     "weight": 0.5,
     "enabled": true
   },
