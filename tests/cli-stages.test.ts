@@ -551,6 +551,7 @@ describe('分阶段作业：runPipeline 的 staged 入口与整链入口共用�
     expect(r.published.length).toBeGreaterThan(0)
     expect(r.funnel.map((f) => f.stage)).toEqual([
       'collected',
+      'afterSourcePrescreen', // DB-13：源级时效预筛层（0 条被砍时也保留，层形状稳定）
       'afterDedupe',
       'afterGates',
       'afterEventCap',

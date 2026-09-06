@@ -92,6 +92,9 @@ export interface StageObserved {
   /** 宽通道（DB-08）：本轮待定池大小与 LLM 判定 include 数（recall 关闭时双 0） */
   recallPoolSize: number
   recallIncluded: number
+  /** 源级时效预筛（DB-13）：采集后、去重前被砍的超时条目数与源分布 */
+  stalePrescreened: number
+  stalePrescreenedBySource: Record<string, number>
 }
 
 /** `CollectStageResult` 的 JSON 形态（Map → entries，eventOrdered → id 序列）。 */
@@ -230,6 +233,8 @@ export function restoreStage(s: CollectStageSnapshot): CollectStageResult {
       enabledSourceIds: s.observed?.enabledSourceIds ?? [],
       recallPoolSize: s.observed?.recallPoolSize ?? 0,
       recallIncluded: s.observed?.recallIncluded ?? 0,
+      stalePrescreened: s.observed?.stalePrescreened ?? 0,
+      stalePrescreenedBySource: s.observed?.stalePrescreenedBySource ?? {},
     },
   }
 }

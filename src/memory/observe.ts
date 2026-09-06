@@ -29,6 +29,9 @@ export interface RoundInput {
   /** 宽通道（DB-08）：待定池大小 / LLM 判定 include 数。捞回条目本身已并入 candidates/relevant 口径（见 pipeline.ts），本字段只作宽通道生效标记与 I 线断链点识别（DB-09 S1-3 订正：原「不改变 candidates 口径」注释与代码相反） */
   recallPoolSize?: number
   recallIncluded?: number
+  /** 源级时效预筛（DB-13）：采集后、去重前被砍的超时条目数与源分布（全陈旧源在此可查，不进 zeroYield/skipped） */
+  stalePrescreened?: number
+  stalePrescreenedBySource?: Record<string, number>
 }
 
 export interface RoundObservation {
@@ -73,6 +76,9 @@ export interface RoundObservation {
   /** 宽通道（DB-08）观测：本字段单独存档；捞回条目已并入 candidates/relevant 口径，I-1/I-3/I-4 读数自 DB-08 起含宽通道贡献（见 docs/probe-verdict-criteria.md DB-08 版本标注，DB-09 S1-3 订正） */
   recallPoolSize?: number
   recallIncluded?: number
+  /** 源级时效预筛（DB-13）：同上，单独存档供 I 线归因 */
+  stalePrescreened?: number
+  stalePrescreenedBySource?: Record<string, number>
 }
 
 function round3(n: number): number {
@@ -138,6 +144,8 @@ export function observeRound(input: RoundInput): RoundObservation {
     enabledSourceIds: input.enabledSourceIds ?? [],
     recallPoolSize: input.recallPoolSize,
     recallIncluded: input.recallIncluded,
+    stalePrescreened: input.stalePrescreened,
+    stalePrescreenedBySource: input.stalePrescreenedBySource,
     telegram: input.telegram,
     pushedDelivered: input.pushedDelivered ?? (input.telegram === 'sent' ? pushed.length : 0),
   }

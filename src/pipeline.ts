@@ -163,6 +163,33 @@ export async function collectStage(opts: PipelineOptions): Promise<CollectStageR
     }
   }
 
+  // 1b. 源级时效预筛（DB-13/P0-1，2026-09-05 小巴审查）：huggingface-blog 实测返回全站
+  // 归档（6.6 年），833/915 条走到去重后才被 persona:tooOld 砍掉——91% 的采集是假量，
+  // 且漏斗被 tooOld 压倒性主导。适配器返回后立即按 persona.maxAgeHours 砍，不让垃圾进
+  // dedupe 哈希。判据与 persona 闸同口径（publishedAt > 0 才判时效；=0 走 staleYearInTitle，
+  // 本层不碰）。铁律：时效损失必须可查——记入漏斗层 afterSourcePrescreen + 观测字段
+  // stalePrescreened/stalePrescreenedBySource，不得静默。
+  const rawFetched = collected.length
+  const maxAgeMs = opts.persona.maxAgeHours * 3_600_000
+  const fresh: RawItem[] = []
+  let stalePrescreened = 0
+  const stalePrescreenedBySource: Record<string, number> = {}
+  for (const it of collected) {
+    if (it.publishedAt > 0 && now - it.publishedAt > maxAgeMs) {
+      stalePrescreened += 1
+      stalePrescreenedBySource[it.source] = (stalePrescreenedBySource[it.source] ?? 0) + 1
+      continue
+    }
+    fresh.push(it)
+  }
+  if (stalePrescreened > 0) {
+    const top = Object.entries(stalePrescreenedBySource).sort((a, b) => b[1] - a[1]).slice(0, 3)
+      .map(([id, n]) => `${id}×${n}`).join('、')
+    console.log(`[collector] 时效预筛：${stalePrescreened} 条超 ${opts.persona.maxAgeHours}h（${top}），不进去重`)
+  }
+  collected.length = 0
+  collected.push(...fresh)
+
   // 2. 精确 id 去重（跟轮次）。id 已由 itemId() 从规范 URL 派生，跨渠道同文档必得同 id
   const { kept: afterDedupe } = dedupe(collected, store.knownIds())
   const sourceAfterDedupe: Record<string, number> = {}
@@ -263,7 +290,9 @@ export async function collectStage(opts: PipelineOptions): Promise<CollectStageR
     dropped: [...gateOutcome.dropped],
     weights,
     funnelPrefix: [
-      { stage: 'collected', count: collected.length },
+      { stage: 'collected', count: rawFetched },
+      // 源级时效预筛（DB-13）：即使 0 条被砍也保留该层——漏斗层形状稳定，历史对比才有意义
+      { stage: 'afterSourcePrescreen', count: collected.length },
       { stage: 'afterDedupe', count: afterDedupe.length },
       { stage: 'afterGates', count: relevant.length },
       // 事件聚合是**降权**不是过滤，故本层不减量；超额数另记 eventDemoted 供看板归因
@@ -273,7 +302,9 @@ export async function collectStage(opts: PipelineOptions): Promise<CollectStageR
     zeroYieldSources,
     // 观测口径的三项计数只在本函数内可得（分段跑时 finalizeStage 拿不到源级明细）
     observed: {
-      collectedCount: collected.length,
+      collectedCount: rawFetched,
+      stalePrescreened,
+      stalePrescreenedBySource,
       relevantCount: relevant.length,
       sourceFetched,
       sourceAfterDedupe,
@@ -446,6 +477,8 @@ export async function finalizeStage(stage: CollectStageResult, opts: FinalizeOpt
     sourceRelevant: stage.observed.sourceRelevant,
     enabledSourceIds: stage.observed.enabledSourceIds,
     recallPoolSize: stage.observed.recallPoolSize,
+    stalePrescreened: stage.observed.stalePrescreened,
+    stalePrescreenedBySource: stage.observed.stalePrescreenedBySource,
     recallIncluded: stage.observed.recallIncluded,
     telegram: 'disabled',
     pushedDelivered: 0,
