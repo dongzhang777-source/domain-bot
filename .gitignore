@@ -10,3 +10,6 @@ dist/
 *.tsbuildinfo
 .DS_Store
 /logs/
+
+# vitest 在部分环境下把 os.tmpdir() 的 /var/folders/... 解析为仓库内相对路径的产物（工具产物零容忍，2026-09-06）
+/var/

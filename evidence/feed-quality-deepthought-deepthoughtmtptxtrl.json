@@ -1,0 +1,219 @@
+{
+  "persona": "deepthought",
+  "personaDisplay": "AI深度思想",
+  "digestId": "deepthoughtmtptxtrl",
+  "generatedAt": 1788700239345,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 915
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 82
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 14
+    },
+    {
+      "stage": "afterGates",
+      "count": 1
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 1
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 1
+    },
+    {
+      "stage": "published",
+      "count": 1
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-0e0a28d0130f277a123c",
+      "title": "Claude Fable 5.1 made me a really nice animated pelican",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/1/claude-fable-5-1/",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-4eb7b4aeeef0e3e18e38",
+      "title": "AI Agents vs. LLMs: Choosing the Right Tool for AI Tasks",
+      "source": "yt-llm",
+      "url": "https://www.youtube.com/watch?v=I9z-nrk9cw0",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-d7b11e7817581777769d",
+      "title": "GPT‑6 Astra",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/3/gpt6-astra/",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 11 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-43c216d63c8bd92a013d",
+      "title": "llm-gemini 0.34",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/2/llm-gemini/",
+      "gate": "blacklist",
+      "ruleId": "damaged:scrapeFragment",
+      "reason": "命中负向模式 damaged:scrapeFragment（damaged）"
+    },
+    {
+      "itemId": "u-1a5adf2188977d1fd9fe",
+      "title": "datasette-mcp 0.2",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/1/datasette-mcp/",
+      "gate": "blacklist",
+      "ruleId": "damaged:scrapeFragment",
+      "reason": "命中负向模式 damaged:scrapeFragment（damaged）"
+    },
+    {
+      "itemId": "u-cce482eca04d192569a8",
+      "title": "llm-anthropic 0.27",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Aug/24/llm-anthropic/",
+      "gate": "blacklist",
+      "ruleId": "damaged:scrapeFragment",
+      "reason": "命中负向模式 damaged:scrapeFragment（damaged）"
+    },
+    {
+      "itemId": "u-cd5da1960a4afcad7e49",
+      "title": "Quoting Rick Brewster",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/2/rick-brewster/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Paint.NET Direct2D rewrite for WINE; not AI/LLM related"
+    },
+    {
+      "itemId": "u-10bcda943db86cbc3afc",
+      "title": "Python 3.15.0 candidate 2 is here!",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/1/python-315-rc-2/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Python release candidate announcement; general programming, not AI-specific"
+    },
+    {
+      "itemId": "u-b0e2d5854a26abcc240b",
+      "title": "Quoting Zach Kehs",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/6/zach-kehs/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Technical debt essay; not AI/LLM adjacent"
+    },
+    {
+      "itemId": "u-0adf9656a4797e5eb455",
+      "title": "Introducing wrapture",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Aug/31/introducing-wrapture/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Python monkeypatching library; not AI/LLM related"
+    },
+    {
+      "itemId": "u-c670250822f2501c0463",
+      "title": "Quoting Andrew Digby",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Aug/31/andrew-digby/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Kakapo conservation news; unrelated to AI/LLM"
+    },
+    {
+      "itemId": "u-7b67d437667cb63c81a0",
+      "title": "EVE Online: The Move to Python 3 Begins!",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Aug/25/eve-online-move-to-python-3/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：EVE Online Python 3 migration; game infrastructure, not AI"
+    },
+    {
+      "itemId": "u-b809feda75e8a682e11e",
+      "title": "Your executable is a SQLite database",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Aug/24/your-executable-is-a-sqlite-database/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：SQLite-as-executable Linux trick; not AI/LLM related"
+    }
+  ],
+  "rejected": [],
+  "rejectCounts": {},
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 0,
+  "eventCount": 1,
+  "eventDemoted": 0,
+  "eventFillMode": false,
+  "skippedSources": [],
+  "zeroYieldSources": [
+    "simonwillison",
+    "yt-llm"
+  ],
+  "recall": {
+    "poolSize": 7,
+    "included": 0,
+    "excluded": 7,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 1,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 0,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "writer",
+        "endpointId": "nous-proxy",
+        "calls": 1,
+        "failures": 0,
+        "reasoningTokens": 2086,
+        "elapsedMs": 44560
+      },
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 1,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 24516
+      }
+    ],
+    "llmCopyCount": 1
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.001092896174863388,
+  "perSourcePublished": {
+    "github-rag": 1
+  },
+  "langDistribution": {
+    "en": 1
+  }
+}

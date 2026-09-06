@@ -475,10 +475,48 @@ describe('runJob：长时批产的进度落盘与断点续跑', () => {
     })
     expect(r.state.degradedBatches).toEqual([1])
     expect(r.state.completedBatches.sort()).toEqual([0, 1, 2])
+    // DB-16：降级原因必须留痕——只有 degradedBatches 时，「端点挂了」与「模型输出不合规」
+    // 在看板上完全同形，2026-09-06 排障时被迫离线复现才能区分
+    expect(r.state.degradedReasons['1']).toBe('端点全链失败')
+    // 成功批不产生原因记录
+    expect(Object.keys(r.state.degradedReasons)).toEqual(['1'])
     // 失败批的 3 条为 null，其余有值
     expect(r.results.slice(0, 3).every((x) => x !== null)).toBe(true)
     expect(r.results.slice(3, 6).every((x) => x === null)).toBe(true)
     expect(r.results.slice(6).every((x) => x !== null)).toBe(true)
+  })
+
+  it('全 null 但无 error 也判降级，且原因标注「输出不合规」与端点故障区分（DB-16）', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-job5b-'))
+    const r = await runJob({
+      jobId: 'j5b',
+      role: 'writer',
+      persona,
+      items,
+      batchSize: 3,
+      stagingDir: dir,
+      runBatch: async (batch) => ({ results: batch.map(() => null), truncated: false }),
+    })
+    expect(r.state.degradedBatches).toEqual([0, 1, 2])
+    for (const b of ['0', '1', '2']) {
+      expect(r.state.degradedReasons[b]).toBe('全部条目被判不合格（非端点故障，模型输出不合规）')
+    }
+  })
+
+  it('空输入零批：不触发「[].every() 恒真」的伪降级（DB-16 顺带修正）', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-job5c-'))
+    const r = await runJob({
+      jobId: 'j5c',
+      role: 'writer',
+      persona,
+      items: [],
+      batchSize: 3,
+      stagingDir: dir,
+      runBatch: async () => ({ results: [], truncated: false }),
+    })
+    expect(r.state.degradedBatches).toEqual([])
+    expect(r.state.degradedReasons).toEqual({})
+    expect(r.results).toEqual([])
   })
 
   it('截断批记入 truncatedBatches（>0 说明批大小或 maxTokens 配错）', async () => {
@@ -540,7 +578,7 @@ describe(' EditorialConfig 契约', () => {
     expect(cfg.writer.batchSize).toBe(3) // 实测：批再大会撞 max_tokens
     expect(cfg.writer.maxTokens).toBe(6000)
     expect(cfg.reviewer.batchSize).toBe(10) // 实测：reviewer 输出短，批可大
-    expect(cfg.reviewer.maxTokens).toBe(3000) // 2026-09-05：ds4 (reasoning_effort:low) 下批 10 需 3000 才装得下 JSON
+    expect(cfg.reviewer.maxTokens).toBe(3000) // 实测：批 10 的 JSON 在 reasoning_effort:low 下需 3000 才装得下（ds4 定，8082 沿用同量级）
     // 老张裁决 4：写与评分离。两端点若相同，同一模型既写又评构成循环。id 与地址双校验，
     // 防未来有人把两端点配回同一个 id（id 相同时地址必然相配，故 id 不同是更强的守卫）
     const w = cfg.writer.chain[0]!
@@ -554,8 +592,12 @@ describe(' EditorialConfig 契约', () => {
       expect(ep.baseUrlDefault).toMatch(/^https?:\/\//)
     }
     // 历史条款（2026-09-04）曾禁止 192.168.100.1:8002/deepseek-v4-flash 出现在任何端点配置，
-    // 依据是「老张口述该端点经实测不存在」。2026-09-05 老张指令以 ~/start_ds4.sh 落地后，
-    // 该端点已真实可用并配为 reviewer 主端点（ds4-local），条款被事实推翻而移除；
+    // 依据是「老张口述该端点经实测不存在」。2026-09-05 老张指令以 ~/start_ds4.sh 落地后该端点
+    // 真实可用并配为 reviewer 主端点（ds4-local），条款被事实推翻而移除。
+    // 订正（2026-09-06，小巴实测）：ds4 端点再次失效（07:47 实测 HTTP 502，主机 ping 通说明后端
+    // 服务未起），老张指令改用新设的 127.0.0.1:8082 Qwen3.8-Flash-Next 双机（qwen38-tb）作 reviewer
+    // 主端点。同一端点 48 小时内两次翻转结论——端点状态是易变事实，故本用例只钉「不变量」
+    // （异族分离、有 env 覆盖位、地址走 http(s)），**不钉任何具体地址**；
     // 「不硬编码进代码、只走配置」的裁决不变（见 src/editorial/provider.ts 头部注释订正）。
   })
 

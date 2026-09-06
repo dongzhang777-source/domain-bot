@@ -2,26 +2,26 @@
 
 ```json
 {
-  "generatedAt": "2026-09-05T13:40:58.855Z",
+  "generatedAt": "2026-09-06T13:26:59.135Z",
   "probeStart": null,
-  "rounds": 16,
+  "rounds": 29,
   "lastRound": {
-    "at": 1788615643768,
+    "at": 1788700937071,
     "candidates": 0,
     "pushed": 0,
-    "collected": 53,
+    "collected": 45,
     "relevant": 0,
     "skippedSources": [],
     "feedbackCount": 5,
     "sourceYield": {
       "hn-frontpage": {
-        "fetched": 20,
-        "afterDedupe": 17,
+        "fetched": 12,
+        "afterDedupe": 8,
         "afterFilter": 0
       },
       "github-new-llm-tools": {
         "fetched": 15,
-        "afterDedupe": 9,
+        "afterDedupe": 0,
         "afterFilter": 0
       },
       "exa-llm-news": {
@@ -31,7 +31,7 @@
       },
       "exa-agent-releases": {
         "fetched": 8,
-        "afterDedupe": 7,
+        "afterDedupe": 3,
         "afterFilter": 0
       },
       "openai-news": {
@@ -47,7 +47,6 @@
     },
     "zeroYieldSources": [
       "hn-frontpage",
-      "github-new-llm-tools",
       "exa-agent-releases"
     ],
     "emptyYieldSources": [],
@@ -89,24 +88,33 @@
       "openai-news",
       "anthropic-research"
     ],
+    "recallPoolSize": 8,
+    "recallIncluded": 0,
+    "stalePrescreened": 21,
+    "stalePrescreenedBySource": {
+      "hn-frontpage": 2,
+      "github-new-llm-tools": 13,
+      "exa-llm-news": 4,
+      "exa-agent-releases": 2
+    },
     "telegram": "disabled",
     "pushedDelivered": 0
   },
   "archive": {
-    "total": 225,
-    "pushed": 66,
+    "total": 283,
+    "pushed": 107,
     "bySource": {
       "arxiv-cs-ai": 105,
-      "huggingface-blog": 41,
-      "github-new-llm-tools": 9,
-      "exa-llm-news": 10,
-      "simonwillison": 17,
+      "huggingface-blog": 55,
+      "github-new-llm-tools": 11,
+      "exa-llm-news": 17,
+      "simonwillison": 28,
       "hf-daily-papers": 2,
-      "github-rag": 17,
-      "exa-agent-releases": 3,
-      "yt-llm": 10,
-      "github-agents": 6,
-      "hn-frontpage": 3,
+      "github-rag": 22,
+      "exa-agent-releases": 6,
+      "yt-llm": 15,
+      "github-agents": 12,
+      "hn-frontpage": 8,
       "openai-news": 1,
       "anthropic-research": 1
     }
@@ -120,8 +128,8 @@
       "id": "I-1",
       "name": "连续 3 轮 candidates=0（候选池枯竭）",
       "threshold": "3 轮",
-      "value": "5/3 轮",
-      "status": "fail",
+      "value": "1/3 轮",
+      "status": "pass",
       "note": "M6 标定中：拟加「且全源零新增」限定（arXiv 周五/周六无公告属排班，非仪器故障）"
     },
     {
@@ -136,8 +144,8 @@
       "id": "I-3",
       "name": "采集失败+零产出源占比 连续 3 轮 > 1/3（B′1 新口径）",
       "threshold": "1/3",
-      "value": "3/6 = 50%",
-      "status": "fail",
+      "value": "2/6 = 33%",
+      "status": "pass",
       "note": "分母按轮取（§2.6.4）；返回空的源单列 emptyYieldSources 可见不报警，是否并入分子待 M6 标定"
     },
     {
@@ -212,9 +220,9 @@
 
 | 判据 | 内容 | 阈值 | 当前值 | 状态 | 备注 |
 |---|---|---|---|---|---|
-| I-1 | 连续 3 轮 candidates=0（候选池枯竭） | 3 轮 | 5/3 轮 | **fail** | M6 标定中：拟加「且全源零新增」限定（arXiv 周五/周六无公告属排班，非仪器故障） |
+| I-1 | 连续 3 轮 candidates=0（候选池枯竭） | 3 轮 | 1/3 轮 | **pass** | M6 标定中：拟加「且全源零新增」限定（arXiv 周五/周六无公告属排班，非仪器故障） |
 | I-2 | 反馈率 < 5%（👍+👎 数 / 推送条数） | 5% | 5/9 = 55.6% | **pass** | 无 Telegram key 时无输入通道，nodata 属预期；全史口径——签字稿定稿时同批切换 |
-| I-3 | 采集失败+零产出源占比 连续 3 轮 > 1/3（B′1 新口径） | 1/3 | 3/6 = 50% | **fail** | 分母按轮取（§2.6.4）；返回空的源单列 emptyYieldSources 可见不报警，是否并入分子待 M6 标定 |
+| I-3 | 采集失败+零产出源占比 连续 3 轮 > 1/3（B′1 新口径） | 1/3 | 2/6 = 33% | **pass** | 分母按轮取（§2.6.4）；返回空的源单列 emptyYieldSources 可见不报警，是否并入分子待 M6 标定 |
 | I-4 | saturationRate 持续 > 0.5（原始分口径；判据形式待裁） | 0.5 | 0 | **pass** | 决策点 7 待裁：现行形式被 M3 证明恒真/恒假不可用；倾向案 B（rawP90 ≥ X），X 归联合标定（决策点 8），签字稿定稿时同批切换 |
 | G-1 | 主动消费性查看 < 10 次（两周累计） | 10 次 | 5 次 | **nodata** | views.json 是 viewed 唯一定义（criteria §2c） |
 | G-2 | 👍率 < 20%（有效反馈中） | 20% | 40.0%（2👍/3👎） | **nodata** |  |
@@ -245,4 +253,17 @@
 {"at":1788611546346,"candidates":0,"pushed":0,"collected":53,"relevant":0,"skippedSources":[],"feedbackCount":5,"sourceYield":{"hn-frontpage":{"fetched":20,"afterDedupe":17,"afterFilter":0},"github-new-llm-tools":{"fetched":15,"afterDedupe":9,"afterFilter":0},"exa-llm-news":{"fetched":8,"afterDedupe":0,"afterFilter":0},"exa-agent-releases":{"fetched":8,"afterDedupe":7,"afterFilter":0},"openai-news":{"fetched":1,"afterDedupe":0,"afterFilter":0},"anthropic-research":{"fetched":1,"afterDedupe":0,"afterFilter":0}},"zeroYieldSources":["hn-frontpage","github-new-llm-tools","exa-agent-releases"],"emptyYieldSources":[],"candidateP50":0,"candidateP90":0,"candidateTop1":0,"rawP50":0,"rawP90":0,"rawTop1":0,"pushedMean":0,"saturationRate":0,"isNewRate":0,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{},"enabledSourceIds":["hn-frontpage","github-new-llm-tools","exa-llm-news","exa-agent-releases","openai-news","anthropic-research"],"telegram":"disabled","pushedDelivered":0}
 {"at":1788615633744,"candidates":0,"pushed":0,"collected":915,"relevant":0,"skippedSources":[],"feedbackCount":5,"sourceYield":{"arxiv-cs-ai":{"fetched":0,"afterDedupe":0,"afterFilter":0},"huggingface-blog":{"fetched":859,"afterDedupe":847,"afterFilter":0},"simonwillison":{"fetched":30,"afterDedupe":22,"afterFilter":0},"github-agents":{"fetched":10,"afterDedupe":4,"afterFilter":0},"github-rag":{"fetched":10,"afterDedupe":2,"afterFilter":0},"hf-daily-papers":{"fetched":1,"afterDedupe":0,"afterFilter":0},"yt-llm":{"fetched":5,"afterDedupe":0,"afterFilter":0}},"zeroYieldSources":["huggingface-blog","simonwillison","github-agents","github-rag"],"emptyYieldSources":["arxiv-cs-ai"],"candidateP50":0,"candidateP90":0,"candidateTop1":0,"rawP50":0,"rawP90":0,"rawTop1":0,"pushedMean":0,"saturationRate":0,"isNewRate":0,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{},"enabledSourceIds":["arxiv-cs-ai","huggingface-blog","simonwillison","github-agents","github-rag","hf-daily-papers","yt-llm"],"telegram":"disabled","pushedDelivered":0}
 {"at":1788615643768,"candidates":0,"pushed":0,"collected":53,"relevant":0,"skippedSources":[],"feedbackCount":5,"sourceYield":{"hn-frontpage":{"fetched":20,"afterDedupe":17,"afterFilter":0},"github-new-llm-tools":{"fetched":15,"afterDedupe":9,"afterFilter":0},"exa-llm-news":{"fetched":8,"afterDedupe":0,"afterFilter":0},"exa-agent-releases":{"fetched":8,"afterDedupe":7,"afterFilter":0},"openai-news":{"fetched":1,"afterDedupe":0,"afterFilter":0},"anthropic-research":{"fetched":1,"afterDedupe":0,"afterFilter":0}},"zeroYieldSources":["hn-frontpage","github-new-llm-tools","exa-agent-releases"],"emptyYieldSources":[],"candidateP50":0,"candidateP90":0,"candidateTop1":0,"rawP50":0,"rawP90":0,"rawTop1":0,"pushedMean":0,"saturationRate":0,"isNewRate":0,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{},"enabledSourceIds":["hn-frontpage","github-new-llm-tools","exa-llm-news","exa-agent-releases","openai-news","anthropic-research"],"telegram":"disabled","pushedDelivered":0}
+{"at":1788637273540,"candidates":14,"pushed":8,"collected":915,"relevant":14,"skippedSources":[],"feedbackCount":5,"sourceYield":{"arxiv-cs-ai":{"fetched":0,"afterDedupe":0,"afterFilter":0},"huggingface-blog":{"fetched":859,"afterDedupe":847,"afterFilter":3},"simonwillison":{"fetched":30,"afterDedupe":22,"afterFilter":3},"github-agents":{"fetched":10,"afterDedupe":5,"afterFilter":3},"github-rag":{"fetched":10,"afterDedupe":2,"afterFilter":1},"hf-daily-papers":{"fetched":1,"afterDedupe":0,"afterFilter":0},"yt-llm":{"fetched":5,"afterDedupe":5,"afterFilter":4}},"zeroYieldSources":[],"emptyYieldSources":["arxiv-cs-ai"],"candidateP50":0.25,"candidateP90":0.4,"candidateTop1":0.45,"rawP50":0.25,"rawP90":0.5,"rawTop1":0.5,"pushedMean":0.292,"saturationRate":0,"isNewRate":1,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{"simonwillison":2,"huggingface-blog":3,"github-rag":1,"github-agents":2},"enabledSourceIds":["arxiv-cs-ai","huggingface-blog","simonwillison","github-agents","github-rag","hf-daily-papers","yt-llm"],"recallPoolSize":20,"recallIncluded":0,"telegram":"disabled","pushedDelivered":0}
+{"at":1788640013498,"candidates":0,"pushed":0,"collected":915,"relevant":0,"skippedSources":[],"feedbackCount":5,"sourceYield":{"arxiv-cs-ai":{"fetched":0,"afterDedupe":0,"afterFilter":0},"huggingface-blog":{"fetched":859,"afterDedupe":844,"afterFilter":0},"simonwillison":{"fetched":30,"afterDedupe":19,"afterFilter":0},"github-agents":{"fetched":10,"afterDedupe":2,"afterFilter":0},"github-rag":{"fetched":10,"afterDedupe":1,"afterFilter":0},"hf-daily-papers":{"fetched":1,"afterDedupe":0,"afterFilter":0},"yt-llm":{"fetched":5,"afterDedupe":1,"afterFilter":0}},"zeroYieldSources":["huggingface-blog","simonwillison","github-agents","github-rag","yt-llm"],"emptyYieldSources":["arxiv-cs-ai"],"candidateP50":0,"candidateP90":0,"candidateTop1":0,"rawP50":0,"rawP90":0,"rawTop1":0,"pushedMean":0,"saturationRate":0,"isNewRate":0,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{},"enabledSourceIds":["arxiv-cs-ai","huggingface-blog","simonwillison","github-agents","github-rag","hf-daily-papers","yt-llm"],"recallPoolSize":20,"recallIncluded":0,"telegram":"disabled","pushedDelivered":0}
+{"at":1788640227005,"candidates":13,"pushed":9,"collected":51,"relevant":13,"skippedSources":[],"feedbackCount":5,"sourceYield":{"hn-frontpage":{"fetched":18,"afterDedupe":16,"afterFilter":3},"github-new-llm-tools":{"fetched":15,"afterDedupe":9,"afterFilter":1},"exa-llm-news":{"fetched":8,"afterDedupe":7,"afterFilter":7},"exa-agent-releases":{"fetched":8,"afterDedupe":7,"afterFilter":2},"openai-news":{"fetched":1,"afterDedupe":0,"afterFilter":0},"anthropic-research":{"fetched":1,"afterDedupe":0,"afterFilter":0}},"zeroYieldSources":[],"emptyYieldSources":[],"candidateP50":0.387,"candidateP90":0.476,"candidateTop1":0.662,"rawP50":0.352,"rawP90":0.529,"rawTop1":0.602,"pushedMean":0.439,"saturationRate":0,"isNewRate":1,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{"exa-llm-news":7,"exa-agent-releases":1,"github-new-llm-tools":1},"enabledSourceIds":["hn-frontpage","github-new-llm-tools","exa-llm-news","exa-agent-releases","openai-news","anthropic-research"],"recallPoolSize":16,"recallIncluded":6,"telegram":"disabled","pushedDelivered":0}
+{"at":1788644500598,"candidates":7,"pushed":3,"collected":915,"relevant":7,"skippedSources":[],"feedbackCount":5,"sourceYield":{"arxiv-cs-ai":{"fetched":0,"afterDedupe":0,"afterFilter":0},"huggingface-blog":{"fetched":859,"afterDedupe":844,"afterFilter":1},"simonwillison":{"fetched":30,"afterDedupe":19,"afterFilter":3},"github-agents":{"fetched":10,"afterDedupe":2,"afterFilter":2},"github-rag":{"fetched":10,"afterDedupe":1,"afterFilter":1},"hf-daily-papers":{"fetched":1,"afterDedupe":0,"afterFilter":0},"yt-llm":{"fetched":5,"afterDedupe":1,"afterFilter":0}},"zeroYieldSources":["yt-llm"],"emptyYieldSources":["arxiv-cs-ai"],"candidateP50":0.25,"candidateP90":0.4,"candidateTop1":0.4,"rawP50":0.25,"rawP90":0.5,"rawTop1":0.5,"pushedMean":0.278,"saturationRate":0,"isNewRate":1,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{"github-agents":2,"simonwillison":1},"enabledSourceIds":["arxiv-cs-ai","huggingface-blog","simonwillison","github-agents","github-rag","hf-daily-papers","yt-llm"],"recallPoolSize":20,"recallIncluded":7,"telegram":"disabled","pushedDelivered":0}
+{"at":1788645367629,"candidates":0,"pushed":0,"collected":33,"relevant":0,"skippedSources":["hn-frontpage"],"feedbackCount":5,"sourceYield":{"github-new-llm-tools":{"fetched":15,"afterDedupe":8,"afterFilter":0},"exa-llm-news":{"fetched":8,"afterDedupe":0,"afterFilter":0},"exa-agent-releases":{"fetched":8,"afterDedupe":6,"afterFilter":0},"openai-news":{"fetched":1,"afterDedupe":0,"afterFilter":0},"anthropic-research":{"fetched":1,"afterDedupe":0,"afterFilter":0}},"zeroYieldSources":["github-new-llm-tools","exa-agent-releases"],"emptyYieldSources":[],"candidateP50":0,"candidateP90":0,"candidateTop1":0,"rawP50":0,"rawP90":0,"rawTop1":0,"pushedMean":0,"saturationRate":0,"isNewRate":0,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{},"enabledSourceIds":["hn-frontpage","github-new-llm-tools","exa-llm-news","exa-agent-releases","openai-news","anthropic-research"],"recallPoolSize":1,"recallIncluded":0,"telegram":"disabled","pushedDelivered":0}
+{"at":1788649205567,"candidates":11,"pushed":10,"collected":915,"relevant":11,"skippedSources":[],"feedbackCount":5,"sourceYield":{"arxiv-cs-ai":{"fetched":0,"afterDedupe":0,"afterFilter":0},"huggingface-blog":{"fetched":859,"afterDedupe":843,"afterFilter":8},"simonwillison":{"fetched":30,"afterDedupe":16,"afterFilter":3},"github-agents":{"fetched":10,"afterDedupe":0,"afterFilter":0},"github-rag":{"fetched":10,"afterDedupe":0,"afterFilter":0},"hf-daily-papers":{"fetched":1,"afterDedupe":0,"afterFilter":0},"yt-llm":{"fetched":5,"afterDedupe":1,"afterFilter":0}},"zeroYieldSources":["yt-llm"],"emptyYieldSources":["arxiv-cs-ai"],"candidateP50":0.25,"candidateP90":0.25,"candidateTop1":0.317,"rawP50":0.25,"rawP90":0.25,"rawTop1":0.352,"pushedMean":0.252,"saturationRate":0,"isNewRate":1,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{"simonwillison":3,"huggingface-blog":7},"enabledSourceIds":["arxiv-cs-ai","huggingface-blog","simonwillison","github-agents","github-rag","hf-daily-papers","yt-llm"],"recallPoolSize":20,"recallIncluded":11,"telegram":"disabled","pushedDelivered":0}
+{"at":1788649483037,"candidates":0,"pushed":0,"collected":48,"relevant":0,"skippedSources":[],"feedbackCount":5,"sourceYield":{"hn-frontpage":{"fetched":15,"afterDedupe":12,"afterFilter":0},"github-new-llm-tools":{"fetched":15,"afterDedupe":8,"afterFilter":0},"exa-llm-news":{"fetched":8,"afterDedupe":0,"afterFilter":0},"exa-agent-releases":{"fetched":8,"afterDedupe":6,"afterFilter":0},"openai-news":{"fetched":1,"afterDedupe":0,"afterFilter":0},"anthropic-research":{"fetched":1,"afterDedupe":0,"afterFilter":0}},"zeroYieldSources":["hn-frontpage","github-new-llm-tools","exa-agent-releases"],"emptyYieldSources":[],"candidateP50":0,"candidateP90":0,"candidateTop1":0,"rawP50":0,"rawP90":0,"rawTop1":0,"pushedMean":0,"saturationRate":0,"isNewRate":0,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{},"enabledSourceIds":["hn-frontpage","github-new-llm-tools","exa-llm-news","exa-agent-releases","openai-news","anthropic-research"],"recallPoolSize":13,"recallIncluded":0,"telegram":"disabled","pushedDelivered":0}
+{"at":1788678003701,"candidates":5,"pushed":5,"collected":915,"relevant":5,"skippedSources":[],"feedbackCount":5,"sourceYield":{"arxiv-cs-ai":{"fetched":0,"afterDedupe":0,"afterFilter":0},"huggingface-blog":{"fetched":859,"afterDedupe":2,"afterFilter":0},"simonwillison":{"fetched":30,"afterDedupe":14,"afterFilter":2},"github-agents":{"fetched":10,"afterDedupe":1,"afterFilter":1},"github-rag":{"fetched":10,"afterDedupe":2,"afterFilter":2},"hf-daily-papers":{"fetched":1,"afterDedupe":0,"afterFilter":0},"yt-llm":{"fetched":5,"afterDedupe":1,"afterFilter":0}},"zeroYieldSources":["huggingface-blog","yt-llm"],"emptyYieldSources":["arxiv-cs-ai"],"candidateP50":0.225,"candidateP90":0.445,"candidateTop1":0.445,"rawP50":0.25,"rawP90":0.556,"rawTop1":0.556,"pushedMean":0.292,"saturationRate":0,"isNewRate":1,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{"simonwillison":2,"github-rag":2,"github-agents":1},"enabledSourceIds":["arxiv-cs-ai","huggingface-blog","simonwillison","github-agents","github-rag","hf-daily-papers","yt-llm"],"recallPoolSize":10,"recallIncluded":2,"stalePrescreened":833,"stalePrescreenedBySource":{"huggingface-blog":833},"telegram":"disabled","pushedDelivered":0}
+{"at":1788679086638,"candidates":1,"pushed":0,"collected":48,"relevant":1,"skippedSources":[],"feedbackCount":5,"sourceYield":{"hn-frontpage":{"fetched":15,"afterDedupe":13,"afterFilter":1},"github-new-llm-tools":{"fetched":15,"afterDedupe":1,"afterFilter":0},"exa-llm-news":{"fetched":8,"afterDedupe":0,"afterFilter":0},"exa-agent-releases":{"fetched":8,"afterDedupe":2,"afterFilter":0},"openai-news":{"fetched":1,"afterDedupe":0,"afterFilter":0},"anthropic-research":{"fetched":1,"afterDedupe":0,"afterFilter":0}},"zeroYieldSources":["github-new-llm-tools","exa-agent-releases"],"emptyYieldSources":[],"candidateP50":0.225,"candidateP90":0.225,"candidateTop1":0.225,"rawP50":0.25,"rawP90":0.25,"rawTop1":0.25,"pushedMean":0,"saturationRate":0,"isNewRate":1,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{},"enabledSourceIds":["hn-frontpage","github-new-llm-tools","exa-llm-news","exa-agent-releases","openai-news","anthropic-research"],"recallPoolSize":13,"recallIncluded":0,"stalePrescreened":20,"stalePrescreenedBySource":{"github-new-llm-tools":13,"exa-llm-news":4,"exa-agent-releases":3},"telegram":"disabled","pushedDelivered":0}
+{"at":1788696366669,"candidates":3,"pushed":2,"collected":915,"relevant":3,"skippedSources":[],"feedbackCount":5,"sourceYield":{"arxiv-cs-ai":{"fetched":0,"afterDedupe":0,"afterFilter":0},"huggingface-blog":{"fetched":859,"afterDedupe":2,"afterFilter":2},"simonwillison":{"fetched":30,"afterDedupe":12,"afterFilter":0},"github-agents":{"fetched":10,"afterDedupe":0,"afterFilter":0},"github-rag":{"fetched":10,"afterDedupe":0,"afterFilter":0},"hf-daily-papers":{"fetched":1,"afterDedupe":0,"afterFilter":0},"yt-llm":{"fetched":5,"afterDedupe":1,"afterFilter":1}},"zeroYieldSources":["simonwillison"],"emptyYieldSources":["arxiv-cs-ai"],"candidateP50":0.25,"candidateP90":0.25,"candidateTop1":0.25,"rawP50":0.25,"rawP90":0.25,"rawTop1":0.25,"pushedMean":0.25,"saturationRate":0,"isNewRate":1,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{"huggingface-blog":2},"enabledSourceIds":["arxiv-cs-ai","huggingface-blog","simonwillison","github-agents","github-rag","hf-daily-papers","yt-llm"],"recallPoolSize":9,"recallIncluded":2,"stalePrescreened":833,"stalePrescreenedBySource":{"huggingface-blog":833},"telegram":"disabled","pushedDelivered":0}
+{"at":1788697512276,"candidates":3,"pushed":3,"collected":45,"relevant":3,"skippedSources":[],"feedbackCount":5,"sourceYield":{"hn-frontpage":{"fetched":12,"afterDedupe":9,"afterFilter":1},"github-new-llm-tools":{"fetched":15,"afterDedupe":1,"afterFilter":1},"exa-llm-news":{"fetched":8,"afterDedupe":0,"afterFilter":0},"exa-agent-releases":{"fetched":8,"afterDedupe":4,"afterFilter":1},"openai-news":{"fetched":1,"afterDedupe":0,"afterFilter":0},"anthropic-research":{"fetched":1,"afterDedupe":0,"afterFilter":0}},"zeroYieldSources":[],"emptyYieldSources":[],"candidateP50":0.317,"candidateP90":0.427,"candidateTop1":0.427,"rawP50":0.352,"rawP90":0.427,"rawTop1":0.427,"pushedMean":0.323,"saturationRate":0,"isNewRate":1,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{"github-new-llm-tools":1,"exa-agent-releases":1,"hn-frontpage":1},"enabledSourceIds":["hn-frontpage","github-new-llm-tools","exa-llm-news","exa-agent-releases","openai-news","anthropic-research"],"recallPoolSize":11,"recallIncluded":3,"stalePrescreened":21,"stalePrescreenedBySource":{"hn-frontpage":2,"github-new-llm-tools":13,"exa-llm-news":4,"exa-agent-releases":2},"telegram":"disabled","pushedDelivered":0}
+{"at":1788700239345,"candidates":1,"pushed":1,"collected":915,"relevant":1,"skippedSources":[],"feedbackCount":5,"sourceYield":{"arxiv-cs-ai":{"fetched":0,"afterDedupe":0,"afterFilter":0},"huggingface-blog":{"fetched":859,"afterDedupe":0,"afterFilter":0},"simonwillison":{"fetched":30,"afterDedupe":12,"afterFilter":0},"github-agents":{"fetched":10,"afterDedupe":0,"afterFilter":0},"github-rag":{"fetched":10,"afterDedupe":1,"afterFilter":1},"hf-daily-papers":{"fetched":1,"afterDedupe":0,"afterFilter":0},"yt-llm":{"fetched":5,"afterDedupe":1,"afterFilter":0}},"zeroYieldSources":["simonwillison","yt-llm"],"emptyYieldSources":["arxiv-cs-ai"],"candidateP50":0.4,"candidateP90":0.4,"candidateTop1":0.4,"rawP50":0.5,"rawP90":0.5,"rawTop1":0.5,"pushedMean":0.4,"saturationRate":0,"isNewRate":1,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{"github-rag":1},"enabledSourceIds":["arxiv-cs-ai","huggingface-blog","simonwillison","github-agents","github-rag","hf-daily-papers","yt-llm"],"recallPoolSize":7,"recallIncluded":0,"stalePrescreened":833,"stalePrescreenedBySource":{"huggingface-blog":833},"telegram":"disabled","pushedDelivered":0}
+{"at":1788700937071,"candidates":0,"pushed":0,"collected":45,"relevant":0,"skippedSources":[],"feedbackCount":5,"sourceYield":{"hn-frontpage":{"fetched":12,"afterDedupe":8,"afterFilter":0},"github-new-llm-tools":{"fetched":15,"afterDedupe":0,"afterFilter":0},"exa-llm-news":{"fetched":8,"afterDedupe":0,"afterFilter":0},"exa-agent-releases":{"fetched":8,"afterDedupe":3,"afterFilter":0},"openai-news":{"fetched":1,"afterDedupe":0,"afterFilter":0},"anthropic-research":{"fetched":1,"afterDedupe":0,"afterFilter":0}},"zeroYieldSources":["hn-frontpage","exa-agent-releases"],"emptyYieldSources":[],"candidateP50":0,"candidateP90":0,"candidateTop1":0,"rawP50":0,"rawP90":0,"rawTop1":0,"pushedMean":0,"saturationRate":0,"isNewRate":0,"weights":{"arxiv-cs-ai":0.5,"huggingface-blog":0.5,"hn-frontpage":0.4,"simonwillison":0.4,"jiqizhixin":0.3,"qbitai":0.3,"github-new-llm-tools":0.5,"github-agents":0.4,"github-rag":0.3,"exa-llm-news":0.6,"exa-agent-releases":0.4,"exa-cn-ai":0.3,"hf-daily-papers":0.6,"openai-news":0.4,"anthropic-research":0.4,"v2ex-hot":0.2,"bili-llm":0.2,"yt-llm":0.3},"bySource":{},"enabledSourceIds":["hn-frontpage","github-new-llm-tools","exa-llm-news","exa-agent-releases","openai-news","anthropic-research"],"recallPoolSize":8,"recallIncluded":0,"stalePrescreened":21,"stalePrescreenedBySource":{"hn-frontpage":2,"github-new-llm-tools":13,"exa-llm-news":4,"exa-agent-releases":2},"telegram":"disabled","pushedDelivered":0}
 ```

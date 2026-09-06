@@ -75,11 +75,17 @@ npm run doctor    # 环境与配置体检（含三个配置文件的存在性与
 
 无需任何 API key 即可运行（启发式打分 + 机械渲染兜底）。
 
-> ⚠️ **AI 编辑部当前是关着的**（`config/editor.json` 的 `enabled: false`），
-> 所以 `npm start` 产出的文案仍是**机械兜底**。这不是遗漏，是实测后的决定：
-> 2026-09-05 00:20 复核，`127.0.0.1:8052`（nous-proxy）活着而 `127.0.0.1:8080`（llama-server）未起，
-> 此时开启会让 reviewer 降级到与 writer 同一个底座，**违反「写与评分离」裁决**。
-> 开启前必须先拉起 8080，或给 reviewer 配另一个异族端点。详见 `config/editor.json` 的 `_enabledNote`。
+> **AI 编辑部已开启**（`config/editor.json` 的 `enabled: true`）。写与评分离当前成立：
+> writer 走 `127.0.0.1:8052`（nous-proxy，云端 longcat 族），reviewer 走 `127.0.0.1:8082`
+> （Qwen3.8-Flash-Next 双机方案，**2026-09-06 老张指令切换**；原 `192.168.100.1:8002` ds4 实测 502 已退役）。
+>
+> **开启 ≠ 生效**：reviewer 每轮上线前必须过金标自检（`npm run calibrate`，与人工金标一致率 ≥70%），
+> 不过则 reviewer 分数作废、writer 一并停用、整轮退回机械兜底——这是刻意的，不是缺陷
+> （评分侧不可信时，写作侧的产出无从验收）。本轮是否真的生效，看 `docs/evidence-latest.md` 看板的
+> `editorial.active` 与 `llmCopyCount`，**不看 `enabled` 字段**。
+>
+> > 历史背景（2026-09-05 旧况，已被上段取代）：当时 `enabled: false`，因 8080 未起、
+> > 开启会让 reviewer 降级到与 writer 同底座而违反裁决 4。该约束已随端点切换消除。
 
 ## 分阶段批产（过夜作业）
 
@@ -163,8 +169,9 @@ itemId 与 source，权重与兴趣就仍然喂不进去。
 
 ## 已知边界（刻意不做 / 欠账）
 
-- **AI 编辑部默认关闭**：见上方 ⚠️。开启的前提是 writer 与 reviewer 有**两个异族端点**同时可用，
-  否则违反「写与评分离」。这是当前影响内容观感的头号事项。
+- **编辑部生效依赖两个异族端点同时活着**：writer 用 8052、reviewer 用 8082，任一挂掉即降级；
+  **reviewer 挂掉的后果比 writer 挂掉更重**——它会连带停用 writer（评分侧不可信则写作侧产出无从验收），
+  整轮内容质量退回机械兜底。端点实测状态与切换依据见 `config/editor.json` 的 `_endpointNote`。
 - **事件聚类是词法的，不做语义归并**：对不含专有名词的标题（如 The Verge 的
   `next big AI model…AGI era`）召回不到，这类同事件刷屏只能靠终审的 `maxPerEvent` 兜。
   LLM 语义归并是欠账，未排期。

@@ -12,6 +12,12 @@ import { defaultFetch } from '../collector/adapters/rss.js'
  * `192.168.100.1:8002/v1` 已真实可用（model id = `deepseek-v4-flash`），并已配为 reviewer
  * 主端点（见 config/editor.json）。走配置不写死代码的裁决不变。
  *
+ * 订正（2026-09-06，小巴接手后实测）：上述 ds4 端点已失效——07:47 实测 HTTP 502
+ * （upstream connect failed，主机 ping 通说明是后端服务未起）。老张指令改用新设的
+ * `127.0.0.1:8082/v1`（Qwen3.8-Flash-Next 双机方案）作 reviewer 主端点。
+ * **这次故障正是「端点走配置」裁决的价值证明**：换底座只改了一个 JSON 字段，
+ * 代码零改动；若当初把地址写死在代码里，此处就是一次代码修改 + 全量回归。
+ *
  * 降级链的必要性（不是装饰）：本机 8052 是免费档云端转发（有限流与 OAuth 刷新依赖），
  * 8080 是本地 llama-server（与 Claude Code 共用 8082 代理会抢资源）。任一端点抖动都不该
  * 让整轮批产报废——writer 单轮 200 条约 53 分钟，从头重跑代价过高。

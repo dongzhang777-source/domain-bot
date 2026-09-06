@@ -48,6 +48,17 @@ export interface JobState<TResult> {
   completedBatches: number[]
   /** 降级批序号（端点全链失败或响应不可解析，产物由调用方走机械兜底） */
   degradedBatches: number[]
+  /**
+   * 批序号 → 降级原因原文（DB-16）。
+   *
+   * 为什么必须有：degradedBatches 只记「第几批降级」，把**为什么**丢了。实测代价——
+   * 2026-09-06 排障 writer 全批降级时，看板只显示 `writerDegradedBatches: 1` 与
+   * `endpointId: unknown`，根因（是端点挂了、还是 JSON 不可解析、还是全部条目被判不合格）
+   * 三种可能完全无法区分，只能靠离线复现猜。而 writeBatch 的 catch 吞掉了 error 文本，
+   * 连 stderr 都没有。降级是**常态事件**（免费档端点限流、思考型模型截断），
+   * 常态事件不留原因是把排障成本推给未来的人。旧快照无此字段时按空对象处理，不假装没降级过。
+   */
+  degradedReasons: Record<string, string>
   /** 批序号 → 该批结果（null 表示该条漏答） */
   resultsByBatch: Record<string, Array<TResult | null>>
   /** 端点级用量：降级链走到哪一档、各档耗多少，看板要能看出来 */
@@ -103,6 +114,7 @@ export function emptyJobState<TResult>(
     totalBatches: opts.totalBatches,
     completedBatches: [],
     degradedBatches: [],
+    degradedReasons: {},
     resultsByBatch: {},
     endpointUsage: {},
     truncatedBatches: [],
@@ -124,6 +136,9 @@ export function loadJobState<TResult>(stagingDir: string, jobId: string): JobSta
     const raw = JSON.parse(readFileSync(path, 'utf8')) as JobState<TResult>
     if (raw.schema !== 'domain-bot-editorial-job-v1') return null
     if (raw.jobId !== jobId) return null
+    // DB-16：旧快照无 degradedReasons（2026-09-06 前的进度文件）。补空对象而非 undefined——
+    // 但不得据此声称「这些降级批没有原因」，字段缺失与原因为空是两回事，故只在读取时兜底、不回写
+    if (typeof raw.degradedReasons !== 'object' || raw.degradedReasons === null) raw.degradedReasons = {}
     return raw
   } catch (err) {
     // 坏进度文件不得静默当成"没有进度"（会导致整轮重跑 53 分钟且看不出原因）
@@ -203,8 +218,18 @@ export async function runJob<TItem, TResult>(opts: RunJobOptions<TItem, TResult>
     state.resultsByBatch[String(b)] = outcome.results
     state.completedBatches.push(b)
 
-    const failed = outcome.error !== undefined || outcome.results.every((r) => r === null)
-    if (failed) state.degradedBatches.push(b)
+    // 空批不判降级：`[].every()` 恒为 true，会让 zero-item 批次被误记成降级批（DB-16 顺带修正）
+    const allNull = outcome.results.length > 0 && outcome.results.every((r) => r === null)
+    const failed = outcome.error !== undefined || allNull
+    if (failed) {
+      state.degradedBatches.push(b)
+      // 降级原因留痕（DB-16）。三种成因在看板上完全同形，不留原文只能靠离线复现猜：
+      // ①端点全链失败（error 有值）②JSON 解析出数组但每条都不合规 ③解析失败（error 已覆盖）
+      const reason = outcome.error ?? (allNull ? '全部条目被判不合格（非端点故障，模型输出不合规）' : '未知')
+      state.degradedReasons[String(b)] = reason
+      // 同步打到 stderr：作业在凌晨定时跑，人不会盯着看板，落 logs/stderr.log 才能事后追
+      console.error(`[editorial] ${opts.role} 第 ${b} 批降级：${reason}`)
+    }
     if (outcome.truncated) state.truncatedBatches.push(b)
     recordUsage(state, outcome.usage, failed)
 
