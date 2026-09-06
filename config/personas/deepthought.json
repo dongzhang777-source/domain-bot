@@ -4,6 +4,8 @@
   "domain": "ai-llm",
   "sources": [
     "arxiv-cs-ai",
+    "arxiv-cs-cl",
+    "arxiv-cs-lg",
     "huggingface-blog",
     "simonwillison",
     "hf-daily-papers",

@@ -51,6 +51,8 @@ export interface SourceConfig {
   url: string
   weight: number
   enabled: boolean
+  /** 仅 exa：每次语义搜索返回条数（缺省 8） */
+  numResults?: number
 }
 
 export interface DomainConfig {

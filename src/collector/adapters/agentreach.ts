@@ -53,7 +53,7 @@ export function parseExaOutput(output: string, sourceId: string): RawItem[] {
 export async function fetchExa(source: SourceConfig, spawnFn: SpawnFn = exaSpawn): Promise<RawItem[]> {
   const { stdout } = await spawnFn('mcporter', [
     'call', 'exa.web_search_exa', '--args',
-    JSON.stringify({ query: source.url, numResults: 8 }),
+    JSON.stringify({ query: source.url, numResults: source.numResults ?? 8 }),
   ])
   return parseExaOutput(stdout, source.id)
 }

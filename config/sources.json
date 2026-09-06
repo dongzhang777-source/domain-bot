@@ -2,7 +2,21 @@
   {
     "id": "arxiv-cs-ai",
     "type": "rss",
-    "url": "http://export.arxiv.org/rss/cs.AI",
+    "url": "http://export.arxiv.org/api/query?search_query=cat:cs.AI&sortBy=submittedDate&sortOrder=descending&max_results=150",
+    "weight": 0.5,
+    "enabled": true
+  },
+  {
+    "id": "arxiv-cs-cl",
+    "type": "rss",
+    "url": "http://export.arxiv.org/api/query?search_query=cat:cs.CL&sortBy=submittedDate&sortOrder=descending&max_results=150",
+    "weight": 0.5,
+    "enabled": true
+  },
+  {
+    "id": "arxiv-cs-lg",
+    "type": "rss",
+    "url": "http://export.arxiv.org/api/query?search_query=cat:cs.LG&sortBy=submittedDate&sortOrder=descending&max_results=150",
     "weight": 0.5,
     "enabled": true
   },
@@ -16,7 +30,21 @@
   {
     "id": "hn-frontpage",
     "type": "rss",
-    "url": "https://hnrss.org/frontpage?points=100",
+    "url": "https://hnrss.org/frontpage?points=30",
+    "weight": 0.4,
+    "enabled": true
+  },
+  {
+    "id": "hn-search-llm",
+    "type": "rss",
+    "url": "https://hnrss.org/newest?q=LLM,LLMs,large+language+model,GPT&points=30",
+    "weight": 0.4,
+    "enabled": true
+  },
+  {
+    "id": "hn-search-ai",
+    "type": "rss",
+    "url": "https://hnrss.org/newest?q=%22AI+agent%22,%22AI+agents%22,%22open-source+model%22,%22open+weights%22&points=25",
     "weight": 0.4,
     "enabled": true
   },
@@ -44,8 +72,29 @@
   {
     "id": "github-new-llm-tools",
     "type": "github",
-    "url": "https://api.github.com/search/repositories?q=topic:llm,large-language-models,ai-tools+created:%3E{{since_days:7}}&sort=stars&order=desc&per_page=15",
+    "url": "https://api.github.com/search/repositories?q=topic:llm,large-language-models,ai-tools+created:%3E{{since_days:7}}&sort=stars&order=desc&per_page=30",
     "weight": 0.5,
+    "enabled": true
+  },
+  {
+    "id": "github-llm-inference",
+    "type": "github",
+    "url": "https://api.github.com/search/repositories?q=topic:llm-inference,inference,quantization+created:%3E{{since_days:7}}&sort=stars&order=desc&per_page=20",
+    "weight": 0.4,
+    "enabled": true
+  },
+  {
+    "id": "github-finetuning",
+    "type": "github",
+    "url": "https://api.github.com/search/repositories?q=topic:fine-tuning,lora,rlhf+created:%3E{{since_days:7}}&sort=stars&order=desc&per_page=20",
+    "weight": 0.4,
+    "enabled": true
+  },
+  {
+    "id": "github-mcp-tools",
+    "type": "github",
+    "url": "https://api.github.com/search/repositories?q=topic:model-context-protocol,mcp-server,ai-agents+created:%3E{{since_days:7}}&sort=stars&order=desc&per_page=20",
+    "weight": 0.4,
     "enabled": true
   },
   {
@@ -67,14 +116,32 @@
     "type": "exa",
     "url": "AI and LLM ecosystem news this week: model releases, agents, inference, safety and alignment, AI hardware, open source",
     "weight": 0.6,
-    "enabled": true
+    "enabled": true,
+    "numResults": 30
   },
   {
     "id": "exa-agent-releases",
     "type": "exa",
     "url": "AI agent framework, LLM tool, or open source AI project major release announcement",
     "weight": 0.4,
-    "enabled": true
+    "enabled": true,
+    "numResults": 30
+  },
+  {
+    "id": "exa-model-launches",
+    "type": "exa",
+    "url": "new frontier LLM release this week: GPT, Gemini, Claude, Llama, Qwen, DeepSeek model launch announcement",
+    "weight": 0.4,
+    "enabled": true,
+    "numResults": 30
+  },
+  {
+    "id": "exa-ai-industry",
+    "type": "exa",
+    "url": "AI industry news this week: OpenAI Anthropic Google DeepMind Meta announcement, funding, product launch",
+    "weight": 0.4,
+    "enabled": true,
+    "numResults": 30
   },
   {
     "id": "exa-cn-ai",
@@ -124,5 +191,51 @@
     "url": "AI LLM agents deep learning explained",
     "weight": 0.3,
     "enabled": true
+  },
+  {
+    "id": "exa-ondevice-ai",
+    "type": "exa",
+    "url": "on-device AI and edge AI news this week: smartphone NPU, on-device LLM, small language model deployment",
+    "weight": 0.4,
+    "enabled": true,
+    "numResults": 20
+  },
+  {
+    "id": "github-local-llm",
+    "type": "github",
+    "url": "https://api.github.com/search/repositories?q=topic:local-llm,ollama,llama-cpp+created:%3E{{since_days:7}}&sort=stars&order=desc&per_page=20",
+    "weight": 0.4,
+    "enabled": true
+  },
+  {
+    "id": "exa-benchmark-sota",
+    "type": "exa",
+    "url": "LLM benchmark state of the art record this week: reasoning, coding, math evaluation new leader",
+    "weight": 0.4,
+    "enabled": true,
+    "numResults": 20
+  },
+  {
+    "id": "exa-open-weights",
+    "type": "exa",
+    "url": "open weights model release this week: Hugging Face upload, Apache license LLM, open source foundation model",
+    "weight": 0.4,
+    "enabled": true,
+    "numResults": 20
+  },
+  {
+    "id": "github-inference-engines",
+    "type": "github",
+    "url": "https://api.github.com/search/repositories?q=topic:vllm,sglang,llm-serving+created:%3E{{since_days:7}}&sort=stars&order=desc&per_page=15",
+    "weight": 0.4,
+    "enabled": true
+  },
+  {
+    "id": "exa-ai-hardware",
+    "type": "exa",
+    "url": "AI inference hardware news this week: Nvidia, AMD, Groq, Cerebras announcement, LLM inference performance",
+    "weight": 0.4,
+    "enabled": true,
+    "numResults": 20
   }
 ]
