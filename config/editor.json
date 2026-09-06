@@ -6,7 +6,7 @@
   "enabled": true,
   "stagingDir": "staging/jobs",
   "writer": {
-    "batchSize": 3,
+    "batchSize": 2,
     "maxTokens": 6000,
     "temperature": 0.3,
     "chain": [
