@@ -1,0 +1,33 @@
+{
+  "id": "laozhang-v1",
+  "displayName": "老张(画像卡 v1 草案,2026-09-06 小智起草,待老张修订)",
+  "authoringNote": "依据=工作区六个子项目的实际工作推断(增量三问的判定基准)。老张修订本文件后,anysearch/exa 查询词与增量三问提示词随版本迭代。",
+  "currentlyWorkingOn": [
+    "fati:端侧 AI 故事信息流(Electron+React 桌面应用,产品主线)",
+    "fati-server:AI 自动化内容生产与全渠道分发(Fastify)",
+    "tuna:AI 时代内容社交网络(端侧社交 App,三级瀑布流)",
+    "fati-local-service:Rust 本地推理守护进程",
+    "fati-tavern:浏览器端 AI 角色扮演 PWA",
+    "domain-bot:领域需求探针(本产线)",
+    "adu-scan:新英格兰 ADU 空间智能扫描与模块化建筑销售"
+  ],
+  "topicsOfInterest": [
+    { "topic": "AI 编码工具与Coding Plan", "why": "日常主力生产力,订阅成本与模型选型直接相关" },
+    { "topic": "端侧/本地推理(llama.cpp, MLX, LiteRT-LM, 量化)", "why": "fati/fati-local-service/tuna 的技术底座" },
+    { "topic": "小模型能力演进(3B-8B 级)", "why": "端侧硬件跑得动的模型选型依据" },
+    { "topic": "多 agent 协作与 CLI agent 生态", "why": "工作区总管制+外派纪律的方法论来源" },
+    { "topic": "AI 内容生产管线与分发", "why": "fati-server/domain-bot 的业务域" },
+    { "topic": "LLM API 价格与模型发布(主流厂商)", "why": "订阅与 API 成本决策" }
+  ],
+  "notInterested": [
+    "卖课/培训/少儿编程推广",
+    "招聘信息与职场鸡汤",
+    "币圈/Web3 投机(除非与 AI 基建有实质交叉)",
+    "泛科技产品测评(手机/家电)"
+  ],
+  "readingStyle": {
+    "language": "中英皆可,中文优先",
+    "depth": "L2 概要看方向,L3 深聊要可操作细节",
+    "volume": "宁缺毋滥,每日 ≤10 条"
+  }
+}
