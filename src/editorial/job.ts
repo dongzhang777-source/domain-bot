@@ -24,6 +24,8 @@ export interface BatchOutcome<TResult> {
 
 export interface EndpointUsageStat {
   calls: number
+  /** 实际服务的模型名（DB-13/P2-4：provider.chat 回读响应，8052 会改写 model，必须存回读值） */
+  model?: string
   promptTokens: number
   completionTokens: number
   /** 思考型模型的推理 token。实测占 completion 的 70-85%，不单独记就会把批大小估错一个量级 */
@@ -144,6 +146,7 @@ function recordUsage<TResult>(state: JobState<TResult>, usage: Usage | undefined
   const id = endpointId ?? usage?.endpointId ?? 'unknown'
   const stat = (state.endpointUsage[id] ??= {
     calls: 0,
+    model: usage?.model,
     promptTokens: 0,
     completionTokens: 0,
     reasoningTokens: 0,
@@ -153,6 +156,7 @@ function recordUsage<TResult>(state: JobState<TResult>, usage: Usage | undefined
   stat.calls += 1
   if (failed) stat.failures += 1
   if (usage) {
+    if (usage.model) stat.model = usage.model // 以最近一次回读为准
     stat.promptTokens += usage.promptTokens
     stat.completionTokens += usage.completionTokens
     stat.reasoningTokens += usage.reasoningTokens
@@ -224,6 +228,11 @@ export async function runJob<TItem, TResult>(opts: RunJobOptions<TItem, TResult>
 
 /** 生成稳定的 jobId：同一天同一产线同一角色续跑同一个作业，而不是每次新起。 */
 export function makeJobId(role: 'writer' | 'reviewer', personaId: string, dayStamp: number): string {
-  const day = new Date(dayStamp).toISOString().slice(0, 10).replace(/-/g, '')
+  // DB-13/P2-1（2026-09-05 小巴审查）：用**本地**日期——旧实现 toISOString 是 UTC，
+  // 波士顿用户晚 20:00 后跑批产 staging 文件名日期与本地差一天，且跨 UTC 午夜的中断
+  // 续跑会新起作业（writer 单轮 ≈53 分钟，重跑代价高）。已知一次性代价：jobId 变化使
+  // staging/jobs 既有进度文件不再匹配（可重跑中间态，非审计留档），切换日续跑失效一次。
+  const d = new Date(dayStamp)
+  const day = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
   return `${role}-${personaId}-${day}`
 }

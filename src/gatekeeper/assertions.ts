@@ -10,7 +10,8 @@ import { HOOK_LIMITS, MIN_HOOK_CHARS, SUMMARY_MAX, WHY_MAX, isTitlePrefix } from
 import type { GatesConfig, GatekeeperInput, PersonaConfig } from '../types.js'
 
 /**
- * 主编终审：十条硬断言，全部**客观可判定**，一票否决。
+ * 主编终审：一组硬断言（条数随判据演进，当前清单见 runAssertions 返回数组——
+ * DB-11 起新增 gk:htmlLeak/gk:hollowSummary，勿在注释里写死数字），全部**客观可判定**，一票否决。
  *
  * 为什么终审只用客观断言、不用 LLM 打分做闸门：
  * 本项目已有「打分饱和 + 传送带消耗使『噪音逐轮下降』验收标准完全无读数」的前车之鉴
@@ -53,9 +54,11 @@ const SCORE_ECHO = /(价值|得分|分数|score)\s*[:：]?\s*\d+\.\d|\d\.\d{2}/
 /** DB-11/D1：tuna local-brief 路径不过 sanitize，裸标签会原样上屏。
  *  不用标签白名单：LLM 会话转录混进的 `<example>`/`<user>` 这类 XML 形标签同样上屏。 */
 const HTML_TAG = /<\/?[a-z][a-z0-9-]*(?:\s[^<>]*)?>/i
-/** DB-11/D3：视频/落地页抓取只拿到平台 chrome（「频道 · 1.2万次观看」「123K views」），无实质内容 */
-const VIEWER_CHROME =
-  /频道\s*·\s*[\d,.]+\s*万?\s*次观看|[\d,.]+\s*[KMB]?\s*(?:views|subscribers|plays)|watch\s+later|subscribe\b|share\b|阅读\s*[\d,.]+\s*万?\s*次|次观看|位订阅者/gi
+// DB-13/P2-5（2026-09-05 小巴审查）：正则源单独保存，substanceOf 内每次 new RegExp('…', 'gi')
+// 局部创建——模块级带 g 正则一旦被 .test()/.exec() 调用会跨调用污染 lastIndex（replace 无此问题，
+// 但禁令靠自觉不如结构上消除）。**勿直接删 g**：replace 需要全局语义（剥全部 chrome 而非首处）。
+const VIEWER_CHROME_SOURCE =
+  '频道\\s*·\\s*[\\d,.]+\\s*万?\\s*次观看|[\\d,.]+\\s*[KMB]?\\s*(?:views|subscribers|plays)|watch\\s+later|subscribe\\b|share\\b|阅读\\s*[\\d,.]+\\s*万?\\s*次|次观看|位订阅者'
 
 /** 单条终审。返回全部断言结果（不是遇错即停），便于看板按 ruleId 统计否决分布。 */
 export function runAssertions(item: GatekeeperInput, input: AssertionInput): AssertionVerdict[] {
@@ -268,7 +271,8 @@ function checkHtmlLeak(item: GatekeeperInput): AssertionVerdict {
  */
 function checkHollowSummary(item: GatekeeperInput): AssertionVerdict {
   const substanceOf = (t: string): number => {
-    const text = t.replace(/https?:\/\/\S+/g, ' ').replace(VIEWER_CHROME, ' ')
+    const chrome = new RegExp(VIEWER_CHROME_SOURCE, 'gi') // 每次调用局部创建（见源串上方说明）
+    const text = t.replace(/https?:\/\/\S+/g, ' ').replace(chrome, ' ')
     const latin = text.match(/[A-Za-z]{2,}/g)?.length ?? 0
     const cjk = text.match(/[\u4e00-\u9fff]/g)?.length ?? 0
     return latin + cjk
