@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.domain-bot</string>
+
+    <!-- 工作目录：保证相对路径与 .env 正常加载（按 CWD 查找） -->
+    <key>WorkingDirectory</key>
+    <string>/Users/aiatwork/Projects/domain-bot</string>
+
+    <!-- 关键：注入完整的 PATH。注意 launchd 不展开 ~，必须写绝对路径 -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/Users/aiatwork/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- 入口：DB-04 后产线入口是 dist/cli.js（`run --persona=all` 跑双产线）。
+         dist/index.js 仅作兼容转发保留，不应再由 launchd 指着它——
+         指向退役入口会让定时作业的行为取决于那个转发壳里的默认值。 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/aiatwork/.local/bin/node</string>
+        <string>--env-file-if-exists=.env</string>
+        <string>dist/cli.js</string>
+        <string>run</string>
+        <string>--persona=all</string>
+    </array>
+
+    <!-- ❗不得用 KeepAlive（DB-04 修正）。
+         旧配置是 RunAtLoad+KeepAlive 守护一个**常驻循环**（日推 6 条 + Telegram 长轮询），
+         那时语义成立。但老张 2026-09-04 裁决「只保留批产线、砍掉每日摘要」后，
+         本命令是**一次性作业**（跑完即退，退出码 0）。KeepAlive=true 与一次性作业
+         组合 = launchd 认为「它又挂了」而立即重拉，形成紧凑重启循环：
+         每轮重跑采集与发布，靠指纹库幂等才没重发内容，但观测序列会被刷成垃圾。
+         改用 StartCalendarInterval：定时触发，跑完就结束，不重拉。 -->
+    <key>RunAtLoad</key>
+    <false/>
+    <!-- 多时段批产（DB-08 Phase 3，2026-09-05 老张批）：03:00 吃隔夜积累高峰（主轮），
+         12:00 / 19:00 补采欧美/亚洲时段增量。宽通道（recall）启用后单轮时长增加
+         （校准 24h 缓存 + 待定池 ≤20 条判定），ExitTimeOut 仍留 2 小时宽限。
+         三轮各自独立，指纹库防重放保证不重发内容。 -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>3</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>12</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>19</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
+    <!-- 单次作业上限：启用编辑部后正常在 1 小时内，给到 2 小时宽限。
+         超时被杀会残留 memory/.lock（信号清理钩子对 SIGKILL 无效），
+         而 acquireLock 对**活 PID** 一律拒绝——下次定时会直接失败。
+         故宁可给足宽限也不要让它被中途杀。 -->
+    <key>ExitTimeOut</key>
+    <integer>7200</integer>
+
+    <!-- 日志落盘目录 -->
+    <key>StandardOutPath</key>
+    <string>/Users/aiatwork/Projects/domain-bot/logs/stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/aiatwork/Projects/domain-bot/logs/stderr.log</string>
+</dict>
+</plist>
