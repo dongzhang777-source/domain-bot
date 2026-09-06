@@ -11,13 +11,22 @@
     "temperature": 0.3,
     "chain": [
       {
+        "id": "deepseek-byok",
+        "baseUrlEnv": "DEEPSEEK_WRITER_BASE_URL",
+        "baseUrlDefault": "https://api.deepseek.com/v1",
+        "apiKeyEnv": "DEEPSEEK_API_KEY",
+        "modelEnv": "DEEPSEEK_WRITER_MODEL",
+        "modelDefault": "deepseek-v4-flash",
+        "timeoutMs": 180000
+      },
+      {
         "id": "nous-proxy",
         "baseUrlEnv": "EDITOR_WRITER_FALLBACK_BASE_URL",
         "baseUrlDefault": "http://127.0.0.1:8052/v1",
-        "apiKeyEnv": "EDITOR_WRITER_API_KEY",
+        "apiKeyEnv": "EDITOR_WRITER_FALLBACK_API_KEY",
         "modelEnv": "EDITOR_WRITER_FALLBACK_MODEL",
         "modelDefault": "qwen3.7-plus",
-        "timeoutMs": 180000
+        "timeoutMs": 120000
       },
       {
         "id": "nvidia-nim",
