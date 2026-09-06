@@ -336,31 +336,35 @@ async function reviewGold(
 ): Promise<Array<ReviewVerdict | null>> {
   const inputs = gold.map((g) => ({ title: g.title, body: g.body ?? '' }))
   const calibDir = mkdtempSync(join(tmpdir(), 'dbot-calibrate-'))
-  const job = await runJob<{ title: string; body: string }, ReviewVerdict>({
-    jobId: `calibrate-${persona.id}`,
-    role: 'reviewer',
-    persona,
-    items: inputs,
-    batchSize: config.reviewer.batchSize,
-    // 校准作业**不得**续跑：jobId 固定为 calibrate-<persona>，若落固定 staging，
-    // runJob 的 resumable 判据（同 jobId+同 totalItems/batchSize）会把上一次的完成态
-    // 无限复用——2026-09-05 实测：改完 reviewer 配置（reasoning_effort:low / maxTokens
-    // 3000）重跑整链，calibrate 仍精确返回旧结果（34.0%/63.8%），新配置根本没生效。
-    // 每次用唯一临时目录，无 prior 可续，自检必然真实重跑。
-    stagingDir: calibDir,
-    runBatch: async (batch) => {
-      const r = await reviewBatch(provider, batch, persona, { maxTokens: config.reviewer.maxTokens })
-      return { results: r.verdicts, usage: r.usage, truncated: r.truncated, error: r.error }
-    },
-  })
   // DB-13/P2-2（2026-09-05 小巴审查）：临时目录用后即删——mkdtemp 每轮泄漏一个目录
-  // 违反「工具产物零容忍」。失败也要删（finally 语义），删除失败不遮蔽主流程。
+  // 违反「工具产物零容忍」。清理必须用 finally：job 失败（runJob 抛错）时目录同样要删，
+  // 否则「异常路径泄漏」照样成立；删除失败不遮蔽主流程。
   try {
-    rmSync(calibDir, { recursive: true, force: true })
-  } catch {
-    console.error(`[calibrate] 临时目录清理失败（不影响结果）：${calibDir}`)
+    const job = await runJob<{ title: string; body: string }, ReviewVerdict>({
+      jobId: `calibrate-${persona.id}`,
+      role: 'reviewer',
+      persona,
+      items: inputs,
+      batchSize: config.reviewer.batchSize,
+      // 校准作业**不得**续跑：jobId 固定为 calibrate-<persona>，若落固定 staging，
+      // runJob 的 resumable 判据（同 jobId+同 totalItems/batchSize）会把上一次的完成态
+      // 无限复用——2026-09-05 实测：改完 reviewer 配置（reasoning_effort:low / maxTokens
+      // 3000）重跑整链，calibrate 仍精确返回旧结果（34.0%/63.8%），新配置根本没生效。
+      // 每次用唯一临时目录，无 prior 可续，自检必然真实重跑。
+      stagingDir: calibDir,
+      runBatch: async (batch) => {
+        const r = await reviewBatch(provider, batch, persona, { maxTokens: config.reviewer.maxTokens })
+        return { results: r.verdicts, usage: r.usage, truncated: r.truncated, error: r.error }
+      },
+    })
+    return job.results
+  } finally {
+    try {
+      rmSync(calibDir, { recursive: true, force: true })
+    } catch {
+      console.error(`[calibrate] 临时目录清理失败（不影响结果）：${calibDir}`)
+    }
   }
-  return job.results
 }
 
 function formatForLog(report: CalibrationReport): string {
