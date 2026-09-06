@@ -1,6 +1,7 @@
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { rmSync } from 'node:fs'
 import type { FetchFn, PersonaConfig, ScoredItem } from '../types.js'
 import { EditorialProvider, type EditorialConfig, type Usage } from './provider.js'
 import { makeJobId, runJob, type JobResult, type EndpointUsageStat } from './job.js'
@@ -213,47 +214,63 @@ export async function runEditorial(opts: EditorialRunOptions): Promise<Editorial
   const sameEndpoint =
     writerProvider.endpoints[0]?.baseUrl === reviewerProvider.endpoints[0]?.baseUrl
 
-  const writerJobPromise = writerUsable
-    ? runJob<ReturnType<typeof toWriterInput>, WrittenCopy>({
-        jobId: makeJobId('writer', opts.persona.id, now),
-        role: 'writer',
-        persona: opts.persona,
-        items: inputs,
-        batchSize: opts.config.writer.batchSize,
-        stagingDir: join(opts.root, opts.config.stagingDir),
-        runBatch: async (batch) => {
-          const r = await writeBatch(writerProvider, batch, opts.persona, { maxTokens: opts.config.writer.maxTokens })
-          return { results: r.copies, usage: r.usage, truncated: r.truncated, error: r.error }
-        },
-        onProgress: (s) => log(`[writer] ${s.completedBatches.length}/${s.totalBatches} 批完成，降级 ${s.degradedBatches.length}`),
-      })
-    : Promise.resolve(null)
+  // DB-13/P1-1（2026-09-05 小巴审查）：runJob 是 async 函数，调用即开始执行——
+  // 旧写法先启动两个 Promise 再 await，「同端点串行」从未生效（已实测发作：
+  // reviewer 降级到 8052 后与 writer 并发撞车）。修复 = 把启动推迟到分支内。
+  const startWriter = () =>
+    runJob<ReturnType<typeof toWriterInput>, WrittenCopy>({
+      jobId: makeJobId('writer', opts.persona.id, now),
+      role: 'writer',
+      persona: opts.persona,
+      items: inputs,
+      batchSize: opts.config.writer.batchSize,
+      stagingDir: join(opts.root, opts.config.stagingDir),
+      runBatch: async (batch) => {
+        const r = await writeBatch(writerProvider, batch, opts.persona, { maxTokens: opts.config.writer.maxTokens })
+        return { results: r.copies, usage: r.usage, truncated: r.truncated, error: r.error }
+      },
+      onProgress: (s) => log(`[writer] ${s.completedBatches.length}/${s.totalBatches} 批完成，降级 ${s.degradedBatches.length}`),
+    })
 
-  const reviewerJobPromise = reviewerUsable
-    ? runJob<ReturnType<typeof toWriterInput>, ReviewVerdict>({
-        jobId: makeJobId('reviewer', opts.persona.id, now),
-        role: 'reviewer',
-        persona: opts.persona,
-        items: inputs,
-        batchSize: opts.config.reviewer.batchSize,
-        stagingDir: join(opts.root, opts.config.stagingDir),
-        runBatch: async (batch) => {
-          const r = await reviewBatch(reviewerProvider, batch, opts.persona, { maxTokens: opts.config.reviewer.maxTokens })
-          return { results: r.verdicts, usage: r.usage, truncated: r.truncated, error: r.error }
-        },
-        onProgress: (s) => log(`[reviewer] ${s.completedBatches.length}/${s.totalBatches} 批完成，降级 ${s.degradedBatches.length}`),
-      })
-    : Promise.resolve(null)
+  const startReviewer = () =>
+    runJob<ReturnType<typeof toWriterInput>, ReviewVerdict>({
+      jobId: makeJobId('reviewer', opts.persona.id, now),
+      role: 'reviewer',
+      persona: opts.persona,
+      items: inputs,
+      batchSize: opts.config.reviewer.batchSize,
+      stagingDir: join(opts.root, opts.config.stagingDir),
+      runBatch: async (batch) => {
+        const r = await reviewBatch(reviewerProvider, batch, opts.persona, { maxTokens: opts.config.reviewer.maxTokens })
+        return { results: r.verdicts, usage: r.usage, truncated: r.truncated, error: r.error }
+      },
+      onProgress: (s) => log(`[reviewer] ${s.completedBatches.length}/${s.totalBatches} 批完成，降级 ${s.degradedBatches.length}`),
+    })
 
-  // 同端点时串行（llama-server 单槽位，并发会互相拖慢甚至排队超时）；异端点并行
+  // 同端点时串行（llama-server 单槽位，并发会互相拖慢甚至排队超时）；异端点并行。
+  // 注意：sameEndpoint 只比配置首端点，拦不住「降级后撞车」（配置注释已承认）——
+  // 撞车探测看下方 endpoointUsage 交集告警。
   let writerJob: JobResult<WrittenCopy> | null
   let reviewerJob: JobResult<ReviewVerdict> | null
   if (sameEndpoint) {
     log('[editorial] writer 与 reviewer 同端点，改串执行（避免单槽位互相拖慢）')
-    writerJob = await writerJobPromise
-    reviewerJob = await reviewerJobPromise
+    writerJob = writerUsable ? await startWriter() : null
+    reviewerJob = reviewerUsable ? await startReviewer() : null
   } else {
-    ;[writerJob, reviewerJob] = await Promise.all([writerJobPromise, reviewerJobPromise])
+    ;[writerJob, reviewerJob] = await Promise.all([
+      writerUsable ? startWriter() : Promise.resolve(null),
+      reviewerUsable ? startReviewer() : Promise.resolve(null),
+    ])
+  }
+
+  // DB-13/P1-1 配套：降级撞车探测——实际用量端点集合有交集即告警（比配置比对更真，
+  // 把配置注释里的「人工干预」变成自动告警）
+  {
+    const wIds = new Set(Object.keys(writerJob?.state.endpointUsage ?? {}))
+    const crashed = Object.keys(reviewerJob?.state.endpointUsage ?? {}).filter((id) => wIds.has(id))
+    if (crashed.length > 0) {
+      log(`[editorial] ⚠ 端点撞车：writer 与 reviewer 实际都用了 ${crashed.join('、')}（降级链重叠，单槽位互相拖慢，看板 endpoints 区可核对）`)
+    }
   }
 
   const copies = writerJob?.results ?? opts.candidates.map(() => null)
@@ -285,13 +302,15 @@ export async function runEditorial(opts: EditorialRunOptions): Promise<Editorial
   }
 }
 
-function lastUsage(endpointUsage: Record<string, { promptTokens: number; completionTokens: number; reasoningTokens: number; elapsedMs: number; calls: number; failures: number }>): Usage | null {
+function lastUsage(endpointUsage: Record<string, { model?: string; promptTokens: number; completionTokens: number; reasoningTokens: number; elapsedMs: number; calls: number; failures: number }>): Usage | null {
   const entries = Object.entries(endpointUsage)
   if (entries.length === 0) return null
   const [endpointId, s] = entries.reduce((a, b) => (b[1].calls > a[1].calls ? b : a))
   return {
     endpointId,
-    model: '',
+    // DB-13/P2-4：说真话——model 来自 provider.chat 回读的实际值（8052 会改写），
+    // 聚合时随 EndpointUsageStat 记录；旧快照无该字段时为 undefined（类型可选，不假装有效）
+    model: s.model ?? '',
     promptTokens: s.promptTokens,
     completionTokens: s.completionTokens,
     reasoningTokens: s.reasoningTokens,
@@ -316,6 +335,7 @@ async function reviewGold(
   config: EditorialConfig,
 ): Promise<Array<ReviewVerdict | null>> {
   const inputs = gold.map((g) => ({ title: g.title, body: g.body ?? '' }))
+  const calibDir = mkdtempSync(join(tmpdir(), 'dbot-calibrate-'))
   const job = await runJob<{ title: string; body: string }, ReviewVerdict>({
     jobId: `calibrate-${persona.id}`,
     role: 'reviewer',
@@ -327,12 +347,19 @@ async function reviewGold(
     // 无限复用——2026-09-05 实测：改完 reviewer 配置（reasoning_effort:low / maxTokens
     // 3000）重跑整链，calibrate 仍精确返回旧结果（34.0%/63.8%），新配置根本没生效。
     // 每次用唯一临时目录，无 prior 可续，自检必然真实重跑。
-    stagingDir: mkdtempSync(join(tmpdir(), 'dbot-calibrate-')),
+    stagingDir: calibDir,
     runBatch: async (batch) => {
       const r = await reviewBatch(provider, batch, persona, { maxTokens: config.reviewer.maxTokens })
       return { results: r.verdicts, usage: r.usage, truncated: r.truncated, error: r.error }
     },
   })
+  // DB-13/P2-2（2026-09-05 小巴审查）：临时目录用后即删——mkdtemp 每轮泄漏一个目录
+  // 违反「工具产物零容忍」。失败也要删（finally 语义），删除失败不遮蔽主流程。
+  try {
+    rmSync(calibDir, { recursive: true, force: true })
+  } catch {
+    console.error(`[calibrate] 临时目录清理失败（不影响结果）：${calibDir}`)
+  }
   return job.results
 }
 

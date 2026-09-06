@@ -213,6 +213,18 @@ export function auditBoard(board: QualityBoard): BoardAudit {
   if (board.editorial.enabled && !board.editorial.active) {
     warnings.push(`AI 编辑部已启用但未生效，本轮全量走机械兜底：${board.editorial.inactiveReason ?? '原因未记录'}`)
   }
+  // DB-14/P1-1 配套（2026-09-05 小巴审查）：运行时撞车探测——sameEndpoint 只比配置
+  // 首端点，拦不住「降级后实际撞车」（17:56 轮实测 reviewer 降级到 8052 与 writer 并发）。
+  // 这里看实际用量的端点交集，把配置注释里的「人工干预」升级为看板自动告警。
+  {
+    const wIds = new Set(board.editorial.endpoints.filter((e) => e.role === 'writer').map((e) => e.endpointId))
+    const crashed = board.editorial.endpoints.filter((e) => e.role === 'reviewer' && wIds.has(e.endpointId)).map((e) => e.endpointId)
+    if (crashed.length > 0) {
+      warnings.push(
+        `端点撞车：writer 与 reviewer 实际都用了 ${[...new Set(crashed)].join('、')}（降级链重叠，并发请求互相拖慢，建议错开降级末端或串行）`,
+      )
+    }
+  }
   if (board.editorial.truncatedBatches > 0) {
     warnings.push(`${board.editorial.truncatedBatches} 个批因 max_tokens 撞顶被截断（批大小或 maxTokens 配错，该批产出已降级）`)
   }
