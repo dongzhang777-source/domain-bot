@@ -148,13 +148,25 @@ export class EditorialProvider {
    * （completion_tokens 恰等于 max_tokens、finish_reason=length），这种响应 HTTP 200
    * 但内容不可用——若只看 status 就会把半截 JSON 喂给下游。
    */
-  async chat(prompt: string, opts?: { maxTokens?: number; temperature?: number }): Promise<ChatResponse> {
+  async chat(
+    prompt: string,
+    opts?: {
+      maxTokens?: number
+      temperature?: number
+      /** 形状级校验：抛错 = 该端点失败，链自动降级到下一档 */
+      validate?: (content: string) => void
+    },
+  ): Promise<ChatResponse> {
     if (this.chain.length === 0) throw new AllEndpointsFailedError([])
 
     const attempts: Array<{ endpointId: string; error: string }> = []
     for (const ep of this.chain) {
       try {
         const res = await this.callEndpoint(ep, prompt, opts)
+        // HTTP 200 + finish=stop 但 JSON 形状不对的响应必须算该端点失败：
+        // parse 检查若只在调用方做，形状错误不落备胎、整批直降机械
+        //（2026-09-06 NIM 故障期 42% 批降级的根因）。
+        if (opts?.validate) opts.validate(res.content)
         return res
       } catch (err) {
         attempts.push({ endpointId: ep.id, error: err instanceof Error ? err.message : String(err) })

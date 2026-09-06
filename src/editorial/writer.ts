@@ -85,7 +85,13 @@ export async function writeBatch(
 ): Promise<WriterBatchResult> {
   if (items.length === 0) return { copies: [], truncated: false }
   try {
-    const res = await provider.chat(buildWriterPrompt(items, persona), opts)
+    const res = await provider.chat(buildWriterPrompt(items, persona), {
+      ...opts,
+      // 形状不对视同该端点失败 → 自动落备胎，而不是整批降机械
+      validate: (content) => {
+        if (!extractJsonArray(content).parsed) throw new Error('JSON 数组不可解析')
+      },
+    })
     const { items: parsed, parsed: ok } = extractJsonArray(res.content)
     if (!ok) {
       return { copies: items.map(() => null), usage: res.usage, truncated: res.truncated, error: 'JSON 数组不可解析' }

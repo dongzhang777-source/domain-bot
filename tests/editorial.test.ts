@@ -156,6 +156,27 @@ describe('EditorialProvider：自动降级链', () => {
     expect((await p.chat('hi')).usage.endpointId).toBe('b')
   })
 
+  it('validate 抛错视同该端点失败并降级（形状错误不落备胎就会整批直降机械——2026-09-06 NIM 故障期根因）', async () => {
+    const s = scriptedFetch([{ body: okBody('{"not":"an array"}') }, { body: okBody('[1]') }])
+    const p = new EditorialProvider(role([{ id: 'a', baseUrlDefault: 'http://a/v1' }, { id: 'b', baseUrlDefault: 'http://b/v1' }]), {} as NodeJS.ProcessEnv, s.fn)
+    const res = await p.chat('hi', { validate: (content) => {
+      if (!content.trim().startsWith('[')) throw new Error('JSON 数组不可解析')
+    } })
+    expect(s.calls).toHaveLength(2)
+    expect(res.usage.endpointId).toBe('b')
+  })
+
+  it('validate 全链不过时抛 AllEndpointsFailedError，attempts 记录形状错误原文', async () => {
+    const s = scriptedFetch([{ body: okBody('oops') }, { body: okBody('oops too') }])
+    const p = new EditorialProvider(role([{ id: 'a', baseUrlDefault: 'http://a/v1' }, { id: 'b', baseUrlDefault: 'http://b/v1' }]), {} as NodeJS.ProcessEnv, s.fn)
+    const err = await p.chat('hi', { validate: () => { throw new Error('形状不对') } }).then(
+      () => null,
+      (e) => e as AllEndpointsFailedError,
+    )
+    expect(err).toBeInstanceOf(AllEndpointsFailedError)
+    expect(err!.attempts.map((a) => a.error)).toEqual(['形状不对', '形状不对'])
+  })
+
   it('全链失败抛 AllEndpointsFailedError，且带每个端点的失败原因', async () => {
     const s = scriptedFetch([{ throw: 'timeout' }, { throw: 'refused' }])
     const p = new EditorialProvider(role([{ id: 'a', baseUrlDefault: 'http://a/v1' }, { id: 'b', baseUrlDefault: 'http://b/v1' }]), {} as NodeJS.ProcessEnv, s.fn)
@@ -281,6 +302,19 @@ describe('writer：三档钩子 + 摘要 + 人话 why', () => {
     const r = await writeBatch(p, [item], persona)
     expect(r.error).toContain('timeout')
     expect(r.copies).toEqual([null])
+  })
+
+  it('writeBatch：主端点返回非数组 JSON 时落备胎出稿，而不是降机械（2026-09-06 NIM 故障期 42% 批降级的修复）', async () => {
+    const s = scriptedFetch([
+      { body: okBody('{"note":"模型把对象当数组返回"}') },
+      { body: okBody([{ index: 0, hooks: ['钩子一讲技术结论与数据反差', '钩子二讲系统痛点与风险', '钩子三讲实践启示'], summary: '一段足够长的摘要内容。', why: '聚焦知识冲突评测' }]) },
+    ])
+    const p = new EditorialProvider(role([{ id: 'a', baseUrlDefault: 'http://a/v1' }, { id: 'b', baseUrlDefault: 'http://b/v1' }]), {} as NodeJS.ProcessEnv, s.fn)
+    const r = await writeBatch(p, [item], persona)
+    expect(r.error).toBeUndefined()
+    expect(r.copies[0]).not.toBeNull()
+    expect(r.copies[0]!.origin).toBe('llm')
+    expect(s.calls).toHaveLength(2)
   })
 
   it('writeBatch：漏答的条目为 null，不用中间值冒充（旧 LlmScorer 填 0.5 造假平台的教训）', async () => {
