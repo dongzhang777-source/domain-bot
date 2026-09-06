@@ -11,6 +11,15 @@
     "temperature": 0.3,
     "chain": [
       {
+        "id": "nous-proxy",
+        "baseUrlEnv": "EDITOR_WRITER_FALLBACK_BASE_URL",
+        "baseUrlDefault": "http://127.0.0.1:8052/v1",
+        "apiKeyEnv": "EDITOR_WRITER_API_KEY",
+        "modelEnv": "EDITOR_WRITER_FALLBACK_MODEL",
+        "modelDefault": "qwen3.7-plus",
+        "timeoutMs": 180000
+      },
+      {
         "id": "nvidia-nim",
         "baseUrlEnv": "EDITOR_WRITER_BASE_URL",
         "baseUrlDefault": "https://integrate.api.nvidia.com/v1",
@@ -18,15 +27,6 @@
         "modelEnv": "EDITOR_WRITER_MODEL",
         "modelDefault": "deepseek-ai/deepseek-v4-flash-0731",
         "timeoutMs": 120000
-      },
-      {
-        "id": "nous-proxy",
-        "baseUrlEnv": "EDITOR_WRITER_FALLBACK_BASE_URL",
-        "baseUrlDefault": "http://127.0.0.1:8052/v1",
-        "apiKeyEnv": "EDITOR_WRITER_API_KEY",
-        "modelEnv": "EDITOR_WRITER_FALLBACK_MODEL",
-        "modelDefault": "qwen3.7-plus",
-        "timeoutMs": 420000
       }
     ]
   },
