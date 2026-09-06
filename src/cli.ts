@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 import type { DomainConfig, FetchFn, GatesConfig, PersonaConfig, SourceConfig } from './types.js'
 import { collectStage, runPipeline, type PipelineOptions, type PipelineResult } from './pipeline.js'
-import { appendFingerprints, buildPack, loadFingerprints, writePack } from './publish/pack.js'
+import { appendFingerprints, attachEmbeddings, buildPack, loadFingerprints, writePack } from './publish/pack.js'
 import { formatSyncReport, syncPack } from './publish/sync-tuna.js'
 import { ingestTunaSignals, type IngestReport } from './ingest/tuna-signals.js'
 import { auditBoard, writeBoard } from './gatekeeper/board.js'
@@ -295,7 +295,7 @@ export async function runCommand(opts: RunOptions): Promise<RunOutcome> {
         io.stdout(`[${persona.id}] 候补池耗尽，实发 ${result.published.length} < 上限 ${persona.maxItems}（宁缺毋滥，不凑数）`)
       }
 
-      const emitted = emitPublished(result, persona, {
+      const emitted = await emitPublished(result, persona, {
         root,
         memoryDir,
         dryRun: opts.dryRun,
@@ -359,7 +359,7 @@ export interface EmitOutcome {
   exitCode: number
 }
 
-export function emitPublished(result: PipelineResult, persona: PersonaConfig, opts: EmitOptions): EmitOutcome {
+export async function emitPublished(result: PipelineResult, persona: PersonaConfig, opts: EmitOptions): Promise<EmitOutcome> {
   const io = opts.io
   // 看板自检：fatal 熔断（看板或闸门在骗人），warning 必须打到 stderr 但不阻断发布。
   // 分级理由：若把「编辑部降级」也当 fatal，端点一抖整轮就废；
@@ -383,10 +383,12 @@ export function emitPublished(result: PipelineResult, persona: PersonaConfig, op
     domain: persona.domain,
     generatedAt: opts.now ?? Date.now(),
   })
+  // E3 过渡态：内容向量随包下发（失败不阻断发布，见 attachEmbeddings 失败语义）
+  const embedded = await attachEmbeddings(pack, io)
   const packPath = writePack(pack, join(opts.root, 'outbox/tuna'))
   const boardPath = writeBoard(result.board, join(opts.root, 'evidence'))
   const added = appendFingerprints(opts.memoryDir, result.published)
-  io.stdout(`[${persona.id}] 发布 ${result.published.length} 条 → ${packPath}（指纹库 +${added}）`)
+  io.stdout(`[${persona.id}] 发布 ${result.published.length} 条 → ${packPath}（指纹库 +${added}，向量 +${embedded}）`)
 
   // 同步到 tuna：默认只算差异不落盘。人工拷贝是第三道影子工序，
   // 收编成命令后至少契约会被校验、差异会被看见。
@@ -691,7 +693,7 @@ export async function publishCommand(opts: PublishOptions): Promise<{ exitCode: 
     if (result.gatekeep.poolExhausted && result.published.length < persona.maxItems) {
       io.stdout(`[${persona.id}] 候补池耗尽，实发 ${result.published.length} < 上限 ${persona.maxItems}（宁缺毋滥，不凑数）`)
     }
-    const emitted = emitPublished(result, persona, {
+    const emitted = await emitPublished(result, persona, {
       root,
       memoryDir,
       dryRun: opts.dryRun,

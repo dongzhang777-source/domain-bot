@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { join } from 'node:path'
 import type { GatekeeperInput } from '../types.js'
 import { collectCanonicalUrls } from '../gates/fingerprint.js'
+import { embedText, isValidEmbedding } from '../embedding.js'
 
 /**
  * 内容包产出与跨产线指纹库。
@@ -65,6 +66,35 @@ export function buildPack(
     posts,
     brief: { generatedAt, items: published.map((p) => ({ postId: p.id, why: p.why, source: 'static' as const })) },
   }
+}
+
+/**
+ * 为包内每条 post 附上内容向量（E3 过渡态：向量随包下发，端侧只算 P 不算 V）。
+ * 向量面 = title + summary（L1/L2 读者可见面即匹配面）。
+ *
+ * 失败语义：单条向量化失败→该条**无 embedding 字段**继续发布（缺向量可后补，
+ * 坏向量会污染端侧兴趣向量 P，绝不带病入库）；整批失败→打印警告不阻断发布——
+ * 向量是增强属性，不能让它拖垮内容主链路。tuna 侧 LocalBriefNormalizer 会做
+ * 同样的合法性校验（维度/有限数），双保险。
+ */
+export async function attachEmbeddings(
+  pack: FeedPack,
+  io: { stderr: (line: string) => void },
+): Promise<number> {
+  let attached = 0
+  for (const post of pack.posts) {
+    try {
+      const text = `${String(post['title'] ?? '')}\n${String(post['summary'] ?? '')}`.trim()
+      if (!text) continue
+      const embedding = await embedText(text)
+      if (!isValidEmbedding(embedding)) throw new Error('向量未通过自校验')
+      post['embedding'] = embedding
+      attached += 1
+    } catch (err) {
+      io.stderr(`[pack] 向量化失败（该条无向量发布）: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  }
+  return attached
 }
 
 /**
