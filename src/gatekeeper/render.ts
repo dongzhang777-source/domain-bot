@@ -53,12 +53,24 @@ export function renderPost(item: ScoredItem, ctx: RenderContext): GatekeeperInpu
 
   const copy = ctx.copy ?? null
   const hooks = copy ? copy.hooks : deriveHooks(cleanTitle, cleanBody, ctx.persona.domain, lang, ctx.stopwords)
+
+  // L3 底料（2026-09-07 老张「L3 篇幅不够」）：亲写 body 优先——编辑部把心流层正文
+  // 写足的中文稿，过同一清洗链；缺省回退清洗后的原文（采集端截断已放宽到 6000，
+  // 两条路都不再是 1200 码点的断头料）。LLM 摘要仍不冒充正文（DB-02 缺口 d）。
+  const cleanCopyBody = copy?.body ? stripMetadata(stripHtml(copy.body)).trim() : ''
+  const body = cleanCopyBody || cleanBody || item.title
+  // 交付语言重判：亲写正文落地后，交付稿（summary+body）可能与原文不同语言
+  //（英文论文 + 中文亲写稿）。lang 决定篇幅上下限档（BODY_MIN/SUMMARY_MIN）与
+  // App 分流，必须按交付面判，不能透传原文语言。**必须在 ensureSummaryFloor
+  // 之前定稿**——否则补足用 en 档补到 300+、shape 检查用 zh 档卡 300，自相矛盾。
+  const langFinal = cleanCopyBody ? detectLang(`${copy?.summary ?? ''}\n${cleanCopyBody}`) : lang
+
   // 篇幅达标（2026-09-06 老张指令）：低于 SUMMARY_MIN 的薄稿在渲染层自动从正文补句，
   // writer 文案与机械兜底走同一条补足路径；终审 gk:summaryBelowFloor 只兜最后防线。
   const summary = ensureSummaryFloor(
     copy ? copy.summary : cleanBody.trim(),
-    cleanBody,
-    lang,
+    body,
+    langFinal,
   )
 
   // why 不得回显内部浮点数（DB-03 §2.4：`"AI深度思想·rss：价值 0.94"` 把打分器调试日志搬上 UI）。
@@ -71,11 +83,10 @@ export function renderPost(item: ScoredItem, ctx: RenderContext): GatekeeperInpu
     title: truncateChars(cleanTitle.trim(), 120),
     hooks,
     summary,
-    // L3 底料始终给清洗后的原文：LLM 摘要是 L2，不得拿摘要冒充原文（DB-02 缺口 d）
-    body: cleanBody || item.title,
+    body,
     why,
     url: item.url,
-    lang,
+    lang: langFinal,
     publishedAt: item.publishedAt,
     source: item.source,
     eventKey: ctx.eventKey ?? item.id,

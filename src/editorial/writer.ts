@@ -22,6 +22,12 @@ export interface WrittenCopy {
   hooks: string[]
   summary: string
   why: string
+  /**
+   * 亲写 L3 正文（可选，2026-09-07 老张「L3 篇幅不够」）：编辑部模式下小智把心流层
+   * 正文一起写足（基于原文素材的中文稿），渲染层优先采用；缺省仍用清洗后的原文底料。
+   * 过 stripHtml/stripMetadata 同一清洗链，篇幅由终审 gk:bodyBelowFloor 把关。
+   */
+  body?: string
   /** 产出来源：llm=模型写的；fallback=降级到机械兜底（看板必须能区分，否则质量塌回原点不可见） */
   origin: 'llm' | 'fallback'
   /** 模型给的分数（若有），仅供看板，**不参与任何判定** */

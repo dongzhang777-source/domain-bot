@@ -37,7 +37,8 @@ export function parseExaOutput(output: string, sourceId: string): RawItem[] {
       .replace(/^---$/gm, '')
       .replace(/\n{2,}/g, '\n')
       .trim()
-      .slice(0, 1200)
+      // 6000（2026-09-07 老张「L3 篇幅不够」）：同 anysearch，原 1200 截断致 L3 断头料
+      .slice(0, 6000)
     return {
       id: itemId(url, title, body),
       source: sourceId,

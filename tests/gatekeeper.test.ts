@@ -13,7 +13,7 @@ import { renderPost } from '../src/gatekeeper/render.js'
 import { BackfillPool } from '../src/gatekeeper/backfill.js'
 import { auditBoard, buildBoard } from '../src/gatekeeper/board.js'
 import { HeuristicScorer } from '../src/refinery/scorer.js'
-import { TITLE_ECHO_OVERLAP, titleOverlap, WHY_MAX } from '../src/render/tuna.js'
+import { TITLE_ECHO_OVERLAP, BODY_MIN, titleOverlap, WHY_MAX } from '../src/render/tuna.js'
 import type { GatesConfig, GatekeeperInput, PersonaConfig, ScoredItem } from '../src/types.js'
 
 /**
@@ -25,6 +25,20 @@ import type { GatesConfig, GatekeeperInput, PersonaConfig, ScoredItem } from '..
  */
 
 const gates = JSON.parse(readFileSync(join(process.cwd(), 'config/gates.json'), 'utf8')) as GatesConfig
+
+/** L3 正文下限（gk:bodyBelowFloor，zh600/en900）之后，fixture 默认底料必须像真实内容
+ * （产线 body 中位 1200 码点）而不是合成短句——短到过不了自己闸门的样本测不出回归。 */
+const LONG_BODY_PAD =
+  '这一实验同时在三类硬件配置上复测，覆盖本地 4090 工作站、A100 云节点与消费级笔记本，以验证结论在不同算力条件下的稳定性。' +
+  '作者还开放了完整的评测脚本、原始日志与复现指南，社区可以在自己的环境里以一条命令重建全部图表。' +
+  '讨论区目前最集中的争议在于采样温度的选择是否系统性抬高了基线，作者回应将在下一版补充温度扫描实验，并承诺把全部中间产物一并开源。' +
+  '此外，论文附录给出了每个子任务的误差条与置信区间，跨三次随机种子的方差控制在百分之一点二以内，显著优于前作的百分之四点七，' +
+  '这也解释了为什么多个独立团队在复现时得到的高度一致的数字。' +
+  '部署侧的实测数据同样值得关注：在开启连续批处理后，单卡吞吐提升约百分之三十七，尾延迟中位数保持在两百毫秒以内，' +
+  '代价是显存占用上升两成三，对小显存设备不够友好；作者给出的折中方案是把 KV 缓存量化到八比特，实测质量损失在一个点以内，' +
+  '不过该方案在长上下文场景尚无充分数据，团队计划在下个版本补齐五万 token 级别的压力测试与对比曲线。' +
+  '在工程落地层面，作者演示了三条接入路径：裸 HTTP 服务、LangChain 回调封装，以及面向推理引擎的 C++ 插件，三者的基准数据相差在一成半以内，团队可以按既有技术栈就近选择，不需要为评测本身迁移基础设施。' +
+  '附录还逐条回应了审稿人关于数据泄漏的质疑：全部评测集在模型权重冻结之后才发布，训练语料的时间截断点早于评测集六个月，n-gram 重合度扫描为零，公开的检查点哈希与训练日志一一对应，可供第三方独立核对。'
 
 const persona: PersonaConfig = {
   id: 'newsline',
@@ -52,7 +66,7 @@ function good(overrides: Partial<GatekeeperInput> = {}): GatekeeperInput {
     ],
     summary:
       'KC-Bench 是首个评估 LLM 智能体动态知识冲突的交互基准，覆盖九款前沿模型。实验设计上，基准把「参数知识」与「检索上下文」同时喂给模型，再测量其在两类信息打架时的判断质量，从而暴露 RAG 系统最常见的隐性失败模式。这一失败模式在检索增强生成（RAG）系统里尤为常见，工程团队需要专门的评测手段来定位。评测结论对 nine-model 对比表的解读也有提示：冲突越大，检索质量的边际收益越低。',
-    body: 'KC-Bench 是首个评估 LLM 智能体动态知识冲突的交互基准，覆盖九款前沿模型。实验显示参数知识与检索上下文冲突时性能明显退化。',
+    body: 'KC-Bench 是首个评估 LLM 智能体动态知识冲突的交互基准，覆盖九款前沿模型。实验显示参数知识与检索上下文冲突时性能明显退化。' + LONG_BODY_PAD,
     why: '聚焦你的关注点「benchmark」',
     url: 'https://arxiv.org/abs/2609.03884',
     lang: 'zh',
@@ -85,11 +99,11 @@ function expectRejected(item: GatekeeperInput, ruleId: string, ctx: Partial<Asse
   return verdicts
 }
 
-describe('十二条硬断言：违例样本逐个否决', () => {
+describe('十三条硬断言：违例样本逐个否决', () => {
   it('基准样本必须全绿（否则各违例用例测的是别的失败原因）', () => {
     const g = good()
     const verdicts = runAssertions(g, input({ batch: [g] }))
-    expect(verdicts).toHaveLength(13)
+    expect(verdicts).toHaveLength(14)
     expect(isAccepted(verdicts)).toBe(true)
   })
 
@@ -255,7 +269,7 @@ describe('gatekeep 编排：渲染 → 断言 → 递补 → 事件复检 → �
     // body 须 ≥ zh 概要下限 200 码点：概要过短时渲染层 ensureSummaryFloor 从 body 补句，
     // body 无料可补则触发 gk:summaryBelowFloor 拒收（2026-09-06 篇幅令）。此文本实测 201 码点。
     body: body ??
-      'KC-Bench 是首个评估 LLM 智能体动态知识冲突的交互基准，覆盖九款前沿模型。实验设计上，基准把「参数知识」与「检索上下文」同时喂给模型，再测量其在两类信息打架时的判断质量，从而暴露 RAG 系统最常见的隐性失败模式。这一失败模式在检索增强生成（RAG）系统里尤为常见，工程团队需要专门的评测手段来定位。评测结论对 nine-model 对比表的解读也有提示：冲突越大，检索质量的边际收益越低。',
+      ('KC-Bench 是首个评估 LLM 智能体动态知识冲突的交互基准，覆盖九款前沿模型。实验设计上，基准把「参数知识」与「检索上下文」同时喂给模型，再测量其在两类信息打架时的判断质量，从而暴露 RAG 系统最常见的隐性失败模式。这一失败模式在检索增强生成（RAG）系统里尤为常见，工程团队需要专门的评测手段来定位。评测结论对 nine-model 对比表的解读也有提示：冲突越大，检索质量的边际收益越低。' + LONG_BODY_PAD),
     url, publishedAt: NOW - 3_600_000, valueScore: score, isNew: true,
     reason: '聚焦你的关注点「benchmark」',
   })
@@ -330,7 +344,7 @@ describe('gatekeep 编排：渲染 → 断言 → 递补 → 事件复检 → �
     // renderPost 用 deriveHooks 生成钩子；断言作用于渲染产物而非 ScoredItem。
     // 若顺序颠倒（先断言 ScoredItem），机械截断/碎片钩子/浮点回显 三类缺陷全都测不到。
     const item = scored('i1', 'A Blind Trust the Bloody Thrust When Attacker Controlled Hook Updates Steer AI Agent Harnesses', 'https://ex.com/1', 0.9,
-      'arXiv:2609.03884v1 Announce Type: cross Abstract: Modern AI agent harnesses expose lifecycle hooks that bind shell commands. These results highlight how evaluation design shapes reported capability gaps across model families, harness implementations, and retrieval configurations in practice. Benchmark coverage spans tool selection, parameter passing, and error recovery under sandboxed execution, which is where real deployments fail first.')
+      'arXiv:2609.03884v1 Announce Type: cross Abstract: Modern AI agent harnesses expose lifecycle hooks that bind shell commands. These results highlight how evaluation design shapes reported capability gaps across model families, harness implementations, and retrieval configurations in practice. Benchmark coverage spans tool selection, parameter passing, and error recovery under sandboxed execution, which is where real deployments fail first. ' + LONG_BODY_PAD)
     const rendered = renderPost(item, { persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords) })
     // arXiv 元数据必须被 stripMetadata 清掉，不得出现在 summary 或钩子里
     expect(rendered.summary).not.toContain('arXiv:2609')
@@ -350,7 +364,7 @@ describe('gatekeep 编排：渲染 → 断言 → 递补 → 事件复检 → �
       'Neuronto Agentic Resource Discovery (ARD) Index. Federated search across every public ARD registry, ' +
         'plus a verified tool index read from each MCP server. Hybrid lexical and semantic retrieval, and ARD-Bench. ' +
         'These results highlight how evaluation design shapes reported capability gaps across model families, ' +
-        'harness implementations, and retrieval configurations in practice.',
+        'harness implementations, and retrieval configurations in practice. ' + LONG_BODY_PAD,
     )
     const rendered = renderPost(item, { persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords) })
     expect(rendered.hooks).toHaveLength(3)
@@ -564,7 +578,7 @@ describe('DB-11 修复回归锁：交付文本必须可直接上屏（tuna local
     id,
     title,
     url,
-    body: body ?? title,
+    body: body ?? (title + LONG_BODY_PAD),
     source: 'rss-1',
     publishedAt: NOW - 3_600_000,
     valueScore: score,
@@ -611,7 +625,7 @@ describe('DB-11 修复回归锁：交付文本必须可直接上屏（tuna local
       '<p>Spotify engineering <a href="https://engineering.atspotify.com/x">wrote about LLM serving</a></p>',
       'https://ex.com/html',
       0.9,
-      '<strong>Genie</strong> is a benchmark for agentic LLM tool use with 12 sandboxed execution tasks. These results highlight how evaluation design shapes reported capability gaps across model families, harness implementations, and retrieval configurations in practice. Benchmark coverage spans tool selection, parameter passing, and error recovery under sandboxed execution.',
+      '<strong>Genie</strong> is a benchmark for agentic LLM tool use with 12 sandboxed execution tasks. These results highlight how evaluation design shapes reported capability gaps across model families, harness implementations, and retrieval configurations in practice. Benchmark coverage spans tool selection, parameter passing, and error recovery under sandboxed execution. ' + LONG_BODY_PAD,
     )
     const rendered = renderPost(item, { persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords) })
     for (const field of [rendered.title, rendered.summary, rendered.body, ...rendered.hooks]) {
@@ -648,5 +662,57 @@ describe('DB-11 修复回归锁：交付文本必须可直接上屏（tuna local
     // 短文本原样通过；无空格超长串退化为硬切，不无限丢字
     expect(truncateWhy('短why', WHY_MAX)).toBe('短why')
     expect(Array.from(truncateWhy('a'.repeat(80), 40)).length).toBeLessThanOrEqual(WHY_MAX)
+  })
+})
+
+// ---------- L3 篇幅（2026-09-07 老张「很多 L3 级内容篇幅不够」） ----------
+
+describe('L3 篇幅：亲写 body 覆盖 + gk:bodyBelowFloor', () => {
+  const gates = JSON.parse(readFileSync(join(process.cwd(), 'config/gates.json'), 'utf8')) as GatesConfig
+  const persona: PersonaConfig = {
+    id: 'newsline', displayName: 'AI时事快线', domain: 'ai-llm', sources: ['rss-1'],
+    maxAgeHours: 72, maxItems: 3, minQualityScore: 6, clusterThreshold: 0.35, rejectRules: [],
+  }
+  function scored(id: string, title: string, url: string, valueScore: number, body: string): ScoredItem {
+    return { id, title, url, valueScore, body, source: 'rss-1', publishedAt: Date.now(), lang: 'zh' } as ScoredItem
+  }
+  const longCopyBody = '这是一段足够长的亲写中文正文，用于验证编辑部把 L3 心流层写足的契约。'.repeat(20) // ≈1400 码点
+
+  it('copy.body 存在时覆盖原文底料，且过同一清洗链（stripHtml/stripMetadata）', () => {
+    const item = scored('i1', '某论文标题', 'https://ex.com/1', 0.9, '原文底料——不应出现在 L3。')
+    const rendered = renderPost(item, {
+      persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords),
+      copy: { hooks: ['钩子一', '钩子二', '钩子三'], summary: '摘要', why: '相关', body: `<p>${longCopyBody}</p>`, origin: 'llm' },
+    })
+    expect(rendered.body).not.toContain('原文底料')
+    expect(rendered.body).toContain('亲写中文正文')
+    expect(rendered.body).not.toContain('<p>')
+  })
+
+  it('copy.body 缺省时回退原文底料（既有契约不回退）', () => {
+    const original = '清洗后的原文底料，采集端截断已放宽到 6000 码点。' + 'x'.repeat(700)
+    const item = scored('i1', '某论文标题', 'https://ex.com/1', 0.9, original)
+    const rendered = renderPost(item, { persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords) })
+    expect(rendered.body).toContain('原文底料')
+  })
+
+  it('gk:bodyBelowFloor：断头料（<下限）拒收，亲写足稿放行', () => {
+    const thin = scored('i1', '某推文', 'https://ex.com/1', 0.9, '就一句话的短正文。')
+    const thinRendered = renderPost(thin, { persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords) })
+    const thinVerdicts = runAssertions(thinRendered, input({ batch: [thinRendered] }))
+    const bodyFail = thinVerdicts.find((v) => v.ruleId === 'gk:bodyBelowFloor')
+    expect(bodyFail?.ok).toBe(false) // 断言本身红即可；rejectionOf 取首违例，可能被前置断言抢占
+
+    const rich = scored('i2', '某论文标题', 'https://ex.com/2', 0.9, '短原文。')
+    const richRendered = renderPost(rich, {
+      persona, digestId: 'abc1', index: 0, stopwords: new Set(gates.dedupe.eventStopwords),
+      copy: { hooks: ['钩子一', '钩子二', '钩子三'], summary: '摘要', why: '相关', body: longCopyBody, origin: 'llm' },
+    })
+    const richVerdicts = runAssertions(richRendered, input({ batch: [richRendered] }))
+    expect(rejectionOf(richVerdicts)?.ruleId).not.toBe('gk:bodyBelowFloor')
+  })
+
+  it('BODY_MIN 双档：zh 600 / en 900（数值钉死，防无意放宽）', () => {
+    expect(BODY_MIN).toEqual({ zh: 600, en: 900 })
   })
 })

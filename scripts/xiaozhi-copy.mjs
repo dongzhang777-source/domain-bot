@@ -4,9 +4,13 @@
 // 用法：
 //   node scripts/xiaozhi-copy.mjs --persona=newsline --input=/tmp/mycopy-newsline.json
 // input JSON 格式（键=候选 id，值=亲写文案）：
-//   { "<候选id>": { "hooks": ["钩子1","钩子2","钩子3"], "summary": "…", "why": "…" } }
+//   { "<候选id>": { "hooks": ["钩子1","钩子2","钩子3"], "summary": "…", "why": "…", "body": "…" } }
+// body 为可选的亲写 L3 正文（2026-09-07 老张「L3 篇幅不够」）：给了就用它作心流层
+// 底料（过 stripHtml/stripMetadata 清洗，终审 gk:bodyBelowFloor 把篇幅下限 zh600/en900），
+// 不给则回退原文。建议亲写 900–1500 码点中文正文。
 //
-// 流程：找该 persona 最新 candidates 快照 → editorialTargetsOf 按 maxItems 重算
+// 流程：找该 persona 最新 candidates 快照（或 --digest-id 指定的历史快照，用于回填
+// 历史轮次的亲写文案）→ editorialTargetsOf 按 maxItems 重算
 // targetIds（与 publish 阶段同一函数，杜绝下标错位）→ 按 id 取亲写文案，
 // 未覆盖的 id 记 null（机械兜底）→ 落 staging/copy-<persona>-<digestId>.json。
 // 之后正常跑 `npm run publish-feed -- --persona=<p>` 即可，终审断言照常把关。
@@ -52,9 +56,12 @@ const { EMPTY_EDITORIAL_STATS } = require('../dist/editorial/index.js');
 
 const root = process.cwd();
 const stagingDir = path.join(root, 'staging');
-const latest = findLatestStage(stagingDir, 'candidates', persona);
-if (!latest) {
-  console.error(`[xiaozhi-copy] ${persona} 无 candidates 快照，先跑 npm run collect`);
+const digestIdArg = arg('digest-id');
+const latest = digestIdArg
+  ? stagePath(stagingDir, 'candidates', persona, digestIdArg)
+  : findLatestStage(stagingDir, 'candidates', persona);
+if (!latest || !fs.existsSync(latest)) {
+  console.error(`[xiaozhi-copy] ${persona} 无 candidates 快照${digestIdArg ? `（digest-id=${digestIdArg}）` : ''}，先跑 npm run collect`);
   process.exit(2);
 }
 const snapshot = JSON.parse(fs.readFileSync(latest, 'utf8'));
@@ -72,11 +79,15 @@ const copies = targets.map((t) => {
   // checkMechanicalTruncation 处 TypeError 顶穿。形状不对走机械兜底，不进终审浪费坑位。
   if (!Array.isArray(c.hooks) || c.hooks.length !== 3 || !c.hooks.every((h) => typeof h === 'string')
     || typeof c.summary !== 'string' || typeof c.why !== 'string') return null;
+  // body（2026-09-07 老张「L3 篇幅不够」）：可选亲写正文，字符串非空才收；
+  // 缺省回退原文底料。形状不对的字段直接整条走机械兜底，不进终审浪费坑位。
+  if (c.body !== undefined && (typeof c.body !== 'string' || c.body.trim().length === 0)) return null;
   covered += 1;
   return {
     hooks: c.hooks,
     summary: c.summary,
     why: c.why,
+    ...(c.body !== undefined ? { body: c.body } : {}),
     origin: 'llm',
   };
 });

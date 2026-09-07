@@ -39,7 +39,9 @@ export function parseAnysearchOutput(output: string, sourceId: string): RawItem[
         .replace(/^- \*\*URL\*\*: .*\n?/gm, '')
         .replace(/\n{2,}/g, '\n')
         .trim()
-        .slice(0, 1200)
+        // 6000（2026-09-07 老张「L3 篇幅不够」）：原 1200 截断把 L3 心流层砍成断头料；
+        // 上限只防异常巨块，正文长度由终审 gk:bodyBelowFloor 把下限。
+        .slice(0, 6000)
       if (!title || !isPublicHttpsUrl(url)) continue
       out.push({
         id: itemId(url, title, body),

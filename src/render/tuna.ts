@@ -31,6 +31,12 @@ export const SUMMARY_MAX: Record<'zh' | 'en', number> = { zh: 300, en: 450 }
  * **改动必须双侧同步**：这里改数值须同步 tuna SUMMARY_LIMITS，反之亦然。
  */
 export const SUMMARY_MIN: Record<'zh' | 'en', number> = { zh: 200, en: 300 }
+/**
+ * L3 心流层正文下限（2026-09-07 老张「很多 L3 级内容篇幅不够」）：点开正文是断头料
+ * （推文空卡/1200 码点截断片段）=「垃圾」判定的又一形态。zh 600 / en 900 码点。
+ * 仅 bot 侧终审把关（tuna App 端 L3 是 ScrollView 无篇幅断言，无需同步）。
+ */
+export const BODY_MIN: Record<'zh' | 'en', number> = { zh: 600, en: 900 }
 /** why 限长，对齐 tuna BriefItem.MAX_WHY_CHARS */
 export const WHY_MAX = 40
 /** 钩子最短码点数。DB-03 §2.4 实测 `"arXiv:2609."` 为 11 字符，故门槛取 12。 */

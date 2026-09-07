@@ -6,7 +6,7 @@ import { BlacklistGate } from '../gates/blacklist.js'
 // 永远过不了自己的断言（实测踩过，一次打红 23 个用例）。
 import { topicTokens } from '../gates/eventCluster.js'
 import { PersonaGate } from '../gates/persona.js'
-import { HOOK_LIMITS, MIN_HOOK_CHARS, SUMMARY_MAX, SUMMARY_MIN, WHY_MAX, isTitlePrefix } from '../render/tuna.js'
+import { HOOK_LIMITS, MIN_HOOK_CHARS, SUMMARY_MAX, SUMMARY_MIN, BODY_MIN, WHY_MAX, isTitlePrefix } from '../render/tuna.js'
 import type { GatesConfig, GatekeeperInput, PersonaConfig } from '../types.js'
 
 /**
@@ -79,6 +79,9 @@ export function runAssertions(item: GatekeeperInput, input: AssertionInput): Ass
     // 薄稿拒收。渲染层 ensureSummaryFloor 已先补足，此处兜「正文也无料可补」的最后
     // 一手；放链尾让内容类违例优先报错，不抢前置断言的指名位置。
     checkSummaryFloor(item),
+    // L3 心流层篇幅下限（2026-09-07 老张「很多 L3 级内容篇幅不够」）：正文断头料
+    // （推文空卡/截断片段）拒收，宁缺毋滥。亲写 body 与放宽后的原文底料都应过线。
+    checkBodyFloor(item),
   ]
 }
 
@@ -88,6 +91,16 @@ function checkSummaryFloor(item: GatekeeperInput): AssertionVerdict {
   const sumN = Array.from(item.summary ?? '').length
   if (sumN < sumMin) return fail('gk:summaryBelowFloor', `summary 仅 ${sumN} 码点，低于 ${item.lang} 下限 ${sumMin}`)
   return { ok: true, ruleId: 'gk:summaryBelowFloor', detail: '' }
+}
+
+/** L3 正文篇幅下限：心流层点开没有可读的完整内容即不合格（zh 600 / en 900 码点）。 */
+function checkBodyFloor(item: GatekeeperInput): AssertionVerdict {
+  const bodyMin = BODY_MIN[item.lang]
+  const bodyN = Array.from(item.body ?? '').length
+  if (bodyN < bodyMin) {
+    return fail('gk:bodyBelowFloor', `L3 正文仅 ${bodyN} 码点，低于 ${item.lang} 下限 ${bodyMin}（断头料不发）`)
+  }
+  return { ok: true, ruleId: 'gk:bodyBelowFloor', detail: '' }
 }
 
 /** 全部通过才算过审。 */
