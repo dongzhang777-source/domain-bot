@@ -286,9 +286,11 @@ describe('分阶段作业：分段跑与整链跑产出完全相同的内容包'
 
     const second = await publishCommand({ root, persona: 'newsline', io: silent })
     expect(second.exitCode).toBe(0)
-    // 同一份快照再发一次：规范 URL 已在指纹库里 → 终审一票否决 → 空包。
+    // 同一份快照再发一次：规范 URL 已在指纹库里 → 终审一票否决 → 本轮 0 条新发布。
     // 这是「不凑数」的预期行为，不是缺陷；静默重发同一内容才是缺陷。
-    expect(readPack(root).posts.length).toBe(0)
+    // 09-07 事故修复后 writePack 为合并写：第二轮不产出新条，但首轮已发布条目
+    // 必须保留在包内（覆盖写会把已交付内容从交付面抹掉——已消费却不在任何 pack）。
+    expect(readPack(root).posts.length).toBe(firstCount)
   })
 })
 

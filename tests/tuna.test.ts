@@ -16,7 +16,10 @@ import {
   truncateChars,
   truncateWhy,
 } from '../src/render/tuna.js'
-import { PACK_SCHEMA, TUNA_POST_ID, assertPackContract, buildPack } from '../src/publish/pack.js'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { PACK_SCHEMA, TUNA_POST_ID, assertPackContract, buildPack, writePack, type FeedPack } from '../src/publish/pack.js'
 import type { GatekeeperInput } from '../src/types.js'
 
 /**
@@ -261,6 +264,75 @@ describe('buildPack / assertPackContract（tuna-brief-v1 装配）', () => {
     expect(HOOK_LIMITS).toEqual({ zh: 70, en: 95 })
     expect(SUMMARY_MAX).toEqual({ zh: 300, en: 450 })
     expect(WHY_MAX).toBe(40)
+  })
+
+  it('lang 按交付文案判语言，不透传候选原文 lang（09-07 事故：中文稿被标 en）', () => {
+    const zhPack = buildPack([post({ summary: '这是一条足够长的中文摘要，讲述 GPT-6 Astra 与 benchmark 的分项成绩，全部以中文交付。' })], ctx)
+    expect(zhPack.posts[0]!['lang']).toBe('zh')
+    const enPack = buildPack([post()], ctx) // summary 全英文
+    expect(enPack.posts[0]!['lang']).toBe('en')
+  })
+})
+
+describe('writePack 合并写（09-07 事故回归锁：同 digest 重跑不得抹掉已发布条目）', () => {
+  const ctx = { digestId: 'abc123', persona: 'newsline', personaDisplay: 'AI时事快线', domain: 'ai-llm', generatedAt: 1_700_000_000_000 }
+  function post(overrides: Partial<GatekeeperInput> = {}): GatekeeperInput {
+    return {
+      id: 'domain-bot-newsline:abc123:0',
+      title: 'KC-Bench evaluates knowledge conflict in reasoning models',
+      hooks: ['hook one long enough', 'hook two long enough', 'hook three long enough'],
+      summary: 'A sufficiently long summary for the pack.',
+      body: 'A sufficiently long body for the pack.',
+      why: '聚焦你的关注点「benchmark」',
+      url: 'https://arxiv.org/abs/1',
+      lang: 'en',
+      publishedAt: 1_700_000_000_000,
+      source: 'rss-1',
+      eventKey: 'e1',
+      valueScore: 0.8,
+      ...overrides,
+    }
+  }
+  let dir: string
+  const setup = () => {
+    dir = join(tmpdir(), `db-writetest-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    return dir
+  }
+  const read = (): any => JSON.parse(readFileSync(join(dir, 'feed-pack-newsline-abc123.json'), 'utf8'))
+
+  it('重跑 publish（指纹拦截后只发增量）时，旧条目保留在包内（合并而非覆盖）', () => {
+    setup()
+    writePack(buildPack([post(), post({ id: 'domain-bot-newsline:abc123:1', url: 'https://arxiv.org/abs/2' })], ctx), dir)
+    // 重跑：指纹库拦了 :0，本轮只发布 :1（同 id 同 URL，文案刷新）
+    writePack(buildPack([post({ id: 'domain-bot-newsline:abc123:1', url: 'https://arxiv.org/abs/2', summary: 'Rewritten summary in the rerun.' })], ctx), dir)
+    const merged = read()
+    expect(merged.posts).toHaveLength(2)
+    expect(merged.posts.map((p: any) => p.id)).toEqual(['domain-bot-newsline:abc123:0', 'domain-bot-newsline:abc123:1'])
+    expect(merged.posts[1].summary).toBe('Rewritten summary in the rerun.') // 同 id 新胜
+    expect(merged.brief.items).toHaveLength(2)
+    expect(() => assertPackContract(merged)).not.toThrow()
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('重跑给同一条目编了新号（旧 id 已交付）：按规范 URL 去重，旧胜，不产生重复 URL', () => {
+    setup()
+    writePack(buildPack([post()], ctx), dir)
+    writePack(buildPack([post({ id: 'domain-bot-newsline:abc123:7' })], ctx), dir)
+    const merged = read()
+    expect(merged.posts).toHaveLength(1)
+    expect(merged.posts[0].id).toBe('domain-bot-newsline:abc123:0')
+    expect(merged.brief.items).toHaveLength(1)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('旧包损坏不可读时退回覆盖写，不阻断发布', () => {
+    setup()
+    require('node:fs').mkdirSync(dir, { recursive: true })
+    writeFileSync(join(dir, 'feed-pack-newsline-abc123.json'), '{broken json')
+    const out = writePack(buildPack([post()], ctx), dir)
+    expect(out).toContain('feed-pack-newsline-abc123.json')
+    expect(read().posts).toHaveLength(1)
+    rmSync(dir, { recursive: true, force: true })
   })
 })
 

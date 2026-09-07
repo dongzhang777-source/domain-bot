@@ -30,7 +30,7 @@
     },
     {
       "stage": "published",
-      "count": 4
+      "count": 10
     }
   ],
   "dropped": [
@@ -313,43 +313,11 @@
       "from": "selected"
     },
     {
-      "itemId": "u-4781b817b6f5ff9e4dc8",
-      "title": "STOP BUYING A SMARTER CHATBOT. YOUR AGENT NEEDS A BACKEND, NOT A BIGGER PROMPT BOX",
-      "url": "https://x.com/kv1nsiii/status/2096970943440593029",
-      "ruleId": "gk:alreadyPublished",
-      "detail": "规范 URL 已在已发布指纹库中：https://x.com/kv1nsiii/status/2096970943440593029",
-      "from": "selected"
-    },
-    {
       "itemId": "u-98d4e4ad304400153723",
       "title": "NiLabs-Org/conform: A conformance suite for LLM inference engines.",
       "url": "https://github.com/NiLabs-Org/conform",
       "ruleId": "gk:summaryBelowFloor",
       "detail": "summary 仅 122 码点，低于 en 下限 300",
-      "from": "selected"
-    },
-    {
-      "itemId": "u-f6f8c7f22e6f7c110518",
-      "title": "IFM Releases K2 Horizon: Six Apache 2.0 Models From 0.9B to 375B",
-      "url": "https://thenews92.com/ifm-releases-k2-horizon-six-apache-2-0-models-from-0-9b-to-375b/",
-      "ruleId": "gk:alreadyPublished",
-      "detail": "规范 URL 已在已发布指纹库中：https://thenews92.com/ifm-releases-k2-horizon-six-apache-2-0-models-from-0-9b-to-375b",
-      "from": "selected"
-    },
-    {
-      "itemId": "u-d9336be1eaebabe7c8aa",
-      "title": "Huawei launches Kirin 9050 Pro processor - its GPU is 142% faster than its predecessor and supports ray tracing - Aroged",
-      "url": "https://www.aroged.com/2026/09/07/huawei-launches-kirin-9050-pro-processor-its-gpu-is-142-faster-than-its-predecessor-and-supports-ray-tracing/",
-      "ruleId": "gk:alreadyPublished",
-      "detail": "规范 URL 已在已发布指纹库中：https://aroged.com/2026/09/07/huawei-launches-kirin-9050-pro-processor-its-gpu-is-142-faster-than-its-predecessor-and-supports-ray-tracing",
-      "from": "selected"
-    },
-    {
-      "itemId": "u-44301aab353717d29fff",
-      "title": "Nubia NaviX Ultra Set for September 16 Debut With System-Level Doubao AI | GSMDome.com",
-      "url": "https://www.gsmdome.com/nubia-navix-ultra-set-for-september-16-debut-with-system-level-doubao-ai",
-      "ruleId": "gk:alreadyPublished",
-      "detail": "规范 URL 已在已发布指纹库中：https://gsmdome.com/nubia-navix-ultra-set-for-september-16-debut-with-system-level-doubao-ai",
       "from": "selected"
     },
     {
@@ -361,65 +329,16 @@
       "from": "selected"
     },
     {
-      "itemId": "u-eddf2a5294b6ddb4b2d7",
-      "title": "the Grok @Bot desktop app just got a whole lot faster! there's still more to improve, but we shipped many perf improveme",
-      "url": "https://x.com/poteto/status/2096786161981366338",
-      "ruleId": "gk:alreadyPublished",
-      "detail": "规范 URL 已在已发布指纹库中：https://x.com/poteto/status/2096786161981366338",
-      "from": "selected"
-    },
-    {
       "itemId": "u-2b6d3b84444233fcfd1b",
       "title": "Happy Grok 4.7 week to those who celebrate",
       "url": "https://x.com/chribjel/status/2096851718772269193",
       "ruleId": "gk:summaryBelowFloor",
       "detail": "summary 仅 42 码点，低于 en 下限 300",
       "from": "selected"
-    },
-    {
-      "itemId": "u-ba856dd4a4b917cd949e",
-      "title": "AI companies accelerate model updates amid competition - UA.NEWS",
-      "url": "https://ua.news/en/technologies/ai-kompaniyi-priskorili-onovlennia-modelei-na-tli-konkurentsiyi",
-      "ruleId": "gk:alreadyPublished",
-      "detail": "规范 URL 已在已发布指纹库中：https://ua.news/en/technologies/ai-kompaniyi-priskorili-onovlennia-modelei-na-tli-konkurentsiyi",
-      "from": "selected"
-    },
-    {
-      "itemId": "u-6824a3ac255e591e7d54",
-      "title": "bsab/france-mcp-servers: A curated catalog of Model Context Protocol servers for French data, laws, and services.",
-      "url": "https://github.com/bsab/france-mcp-servers",
-      "ruleId": "gk:summaryBelowFloor",
-      "detail": "summary 仅 157 码点，低于 en 下限 300",
-      "from": "selected"
-    },
-    {
-      "itemId": "u-96abc3ee35f64c582fe4",
-      "title": "I love Astra BUT",
-      "url": "https://x.com/mervenoyann/status/2096896446301618179",
-      "ruleId": "gk:summaryBelowFloor",
-      "detail": "summary 仅 242 码点，低于 en 下限 300",
-      "from": "selected"
-    },
-    {
-      "itemId": "u-b30d88b740ae7bd50666",
-      "title": "Using GPT-6 Astra Max to make my wedding website",
-      "url": "https://x.com/venturetwins/status/2096659577660203436",
-      "ruleId": "gk:summaryBelowFloor",
-      "detail": "summary 仅 48 码点，低于 en 下限 300",
-      "from": "selected"
-    },
-    {
-      "itemId": "u-250e2d6dead632dce8f9",
-      "title": "I can’t stop making ad creatives on Astra. ",
-      "url": "https://x.com/BeingAshwin/status/2096719779575074997",
-      "ruleId": "gk:summaryBelowFloor",
-      "detail": "summary 仅 139 码点，低于 en 下限 300",
-      "from": "selected"
     }
   ],
   "rejectCounts": {
-    "gk:summaryBelowFloor": 10,
-    "gk:alreadyPublished": 6
+    "gk:summaryBelowFloor": 6
   },
   "backfilled": 0,
   "poolExhausted": true,
@@ -443,7 +362,7 @@
     "excluded": 17,
     "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
   },
-  "publishedFingerprintCount": 4,
+  "publishedFingerprintCount": 10,
   "compileErrors": [],
   "editorial": {
     "enabled": true,
@@ -473,14 +392,17 @@
     "engagements": 4,
     "feedback": 5
   },
-  "qualityYieldRatio": 0.014084507042253521,
+  "qualityYieldRatio": 0.035211267605633804,
   "perSourcePublished": {
     "exa-llm-news": 1,
     "exa-ai-hardware": 1,
     "exa-benchmark-sota": 1,
-    "exa-ondevice-ai": 1
+    "exa-ondevice-ai": 3,
+    "twitter-feed": 2,
+    "exa-open-weights": 1,
+    "exa-ai-industry": 1
   },
   "langDistribution": {
-    "en": 4
+    "en": 10
   }
 }

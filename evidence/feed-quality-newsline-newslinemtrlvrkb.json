@@ -1,0 +1,400 @@
+{
+  "persona": "newsline",
+  "personaDisplay": "AI时事快线",
+  "digestId": "newslinemtrlvrkb",
+  "generatedAt": 1788807638603,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 308
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 183
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 71
+    },
+    {
+      "stage": "afterGates",
+      "count": 20
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 20
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 20
+    },
+    {
+      "stage": "published",
+      "count": 10
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-f640cbd417db95a57130",
+      "title": "bzip3",
+      "source": "hn-frontpage",
+      "url": "https://github.com/iczelia/bzip3",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-53e7c3dd78e15afb8a07",
+      "title": "Scino/fstack",
+      "source": "github-mcp-tools",
+      "url": "https://github.com/Scino/fstack",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 12 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-81d665f9e86a6f59e4b4",
+      "title": "v3.1.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.1.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-52346d0708da30e3fe18",
+      "title": "v3.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-e426bb385fd6a5910632",
+      "title": "6.3.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.3.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-56852fbf1855a1cf7d72",
+      "title": "v1.17.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/langgenius/dify/releases/tag/1.17.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 7 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-7eebfa572638476abeaf",
+      "title": "6.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-1af3a9bfba40bb0a07dc",
+      "title": "shutter-bashir/BASHIR-2.0: AI-powered multi-agent system that automates your internship/attachment search. Discovers companies via Google Maps, extracts emails from websites, writes personalized applications using a local LLM (Ollama), creates Gmail drafts with your CV attached, tracks everything in Google Sheets, and auto-follows up. Built for university students.",
+      "source": "github-local-llm",
+      "url": "https://github.com/shutter-bashir/BASHIR-2.0",
+      "gate": "blacklist",
+      "ruleId": "ad:resume",
+      "reason": "命中负向模式 ad:resume（adRecruit）"
+    },
+    {
+      "itemId": "u-634555d002f677e9c0bb",
+      "title": "",
+      "source": "twitter-feed",
+      "url": "https://x.com/rubenhassid/status/2096841587313787149",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 0 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-db761385295803bb25d4",
+      "title": "⌛",
+      "source": "twitter-feed",
+      "url": "https://x.com/herdrdev/status/2096728106669142271",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 1 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-45e3e36a0c67b218f18b",
+      "title": "",
+      "source": "twitter-feed",
+      "url": "https://x.com/Khazix0918/status/2096807089956176029",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 0 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "(batch)",
+      "title": "24 条宽通道候选超池上限",
+      "source": "(multiple)",
+      "url": "",
+      "gate": "recall",
+      "ruleId": "recall:poolOverflow",
+      "reason": "待定池上限 20，按积分降序截断 24 条"
+    },
+    {
+      "itemId": "u-5920edda17483bff0ecb",
+      "title": "the best 20 accounts to follow in AI:",
+      "source": "twitter-feed",
+      "url": "https://x.com/ai_explorer25/status/2096788042870890905",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Social media account listicle; no substantive news or learning value."
+    },
+    {
+      "itemId": "u-31ccbd9edc760220393b",
+      "title": "Amazing! Fable 5.2 launches shortly ",
+      "source": "twitter-feed",
+      "url": "https://x.com/bindureddy/status/2096765370862317742",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Vague hype/speculation about model launches with no substantive information."
+    },
+    {
+      "itemId": "u-b5b9f50d8d0cc2c4e254",
+      "title": "Delinor-Hens/Vortex: ИИ под названием Vortex для любых задач. Сейчас уже доступна рабочая версия проекта, которая ежедневно улучшается",
+      "source": "github-new-llm-tools",
+      "url": "https://github.com/Delinor-Hens/Vortex",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Generic small AI project announcement; not newsworthy or informative."
+    },
+    {
+      "itemId": "u-557a948b0c220fddcfa0",
+      "title": "Huawei Mate XT 2: Tri-fold with Privacy Screen, Kirin 9050 Pro",
+      "source": "exa-ondevice-ai",
+      "url": "https://soyacincau.com/2026/09/07/huawei-mate-xt-2-tri-fold-smartphone-launch-price-specs/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Consumer smartphone hardware announcement; not AI/LLM-adjacent."
+    },
+    {
+      "itemId": "u-4cdcf62dda21b83280b7",
+      "title": "Omarchy on a M1 MacBook Air with 8gb of ram",
+      "source": "twitter-feed",
+      "url": "https://x.com/SiliconForested/status/2096844057746243780",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Linux distro discussion; unrelated to AI/LLM."
+    },
+    {
+      "itemId": "u-a3178033f1c7500b1843",
+      "title": "No constitutional right to clean water, federal court finds",
+      "source": "hn-frontpage",
+      "url": "https://www.usatoday.com/story/news/nation/2026/09/07/court-constitution-right-clean-water/91649488007/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Constitutional law ruling; completely unrelated to AI."
+    },
+    {
+      "itemId": "u-79841fc5888cb16532f3",
+      "title": "PostgreSQL 19 Interactive Tour",
+      "source": "hn-frontpage",
+      "url": "https://victoriametrics.com/blog/postgres-19/index.html",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Database product tour, not AI/LLM related."
+    },
+    {
+      "itemId": "u-3408e0841621d6b6076d",
+      "title": "Bing Wallpaper showing Ad for Harry Potter and Fantastic beasts box set",
+      "source": "hn-frontpage",
+      "url": "https://www.thurrott.com/forums/microsoft/windows/thread/bing-wallpaper-showing-ad-for-harry-potter-and-fantastic-beasts-box-set",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Ad placement complaint about Bing wallpaper, not AI/LLM."
+    },
+    {
+      "itemId": "u-7270f65ce1f2385af1ad",
+      "title": "C Is Not a Low-Level Language (2018)",
+      "source": "hn-frontpage",
+      "url": "https://queue.acm.org/doi/10.1145/3212477.3212479",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Programming language discussion, not AI/LLM related."
+    },
+    {
+      "itemId": "u-60e372c20cb5bb5c3471",
+      "title": "Bill Gates tries to install MovieMaker",
+      "source": "hn-frontpage",
+      "url": "https://www.techemails.com/p/bill-gates-tries-to-install-movie-maker",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Tech anecdote/humor piece, not AI/LLM related."
+    },
+    {
+      "itemId": "u-0b5ef84ae5110611ec10",
+      "title": "De-Brainrot Vacations",
+      "source": "hn-frontpage",
+      "url": "https://devz.cl/posts/i-spent-my-vacations-de-brainrotting/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Digital detox lifestyle post, not AI/LLM related."
+    },
+    {
+      "itemId": "u-d8a34bc7cc4fa19580b6",
+      "title": "Splash-free urinals (2025)",
+      "source": "hn-frontpage",
+      "url": "https://academic.oup.com/pnasnexus/article/4/4/pgaf087/8098745?login=false",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Physics/engineering paper on urinals, not AI/LLM."
+    },
+    {
+      "itemId": "u-1444d34605ce9fb67f4f",
+      "title": "Smartphone makers don't bother to comply with EU repairability requirements",
+      "source": "hn-frontpage",
+      "url": "https://www.theregister.com/personal-tech/2026/09/07/smartphone-makers-dont-bother-to-comply-with-eu-repairability-requirements/5294532",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Consumer electronics regulation, not AI/LLM related."
+    },
+    {
+      "itemId": "u-5788240768d43dce1c7d",
+      "title": "Apparently CodePen 2.0 sends data to their servers as you type",
+      "source": "hn-frontpage",
+      "url": "https://news.ycombinator.com/item?id=49596976",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Web dev tool privacy issue, not AI/LLM related."
+    },
+    {
+      "itemId": "u-24aa90368d34315ce03f",
+      "title": "Impedance Matching (2017)",
+      "source": "hn-frontpage",
+      "url": "https://www.edge.org/response-detail/27238",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Electronics/physics topic, not AI/LLM related."
+    },
+    {
+      "itemId": "u-38c2ab651ad7402dc94e",
+      "title": "Caltech Mathathon – first hackathon ever devoted to research level mathematics",
+      "source": "hn-frontpage",
+      "url": "https://mathathonchallenge.com/index.html",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Math research hackathon, not AI/LLM focused."
+    }
+  ],
+  "rejected": [
+    {
+      "itemId": "u-808dbc3c54f89b42ef8f",
+      "title": "Grok 4.7 dropping today",
+      "url": "https://x.com/DavidOndrej1/status/2097000909695815853",
+      "ruleId": "gk:hollowSummary",
+      "detail": "剥除平台 chrome 后实质内容仅 3 词元（<5）：L2/L3 是空卡「Grok 4.7 dropping today」",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-53416e58bb4b3000ed33",
+      "title": "NVIDIA releases free PAIR software to pool multiple home PCs for local AI agents",
+      "url": "https://gcn.com/nvidia-releases-pair-software-local-ai/21442/",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「NVIDIA releases free ...」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-2a1e1c951fc70a9660aa",
+      "title": "As a Gemini Enterprise admin, you may now have access to new settings for managing the use of @antigravity in your org.",
+      "url": "https://x.com/GoogleCloudTech/status/2096991886586057015",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 288 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-4cd378ec226f583e91b9",
+      "title": "Trending repository of the day 📈",
+      "url": "https://x.com/trending_repos/status/2096948600211140897",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 243 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-3e2a3cc93cadf047df8c",
+      "title": "Tell HN: OpenAI brings back 5 hour limit for plus and business standard users",
+      "url": "https://news.ycombinator.com/item?id=49600233",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 227 码点，低于 en 下限 300",
+      "from": "selected"
+    }
+  ],
+  "rejectCounts": {
+    "gk:hollowSummary": 1,
+    "gk:hookEntity": 1,
+    "gk:summaryBelowFloor": 3
+  },
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 1,
+  "eventCount": 15,
+  "eventDemoted": 3,
+  "eventFillMode": false,
+  "skippedSources": [
+    "hn-search-ai"
+  ],
+  "zeroYieldSources": [
+    "github-new-llm-tools",
+    "github-finetuning",
+    "github-mcp-tools",
+    "exa-agent-releases",
+    "github-local-llm"
+  ],
+  "recall": {
+    "poolSize": 20,
+    "included": 4,
+    "excluded": 16,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 10,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 0,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 2,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 213329
+      }
+    ],
+    "llmCopyCount": 5
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.032467532467532464,
+  "perSourcePublished": {
+    "exa-ai-industry": 4,
+    "exa-open-weights": 2,
+    "twitter-feed": 2,
+    "hn-frontpage": 1,
+    "exa-ondevice-ai": 1
+  },
+  "langDistribution": {
+    "en": 10
+  }
+}

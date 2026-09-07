@@ -1,8 +1,8 @@
 {
   "persona": "deepthought",
   "personaDisplay": "AI深度思想",
-  "digestId": "deepthoughtmtrdm6sl",
-  "generatedAt": 1788793754853,
+  "digestId": "deepthoughtmtrm4lhx",
+  "generatedAt": 1788808050645,
   "funnel": [
     {
       "stage": "collected",
@@ -14,19 +14,19 @@
     },
     {
       "stage": "afterDedupe",
-      "count": 579
+      "count": 559
     },
     {
       "stage": "afterGates",
-      "count": 26
+      "count": 17
     },
     {
       "stage": "afterEventCap",
-      "count": 26
+      "count": 17
     },
     {
       "stage": "afterTruncate",
-      "count": 20
+      "count": 17
     },
     {
       "stage": "published",
@@ -764,6 +764,24 @@
       "reason": "命中 deepthought 淘汰红线 conceptComparison"
     },
     {
+      "itemId": "u-165cd1c23726193d8b18",
+      "title": "Skills vs MCP vs RAG vs Memory: What AI Agents Need to Know",
+      "source": "yt-llm",
+      "url": "https://www.youtube.com/watch?v=X4FVEEegCbk",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-f208b50f46de5bf84902",
+      "title": "What Is an Inference Engine? Complete 2026 Guide",
+      "source": "anysearch-local-llm",
+      "url": "https://www.articsledge.com/post/inference-engine",
+      "gate": "persona",
+      "ruleId": "persona:reject:nameExplainer",
+      "reason": "命中 deepthought 淘汰红线 nameExplainer"
+    },
+    {
       "itemId": "u-51fcaee6e09437407e97",
       "title": "Why Better Models Can Create Riskier Systems: Evidence from LLM Agents in Financial Markets",
       "source": "arxiv-cs-ai",
@@ -828,12 +846,12 @@
     },
     {
       "itemId": "(batch)",
-      "title": "459 条宽通道候选超池上限",
+      "title": "447 条宽通道候选超池上限",
       "source": "(multiple)",
       "url": "",
       "gate": "recall",
       "ruleId": "recall:poolOverflow",
-      "reason": "待定池上限 20，按积分降序截断 459 条"
+      "reason": "待定池上限 20，按积分降序截断 447 条"
     },
     {
       "itemId": "u-bca9b5bc0dfa762f0a84",
@@ -842,7 +860,7 @@
       "url": "https://arxiv.org/abs/2609.05335v1",
       "gate": "recall",
       "ruleId": "recall:excluded",
-      "reason": "LLM 判定不召回：Software security/vulnerability detection paper, not AI/LLM adjacent."
+      "reason": "LLM 判定不召回：Software security/vulnerability detection, not AI/LLM-focused."
     },
     {
       "itemId": "u-a3b119d057f167468dcb",
@@ -851,7 +869,7 @@
       "url": "https://arxiv.org/abs/2609.05040v1",
       "gate": "recall",
       "ruleId": "recall:excluded",
-      "reason": "LLM 判定不召回：Evolutionary optimization paper, not AI/LLM related."
+      "reason": "LLM 判定不召回：Niche evolutionary optimization; not relevant to AI/LLM readers."
     },
     {
       "itemId": "u-03f66002bf62be2f2985",
@@ -860,72 +878,47 @@
       "url": "https://arxiv.org/abs/2609.02529v1",
       "gate": "recall",
       "ruleId": "recall:excluded",
-      "reason": "LLM 判定不召回：Image quality assessment paper; not AI/LLM news-worthy."
+      "reason": "LLM 判定不召回：Niche image quality assessment paper; tangential to AI/LLM."
     },
     {
-      "itemId": "u-60c85f37837600713627",
-      "title": "Vectorizing Classical Tamil: Representation Learning for Verse-Commentary Pairs",
+      "itemId": "u-9d6ede4715661a010323",
+      "title": "Phrase-Localized Language-Contrastive Guidance: Training-Free Localized Accent Control for Code-Switching Text-to-Speech",
       "source": "arxiv-cs-cl",
-      "url": "https://arxiv.org/abs/2609.04755v1",
+      "url": "https://arxiv.org/abs/2609.01016v1",
       "gate": "recall",
       "ruleId": "recall:excluded",
-      "reason": "LLM 判定不召回：Niche digital humanities application; AI/LLM angle is secondary to Tamil studies."
+      "reason": "LLM 判定不召回：Speech synthesis paper, weakly adjacent to LLM-focused readers"
     },
     {
-      "itemId": "u-3370409e6d6df398b30a",
-      "title": "Scalable Direction-Following TTS via Voice Impression-Guided Pseudo Triplet Construction",
+      "itemId": "u-5c00693cf1bcd4f7408e",
+      "title": "When Features Become Instances: Inverted Contrastive Learning for Unsupervised Feature Selection",
       "source": "arxiv-cs-cl",
-      "url": "https://arxiv.org/abs/2609.02623v1",
+      "url": "https://arxiv.org/abs/2609.00782v1",
       "gate": "recall",
       "ruleId": "recall:excluded",
-      "reason": "LLM 判定不召回：Speech synthesis paper; AI-adjacent but not LLM-focused."
-    },
-    {
-      "itemId": "u-4a97ba43385dc4798a9c",
-      "title": "From Detection to Characterization: A Large-Scale Study of Ragebait on Japanese X",
-      "source": "arxiv-cs-cl",
-      "url": "https://arxiv.org/abs/2609.02262v1",
-      "gate": "recall",
-      "ruleId": "recall:excluded",
-      "reason": "LLM 判定不召回：Social media content analysis; LLM used as tool, not the subject of study."
+      "reason": "LLM 判定不召回：General ML feature selection method, not LLM-adjacent"
     }
   ],
-  "rejected": [
-    {
-      "itemId": "u-b5737e56e26b6e88034a",
-      "title": "I built an open-source blind benchmark for AI agent harnesses",
-      "url": "https://www.reddit.com/r/LLMDevs/comments/1w56c7e/i_built_an_opensource_blind_benchmark_for_ai/",
-      "ruleId": "gk:summaryBelowFloor",
-      "detail": "summary 仅 196 码点，低于 en 下限 300",
-      "from": "selected"
-    },
-    {
-      "itemId": "u-b62e1f3623d8ae6d7836",
-      "title": "linny006/agent-eval-harness: Live, open-source benchmark ... - GitHub",
-      "url": "https://github.com/linny006/agent-eval-harness",
-      "ruleId": "gk:summaryBelowFloor",
-      "detail": "summary 仅 234 码点，低于 en 下限 300",
-      "from": "selected"
-    }
-  ],
-  "rejectCounts": {
-    "gk:summaryBelowFloor": 2
-  },
+  "rejected": [],
+  "rejectCounts": {},
   "backfilled": 0,
   "poolExhausted": true,
-  "eventTrimmed": 0,
-  "eventCount": 19,
-  "eventDemoted": 4,
+  "eventTrimmed": 1,
+  "eventCount": 13,
+  "eventDemoted": 2,
   "eventFillMode": false,
   "skippedSources": [],
   "zeroYieldSources": [
+    "arxiv-cs-ai",
     "arxiv-cs-lg",
-    "simonwillison"
+    "simonwillison",
+    "github-rag",
+    "yt-llm"
   ],
   "recall": {
     "poolSize": 20,
-    "included": 14,
-    "excluded": 6,
+    "included": 15,
+    "excluded": 5,
     "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
   },
   "publishedFingerprintCount": 10,
@@ -945,7 +938,7 @@
         "calls": 2,
         "failures": 0,
         "reasoningTokens": 0,
-        "elapsedMs": 187009
+        "elapsedMs": 211780
       }
     ],
     "llmCopyCount": 8
@@ -960,10 +953,8 @@
   },
   "qualityYieldRatio": 0.004692632566870014,
   "perSourcePublished": {
-    "arxiv-cs-ai": 4,
     "anysearch-agent-bench": 1,
-    "arxiv-cs-cl": 3,
-    "anysearch-local-llm": 2
+    "arxiv-cs-cl": 9
   },
   "langDistribution": {
     "en": 10

@@ -1,7 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { GatekeeperInput } from '../types.js'
+import { canonicalUrl } from '../collector/canonicalUrl.js'
 import { collectCanonicalUrls } from '../gates/fingerprint.js'
+import { detectLang } from '../render/tuna.js'
 import { embedText, isValidEmbedding } from '../embedding.js'
 
 /**
@@ -47,7 +49,11 @@ export function buildPack(
     hooks: p.hooks,
     summary: p.summary,
     body: p.body,
-    lang: p.lang,
+    // lang 必须按**交付文案**（summary）的实际语言标注，不能透传候选原文的 lang：
+    // 编辑部生产（2026-09-06 起）对英文原文产出中文文案，透传会让 App 侧拿到 lang=en
+    // 的中文稿，任何按 lang 分流的消费端都会分流错。判据复用 render/tuna 的 detectLang
+    //（CJK 占比 >30% 即 zh），不另写一套。
+    lang: detectLang(p.summary),
     author: { id: `domain-bot-${ctx.persona}`, name: ctx.personaDisplay, kind: 'user' as const },
     provenance: 'human',
     epistemic: 'inference',
@@ -129,11 +135,66 @@ export function assertPackContract(pack: FeedPack): void {
 }
 
 export function writePack(pack: FeedPack, outDir: string): string {
-  assertPackContract(pack)
-  mkdirSync(outDir, { recursive: true })
   const path = join(outDir, `feed-pack-${pack.persona}-${pack.digestId}.json`)
-  writeFileSync(path, JSON.stringify(pack, null, 2))
+  // 合并写（2026-09-07 事故修复）：同 digest 重跑 publish 时，此前已发布的条目会被
+  // 指纹库（gk:alreadyPublished）拦下、不在本轮 published 里——整文件覆盖会把它们从
+  // 交付面抹掉（已消费但不在任何 pack，下游永久丢稿，09-07 实测两轮各丢一半）。
+  // 合并规则：
+  //   a) 同 id（同一条目重发/文案刷新）→ 新胜。清指纹补发的恢复流程依赖此路径。
+  //   b) 不同 id 但规范 URL 相同（重跑重编号）→ 旧胜，不换号重发已交付内容。
+  //   c) 同 id 但 URL 变了（不应发生）→ 不挤占旧账，跳过新条。
+  let merged = pack
+  if (existsSync(path)) {
+    try {
+      const prev = JSON.parse(readFileSync(path, 'utf8')) as FeedPack
+      const byId = new Map(prev.posts.map((p) => [String(p.id), p]))
+      const briefById = new Map(prev.brief.items.map((i) => [i.postId, i]))
+      const seenUrls = new Set(
+        prev.posts
+          .map((p) => canonicalUrl(String(p.sourceUrl ?? '')))
+          .filter((u) => u.length > 0),
+      )
+      for (let i = 0; i < pack.posts.length; i++) {
+        const p = pack.posts[i]!
+        const id = String(p.id)
+        const url = canonicalUrl(String(p.sourceUrl ?? ''))
+        if (byId.has(id)) {
+          // a) 同 id 内容刷新：新胜（brief 同步换新）
+          byId.set(id, p)
+          briefById.set(id, pack.brief.items[i]!)
+          continue
+        }
+        if (url.length > 0 && seenUrls.has(url)) continue // b) 已按别的 id 交付过同文
+        if (url.length > 0) seenUrls.add(url)
+        byId.set(id, p)
+        briefById.set(id, pack.brief.items[i]!)
+      }
+      const posts = [...byId.values()].sort((a, b) => postIndex(a) - postIndex(b))
+      merged = {
+        ...pack,
+        posts,
+        brief: {
+          generatedAt: pack.brief.generatedAt,
+          items: posts
+            .map((p) => briefById.get(String(p.id)))
+            .filter((i): i is FeedPack['brief']['items'][number] => i !== undefined),
+        },
+      }
+    } catch {
+      // 旧包损坏不可读：按纯新一轮覆盖写（等同旧行为），不因合并逻辑引入新故障
+      merged = pack
+    }
+  }
+  assertPackContract(merged)
+  mkdirSync(outDir, { recursive: true })
+  writeFileSync(path, JSON.stringify(merged, null, 2))
   return path
+}
+
+/** postId 尾段序号（`domain-bot-<persona>:<digest>:<index>`），保持 digest 内原顺序。 */
+function postIndex(p: Record<string, unknown>): number {
+  const m = String(p.id ?? '').match(/:(\d+)$/)
+  return m ? Number(m[1]) : Number.MAX_SAFE_INTEGER
 }
 
 // ---------- 跨产线共享的已发布指纹库 ----------
