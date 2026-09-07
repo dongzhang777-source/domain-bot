@@ -1,8 +1,8 @@
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { collectCommand, editCommand, publishCommand, reviewCommand, runCommand } from '../src/cli.js'
+import { appendPublishLog, collectCommand, editCommand, publishCommand, readPublishLog, reviewCommand, runCommand } from '../src/cli.js'
 import { runPipeline } from '../src/pipeline.js'
 import {
   COPY_SCHEMA,
@@ -562,5 +562,81 @@ describe('分阶段作业：runPipeline 的 staged 入口与整链入口共用�
     ])
     // 观测口径必须与整链一致：源级明细来自快照，不是现场重算
     expect(r.funnel.find((f) => f.stage === 'collected')!.count).toBe(snapshot.observed.collectedCount)
+  })
+})
+
+describe('发布历史账 publish-log.jsonl（DB-22 §3 / DB-21 A-3）', () => {
+  const readLog = (memoryDir: string) =>
+    readFileSync(join(memoryDir, 'publish-log.jsonl'), 'utf8')
+      .split('\n')
+      .filter((l) => l.trim().length > 0)
+      .map((l) => JSON.parse(l) as Record<string, unknown>)
+
+  it('连续两次发布追加两行（非覆盖），字段齐备且 postIds 逐次如实', async () => {
+    const root = makeRoot()
+    await collectCommand({ root, persona: 'newsline', now: NOW, fetchFn: mockFetch(), io: silent })
+    const first = await publishCommand({ root, persona: 'newsline', io: silent })
+    expect(first.exitCode).toBe(0)
+    const firstCount = readPack(root).posts.length
+    expect(firstCount).toBeGreaterThan(0)
+
+    const second = await publishCommand({ root, persona: 'newsline', io: silent })
+    expect(second.exitCode).toBe(0)
+
+    const rows = readLog(join(root, 'memory'))
+    // append-only：两行都在，第一轮的账没有被第二轮抹掉
+    expect(rows).toHaveLength(2)
+    expect(rows[0]!.persona).toBe('newsline')
+    expect(rows[1]!.persona).toBe('newsline')
+    for (const row of rows) {
+      expect(typeof row['at']).toBe('string')
+      expect(Number.isNaN(Date.parse(String(row['at'])))).toBe(false)
+      expect(typeof row['digestId']).toBe('string')
+      expect(String(row['digestId']).length).toBeGreaterThan(0)
+      expect(String(row['packPath'])).toContain(`feed-pack-newsline-${row['digestId']}.json`)
+      expect(Array.isArray(row['postIds'])).toBe(true)
+    }
+    expect((rows[0]!['postIds'] as string[]).length).toBe(firstCount)
+    // 第二轮被指纹库全数拦下（0 条新发布）：账本必须如实记 0，而不是漏记
+    expect(rows[1]!['postIds']).toEqual([])
+    expect(String(rows[0]!['packPath'])).toBe(first.packPath)
+  })
+
+  it('dry-run 不写账本（与指纹库同一触发点）', async () => {
+    const root = makeRoot()
+    await collectCommand({ root, persona: 'newsline', now: NOW, fetchFn: mockFetch(), io: silent })
+    const r = await publishCommand({ root, persona: 'newsline', dryRun: true, io: silent })
+    expect(r.exitCode).toBe(0)
+    expect(existsSync(join(root, 'memory', 'publish-log.jsonl'))).toBe(false)
+  })
+
+  it('appendPublishLog 追加语义 + readPublishLog 对坏行容错（不阻断）', () => {
+    const memoryDir = mkdtempSync(join(tmpdir(), 'dbot-publog-'))
+    appendPublishLog(memoryDir, {
+      at: '2026-09-07T15:00:00.000Z',
+      persona: 'newsline',
+      digestId: 'd1',
+      packPath: '/tmp/x/feed-pack-newsline-d1.json',
+      postIds: ['domain-bot-newsline:d1:0'],
+    })
+    appendPublishLog(memoryDir, {
+      at: '2026-09-07T15:09:00.000Z',
+      persona: 'deepthought',
+      digestId: 'd2',
+      packPath: '/tmp/x/feed-pack-deepthought-d2.json',
+      postIds: ['domain-bot-deepthought:d2:0'],
+    })
+    expect(readPublishLog(memoryDir)).toHaveLength(2)
+
+    // 中途混入半行（进程在写入中途被 kill 的形态）与整行坏 JSON：读侧跳过，不抛
+    const path = join(memoryDir, 'publish-log.jsonl')
+    writeFileSync(path, `${readFileSync(path, 'utf8').trimEnd()}\n{"at":"2026-09-07T1\n{not json}\n`)
+    const rows = readPublishLog(memoryDir)
+    expect(rows).toHaveLength(2)
+    expect(rows.map((r) => r.digestId)).toEqual(['d1', 'd2'])
+
+    // 账本不存在的目录：返回空数组而不是抛
+    expect(readPublishLog(join(mkdtempSync(join(tmpdir(), 'dbot-publog-empty-')), 'nope'))).toEqual([])
+    rmSync(memoryDir, { recursive: true, force: true })
   })
 })

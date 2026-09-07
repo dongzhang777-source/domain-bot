@@ -339,6 +339,65 @@ export async function runCommand(opts: RunOptions): Promise<RunOutcome> {
   }
 }
 
+// ---------- 发布历史账（DB-22 §3 / DB-21 A-3） ----------
+
+export const PUBLISH_LOG_FILE = 'publish-log.jsonl'
+
+export interface PublishLogEntry {
+  /**
+   * 本次发布实际发生的时刻（墙钟 ISO）。**不用** `now`（那是采集时刻）：
+   * 一夜积压早上 publish 时，五次重跑会共享同一个 `now`，账本就分辨不出是哪一次——
+   * 而「第几次重跑」正是本账本要回答的问题。
+   */
+  at: string
+  persona: string
+  digestId: string
+  packPath: string
+  postIds: string[]
+}
+
+/**
+ * 读发布历史账。读侧容错是本账本契约的一半：坏行/半行跳过、不阻断——
+ * 账本是可观测性设施，不能反过来让读它的东西挂掉。
+ */
+export function readPublishLog(memoryDir: string): PublishLogEntry[] {
+  const path = join(memoryDir, PUBLISH_LOG_FILE)
+  if (!existsSync(path)) return []
+  const rows: PublishLogEntry[] = []
+  for (const line of readFileSync(path, 'utf8').split('\n')) {
+    const t = line.trim()
+    if (t.length === 0) continue
+    try {
+      const parsed: unknown = JSON.parse(t)
+      if (parsed && typeof parsed === 'object') rows.push(parsed as PublishLogEntry)
+    } catch {
+      /* 坏行跳过 */
+    }
+  }
+  return rows
+}
+
+/**
+ * append-only 发布历史账：每次真发布追加一行（DB-21 A-3）。
+ *
+ * 为什么必须有：09-07 想量化「同轮 5 次重跑各丢了哪几条」时三条路全断——
+ * outbox pack 被最后一次覆盖、`digests.json` 只反映最后一次、指纹库只有 URL 无轮次归因，
+ * 唯一追加式的 `observations.jsonl` 又只记数量不记条目 id。丢稿只能凭印象整改。
+ *
+ * 落盘纪律与 `appendFingerprints` / store 的 `writeFileAtomic` 同源（读全量 → tmp+rename
+ * 原子替换）：两个调用点都在 `acquireLock` 临界区内，读改写不会被并发发布交错；
+ * append-only 语义由「先读旧账再加一行」保证，绝不重写已有行。
+ */
+export function appendPublishLog(memoryDir: string, entry: PublishLogEntry): void {
+  const rows = readPublishLog(memoryDir)
+  rows.push(entry)
+  const path = join(memoryDir, PUBLISH_LOG_FILE)
+  mkdirSync(memoryDir, { recursive: true })
+  const tmp = `${path}.tmp-${process.pid}`
+  writeFileSync(tmp, rows.map((r) => JSON.stringify(r)).join('\n') + '\n')
+  renameSync(tmp, path)
+}
+
 /**
  * 发布落盘：看板自检 → dry-run 短路 → 内容包 → 看板 → 指纹库 → 可选同步 tuna。
  *
@@ -392,6 +451,20 @@ export async function emitPublished(result: PipelineResult, persona: PersonaConf
   const packPath = writePack(pack, join(opts.root, 'outbox/tuna'))
   const boardPath = writeBoard(result.board, join(opts.root, 'evidence'))
   const added = appendFingerprints(opts.memoryDir, result.published)
+  // 发布历史账（DB-22 §3 / DB-21 A-3）：把「这次发布到底发了哪些条」记到条目 id 粒度。
+  // 触发点与指纹库完全一致（真发布才记，--dry-run 已在上方短路）。
+  // 失败不阻断发布——账本是可观测性设施，不能反过来拖垮内容主链路。
+  try {
+    appendPublishLog(opts.memoryDir, {
+      at: new Date().toISOString(),
+      persona: persona.id,
+      digestId: result.digestId,
+      packPath,
+      postIds: result.published.map((p) => p.id),
+    })
+  } catch (err) {
+    io.stderr(`[${persona.id}] 发布账本写入失败（不阻断发布）: ${err instanceof Error ? err.message : String(err)}`)
+  }
   io.stdout(`[${persona.id}] 发布 ${result.published.length} 条 → ${packPath}（指纹库 +${added}，向量 +${embedded}）`)
 
   // 同步到 tuna：默认只算差异不落盘。人工拷贝是第三道影子工序，

@@ -906,10 +906,35 @@
       "ruleId": "gk:summaryBelowFloor",
       "detail": "summary 仅 234 码点，低于 en 下限 300",
       "from": "selected"
+    },
+    {
+      "itemId": "u-becd1f5e2b55ff013c25",
+      "title": "On-Device AI Frameworks Compared: 2026 Decision Guide",
+      "url": "https://appscale.blog/en/blog/on-device-ai-frameworks-compared-llamacpp-mlc-onnx-mediapipe-coreml-2026",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 469 码点，低于 en 下限 900（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-c9c9eee0356eef4e2353",
+      "title": "Google LiteRT-LM: High-Performance On-Device LLM Inference",
+      "url": "https://aitoolly.com/ai-news/article/2026-04-09-google-launches-litert-lm-a-high-performance-open-source-framework-for-on-device-large-language-mode",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 413 码点，低于 en 下限 900（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-b656e4d71e9d2f9a8ed9",
+      "title": "2026 Ultimate LLM Inference Framework Guide: 7 Frameworks ...",
+      "url": "https://stable-learn.com/en/llm-inference-framework-guide-2026/",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 256 码点，低于 en 下限 300",
+      "from": "selected"
     }
   ],
   "rejectCounts": {
-    "gk:summaryBelowFloor": 2
+    "gk:summaryBelowFloor": 3,
+    "gk:bodyBelowFloor": 2
   },
   "backfilled": 0,
   "poolExhausted": true,
@@ -962,10 +987,10 @@
   "perSourcePublished": {
     "arxiv-cs-ai": 4,
     "anysearch-agent-bench": 1,
-    "arxiv-cs-cl": 3,
-    "anysearch-local-llm": 2
+    "arxiv-cs-cl": 5
   },
   "langDistribution": {
-    "en": 10
+    "zh": 8,
+    "en": 2
   }
 }

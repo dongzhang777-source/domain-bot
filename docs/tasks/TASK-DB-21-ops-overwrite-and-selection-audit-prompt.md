@@ -1,5 +1,7 @@
 # TASK-DB-21：domain-bot 产线「覆盖写丢数据 / 交付选择错位」运营隐患专项审查
 
+> **⚠️ 2026-09-07 晚更新（总管）**：B 族核心根因已在审查派单前定位并修复入库（domain-bot `31e1d76` + tuna `19329a5`）：①同事件配额按旧→新遍历占坑（旧 digest 占满、当天新稿被挤）→ 改 createdAt 新→旧；②writePack 整文件覆盖丢稿 → 合并写；③lang 透传误标 → 按交付文案判。端到端实测 v17：今天四轮 16 篇全量可见、lang 全 zh、App normalizer 40/40 过。**本单 B.1 的「存活账重建」改为复核性验证**（验证修复后的新发布行为），A/C 族排查照常。
+
 > 工单号：DB-21　｜　创建：2026-09-07　｜　创建人：总管小智
 > 基线 HEAD：`domain-bot @ 9757a23`（main，vitest 上轮全绿；本单为只读审查，不改码）＋ `tuna @ 5a5f1ba`
 > 工作目录：`/Users/aiatwork/Projects/domain-bot`（主）、`/Users/aiatwork/Projects/tuna`（发布器一段）

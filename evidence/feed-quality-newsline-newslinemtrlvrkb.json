@@ -321,6 +321,14 @@
       "from": "selected"
     },
     {
+      "itemId": "u-42304d1f2e0816d97fca",
+      "title": "We used TeamAI-CLI internally at Tencent since March. Open sourced it.",
+      "url": "https://x.com/TencentAI_News/status/2096876836898865165",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 567 码点，低于 en 下限 900（断头料不发）",
+      "from": "selected"
+    },
+    {
       "itemId": "u-3e2a3cc93cadf047df8c",
       "title": "Tell HN: OpenAI brings back 5 hour limit for plus and business standard users",
       "url": "https://news.ycombinator.com/item?id=49600233",
@@ -332,7 +340,8 @@
   "rejectCounts": {
     "gk:hollowSummary": 1,
     "gk:hookEntity": 1,
-    "gk:summaryBelowFloor": 3
+    "gk:summaryBelowFloor": 3,
+    "gk:bodyBelowFloor": 1
   },
   "backfilled": 0,
   "poolExhausted": true,
@@ -388,13 +397,14 @@
   },
   "qualityYieldRatio": 0.032467532467532464,
   "perSourcePublished": {
-    "exa-ai-industry": 4,
+    "exa-ai-industry": 5,
     "exa-open-weights": 2,
-    "twitter-feed": 2,
+    "twitter-feed": 1,
     "hn-frontpage": 1,
     "exa-ondevice-ai": 1
   },
   "langDistribution": {
-    "en": 10
+    "zh": 5,
+    "en": 5
   }
 }

@@ -30,7 +30,7 @@
     },
     {
       "stage": "published",
-      "count": 10
+      "count": 8
     }
   ],
   "dropped": [
@@ -313,6 +313,14 @@
       "from": "selected"
     },
     {
+      "itemId": "u-4781b817b6f5ff9e4dc8",
+      "title": "STOP BUYING A SMARTER CHATBOT. YOUR AGENT NEEDS A BACKEND, NOT A BIGGER PROMPT BOX",
+      "url": "https://x.com/kv1nsiii/status/2096970943440593029",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 798 码点，低于 en 下限 900（断头料不发）",
+      "from": "selected"
+    },
+    {
       "itemId": "u-98d4e4ad304400153723",
       "title": "NiLabs-Org/conform: A conformance suite for LLM inference engines.",
       "url": "https://github.com/NiLabs-Org/conform",
@@ -329,16 +337,57 @@
       "from": "selected"
     },
     {
+      "itemId": "u-eddf2a5294b6ddb4b2d7",
+      "title": "the Grok @Bot desktop app just got a whole lot faster! there's still more to improve, but we shipped many perf improveme",
+      "url": "https://x.com/poteto/status/2096786161981366338",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 720 码点，低于 en 下限 900（断头料不发）",
+      "from": "selected"
+    },
+    {
       "itemId": "u-2b6d3b84444233fcfd1b",
       "title": "Happy Grok 4.7 week to those who celebrate",
       "url": "https://x.com/chribjel/status/2096851718772269193",
       "ruleId": "gk:summaryBelowFloor",
       "detail": "summary 仅 42 码点，低于 en 下限 300",
       "from": "selected"
+    },
+    {
+      "itemId": "u-6824a3ac255e591e7d54",
+      "title": "bsab/france-mcp-servers: A curated catalog of Model Context Protocol servers for French data, laws, and services.",
+      "url": "https://github.com/bsab/france-mcp-servers",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 157 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-96abc3ee35f64c582fe4",
+      "title": "I love Astra BUT",
+      "url": "https://x.com/mervenoyann/status/2096896446301618179",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 242 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-b30d88b740ae7bd50666",
+      "title": "Using GPT-6 Astra Max to make my wedding website",
+      "url": "https://x.com/venturetwins/status/2096659577660203436",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 48 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-250e2d6dead632dce8f9",
+      "title": "I can’t stop making ad creatives on Astra. ",
+      "url": "https://x.com/BeingAshwin/status/2096719779575074997",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 139 码点，低于 en 下限 300",
+      "from": "selected"
     }
   ],
   "rejectCounts": {
-    "gk:summaryBelowFloor": 6
+    "gk:summaryBelowFloor": 10,
+    "gk:bodyBelowFloor": 2
   },
   "backfilled": 0,
   "poolExhausted": true,
@@ -362,7 +411,7 @@
     "excluded": 17,
     "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
   },
-  "publishedFingerprintCount": 10,
+  "publishedFingerprintCount": 8,
   "compileErrors": [],
   "editorial": {
     "enabled": true,
@@ -392,17 +441,17 @@
     "engagements": 4,
     "feedback": 5
   },
-  "qualityYieldRatio": 0.035211267605633804,
+  "qualityYieldRatio": 0.028169014084507043,
   "perSourcePublished": {
     "exa-llm-news": 1,
     "exa-ai-hardware": 1,
     "exa-benchmark-sota": 1,
     "exa-ondevice-ai": 3,
-    "twitter-feed": 2,
     "exa-open-weights": 1,
     "exa-ai-industry": 1
   },
   "langDistribution": {
-    "en": 10
+    "zh": 4,
+    "en": 4
   }
 }
