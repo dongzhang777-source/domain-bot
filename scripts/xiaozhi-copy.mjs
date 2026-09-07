@@ -14,17 +14,28 @@
 // 篇幅契约（2026-09-06 篇幅令）：钩子 zh≤70/en≤95、摘要 zh 200–300/en 300–450 码点、why≤40。
 // 本工具不做篇幅截断——写不到位会被终审 gk:summaryBelowFloor 拒收，宁可写作时就写足。
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+
+// P0（2026-09-07 审查）：本文件是 .mjs（恒为 ESM），裸 require() 必崩
+// `ReferenceError: require is not defined`。仓内先例 probe-event-cluster.mjs 同款写法。
+const require = createRequire(import.meta.url);
 
 function arg(name) {
-  const i = process.argv.indexOf(`--${name}`);
-  return i >= 0 ? process.argv[i + 1] : undefined;
+  // P1（2026-09-07 审查）：同时支持 `--k v` 与文档写法的 `--k=v`。
+  for (const a of process.argv.slice(2)) {
+    if (a === `--${name}`) return process.argv[process.argv.indexOf(a) + 1];
+    if (a.startsWith(`--${name}=`)) return a.slice(name.length + 3);
+  }
+  return undefined;
 }
 
 const persona = arg('persona');
 const inputPath = arg('input');
-if (!persona || !inputPath || !fs.existsSync(inputPath)) {
+// P1（2026-09-07 审查）：persona 未校验直接拼进 readFileSync/stagePath，
+// `--persona ../../tmp/x` 可读写界外文件。只允许 persona 配置名 charset。
+if (!persona || !/^[a-z0-9-]+$/.test(persona) || !inputPath || !fs.existsSync(inputPath)) {
   console.error('用法：node scripts/xiaozhi-copy.mjs --persona=<newsline|deepthought> --input=<亲写文案JSON>');
   process.exit(2);
 }
@@ -57,6 +68,10 @@ let covered = 0;
 const copies = targets.map((t) => {
   const c = mine[t.id];
   if (!c) return null;
+  // P1（2026-09-07 审查）：外部 JSON 形状不校验，非数组 hooks 会在 publish 的
+  // checkMechanicalTruncation 处 TypeError 顶穿。形状不对走机械兜底，不进终审浪费坑位。
+  if (!Array.isArray(c.hooks) || c.hooks.length !== 3 || !c.hooks.every((h) => typeof h === 'string')
+    || typeof c.summary !== 'string' || typeof c.why !== 'string') return null;
   covered += 1;
   return {
     hooks: c.hooks,
@@ -79,4 +94,9 @@ const doc = {
 const out = writeStageJson(stagePath(stagingDir, 'copy', persona, snapshot.digestId), doc);
 console.log(`[xiaozhi-copy] 亲写覆盖 ${covered}/${targets.length} 条（未覆盖走机械兜底，终审与发布器闸照常把关）`);
 console.log(`[xiaozhi-copy] 已落盘 ${out}`);
+// P1（2026-09-07 审查）：覆盖 0 条仍打印 PASS 会让调用方误判成功。0 覆盖退非零。
+if (covered === 0) {
+  console.error('[xiaozhi-copy] 亲写覆盖 0 条，拒绝 PASS（检查 input 键是否为本轮 targetIds）');
+  process.exit(3);
+}
 console.log('XIAOZHI_COPY_PASS');

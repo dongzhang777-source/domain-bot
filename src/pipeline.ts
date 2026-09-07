@@ -16,7 +16,7 @@ import { fetchRss } from './collector/adapters/rss.js'
 import { fetchGithub } from './collector/adapters/github.js'
 import { fetchBili, fetchExa, fetchJina, fetchV2ex, fetchYtSearch } from './collector/adapters/agentreach.js'
 import { fetchTwitter } from './collector/adapters/twitter.js'
-import { fetchAnysearch } from './collector/adapters/anysearch.js'
+import { fetchAnysearch, type AnysearchFetch } from './collector/adapters/anysearch.js'
 import { resolveSourceUrl } from './collector/urlTemplate.js'
 import { buildFunnel, capEvents, collectCanonicalUrls, entityTokens, runGates } from './gates/index.js'
 import { makeScorerFromEnv } from './refinery/scorer.js'
@@ -636,7 +636,14 @@ async function collectSource(source: SourceConfig, fetchFn?: FetchFn, spawnFn?: 
     // 扩源 T3/T1（2026-09-06 老张拍板）：Twitter feed（cookies 走 env）与 anysearch 主动搜索（key 通道）
     case 'twitter':
       return fetchTwitter(source, spawnFn)
-    case 'anysearch':
-      return fetchAnysearch(source)
+    case 'anysearch': {
+      // P0（2026-09-07 审查）：必须转发 fetchFn，否则单测 mock 全旁路、必打真实网络。
+      if (!fetchFn) return fetchAnysearch(source)
+      const injected: AnysearchFetch = async (url, init) => {
+        const res = await fetchFn(url, init)
+        return { ok: res.ok, status: res.status ?? 0, text: res.text }
+      }
+      return fetchAnysearch(source, injected)
+    }
   }
 }
