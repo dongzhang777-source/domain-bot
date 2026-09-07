@@ -1,0 +1,400 @@
+{
+  "persona": "newsline",
+  "personaDisplay": "AI时事快线",
+  "digestId": "newslinemtrahmtq",
+  "generatedAt": 1788788503502,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 303
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 176
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 94
+    },
+    {
+      "stage": "afterGates",
+      "count": 40
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 40
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 20
+    },
+    {
+      "stage": "published",
+      "count": 10
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-53e7c3dd78e15afb8a07",
+      "title": "Scino/fstack",
+      "source": "github-mcp-tools",
+      "url": "https://github.com/Scino/fstack",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 12 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-81d665f9e86a6f59e4b4",
+      "title": "v3.1.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.1.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-52346d0708da30e3fe18",
+      "title": "v3.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-e426bb385fd6a5910632",
+      "title": "6.3.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.3.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-56852fbf1855a1cf7d72",
+      "title": "v1.17.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/langgenius/dify/releases/tag/1.17.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 7 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-7eebfa572638476abeaf",
+      "title": "6.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-1af3a9bfba40bb0a07dc",
+      "title": "shutter-bashir/BASHIR-2.0: AI-powered multi-agent system that automates your internship/attachment search. Discovers companies via Google Maps, extracts emails from websites, writes personalized applications using a local LLM (Ollama), creates Gmail drafts with your CV attached, tracks everything in Google Sheets, and auto-follows up. Built for university students.",
+      "source": "github-local-llm",
+      "url": "https://github.com/shutter-bashir/BASHIR-2.0",
+      "gate": "blacklist",
+      "ruleId": "ad:resume",
+      "reason": "命中负向模式 ad:resume（adRecruit）"
+    },
+    {
+      "itemId": "u-db761385295803bb25d4",
+      "title": "⌛",
+      "source": "twitter-feed",
+      "url": "https://x.com/herdrdev/status/2096728106669142271",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 1 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-aac772e7cc7f57075cc4",
+      "title": "What the fuck",
+      "source": "twitter-feed",
+      "url": "https://x.com/RafaRuizdeLira/status/2096593368675475497",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 13 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-ba39781f2efaea647ca5",
+      "title": "Play now at",
+      "source": "twitter-feed",
+      "url": "https://x.com/EvanMilenko/status/2096660264582054063",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 11 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-06e1a5a86afab12776e5",
+      "title": "デジタル庁へ",
+      "source": "twitter-feed",
+      "url": "https://x.com/haruo2177/status/2096830249787171078",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-8e5c37d59b6b81bbf497",
+      "title": "冷知识：",
+      "source": "twitter-feed",
+      "url": "https://x.com/chasen_liao/status/2096870280589369503",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 4 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "(batch)",
+      "title": "27 条宽通道候选超池上限",
+      "source": "(multiple)",
+      "url": "",
+      "gate": "recall",
+      "ruleId": "recall:poolOverflow",
+      "reason": "待定池上限 20，按积分降序截断 27 条"
+    },
+    {
+      "itemId": "u-ac938480297cab59c543",
+      "title": "Everyone is overcomplicating making money with AI.",
+      "source": "twitter-feed",
+      "url": "https://x.com/Manu_Sisti/status/2096625722077151381",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Clickbait money-making hustle content, not informative AI news"
+    },
+    {
+      "itemId": "u-bdafc00e492aa0aec901",
+      "title": "VMware migration reduces Tottenham Hotspur's licensing fees by 85 percent",
+      "source": "hn-frontpage",
+      "url": "https://arstechnica.com/information-technology/2026/09/vmware-migration-reduces-tottenham-hotspurs-licensing-fees-by-85-percent/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：IT infrastructure licensing story, unrelated to AI/LLM"
+    },
+    {
+      "itemId": "u-b5b9f50d8d0cc2c4e254",
+      "title": "Delinor-Hens/Vortex: ИИ под названием Vortex для любых задач. Сейчас уже доступна рабочая версия проекта, которая ежедневно улучшается",
+      "source": "github-new-llm-tools",
+      "url": "https://github.com/Delinor-Hens/Vortex",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Minor 11-star GitHub project announcement with little substance"
+    },
+    {
+      "itemId": "u-0b5ef84ae5110611ec10",
+      "title": "De-Brainrot Vacations",
+      "source": "hn-frontpage",
+      "url": "https://devz.cl/posts/i-spent-my-vacations-de-brainrotting/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Digital detox lifestyle post, not AI/LLM related"
+    },
+    {
+      "itemId": "u-d8a34bc7cc4fa19580b6",
+      "title": "Splash-free urinals for global sustainability and accessibility",
+      "source": "hn-frontpage",
+      "url": "https://academic.oup.com/pnasnexus/article/4/4/pgaf087/8098745?login=false",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Sustainability engineering paper, unrelated to AI"
+    },
+    {
+      "itemId": "u-1444d34605ce9fb67f4f",
+      "title": "Smartphone makers don't bother to comply with EU repairability requirements",
+      "source": "hn-frontpage",
+      "url": "https://www.theregister.com/personal-tech/2026/09/07/smartphone-makers-dont-bother-to-comply-with-eu-repairability-requirements/5294532",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：EU repairability regulation for smartphones, not AI-related"
+    },
+    {
+      "itemId": "u-5788240768d43dce1c7d",
+      "title": "Apparently CodePen 2.0 sends data to their servers as you type",
+      "source": "hn-frontpage",
+      "url": "https://news.ycombinator.com/item?id=49596976",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Privacy issue with CodePen editor; not AI/LLM related."
+    },
+    {
+      "itemId": "u-c7bb1162481fd91a4df4",
+      "title": "Tiny $70 Xteink X3 e-reader puts Silicon Valley to shame",
+      "source": "hn-frontpage",
+      "url": "https://www.theatlantic.com/technology/2026/09/xteink-e-reader-best-technology-years/688539/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：E-reader hardware review; not AI/LLM related."
+    },
+    {
+      "itemId": "u-24aa90368d34315ce03f",
+      "title": "Impedance Matching (2017)",
+      "source": "hn-frontpage",
+      "url": "https://www.edge.org/response-detail/27238",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Electrical engineering topic; not AI/LLM related."
+    },
+    {
+      "itemId": "u-ccd03e9e655fabfe88f8",
+      "title": "'You Can See Everything' Review: Nathan Fielder's Doc About Elizabeth Holmes",
+      "source": "hn-frontpage",
+      "url": "https://variety.com/2026/film/reviews/nathan-fielder-surprise-film-telluride-elizabeth-holmes-1236853513/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Film review about Theranos documentary; not AI/LLM related."
+    },
+    {
+      "itemId": "u-38c2ab651ad7402dc94e",
+      "title": "Caltech Mathathon – first hackathon ever devoted to research level mathematics",
+      "source": "hn-frontpage",
+      "url": "https://mathathonchallenge.com/index.html",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Mathematics hackathon; not AI/LLM related."
+    },
+    {
+      "itemId": "u-35c215c318860a057df7",
+      "title": "Live map of public transport in Belgium",
+      "source": "hn-frontpage",
+      "url": "https://openbaarvervoerbelgie.be/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Public transport map; not AI/LLM related."
+    },
+    {
+      "itemId": "u-9a9274f192ecb1cae2c7",
+      "title": "Programming is Art",
+      "source": "hn-frontpage",
+      "url": "https://orchidfiles.com/programming-is-art/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Philosophical essay on programming; not AI/LLM specific."
+    },
+    {
+      "itemId": "u-bbac755a04bf89d5bfcd",
+      "title": "LG smart TVs caught logging audio with screen off and snooping on local devices",
+      "source": "hn-frontpage",
+      "url": "https://www.notebookcheck.net/LG-smart-TVs-caught-logging-audio-with-screen-off-and-snooping-on-local-devices.1391214.0.html",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Consumer privacy/smart TV surveillance; not AI/LLM focused."
+    },
+    {
+      "itemId": "u-b7285ee336aed6ec9385",
+      "title": "Switzerland's Federal Government Is Replacing Microsoft on 3k Computers",
+      "source": "hn-frontpage",
+      "url": "https://itsfoss.com/news/switzerland-replace-microssoft-pilot/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Government IT/open-source policy; not AI/LLM related."
+    }
+  ],
+  "rejected": [
+    {
+      "itemId": "u-7c0b50f0b8bd8bf11f83",
+      "title": "IFM Launches K2 Horizon: Six Open-Source Models to 375B",
+      "url": "https://aidailypost.com/news/ifm-launches-k2-horizon-six-open",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「For architects, this release enables full reproducibility and custom fine-tuning from any stag…」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-aebe44cc14c0c310b3a3",
+      "title": "fport/issue-writer: Bilingual (EN/TR) synthetic dataset generator and LoRA fine-tuning pipeline that turns raw product input into well-formed issue tracker entries",
+      "url": "https://github.com/fport/issue-writer",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 219 码点，低于 en 下限 300",
+      "from": "selected"
+    }
+  ],
+  "rejectCounts": {
+    "gk:hookEntity": 1,
+    "gk:summaryBelowFloor": 1
+  },
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 0,
+  "eventCount": 16,
+  "eventDemoted": 18,
+  "eventFillMode": false,
+  "skippedSources": [
+    "hn-search-llm",
+    "hn-search-ai"
+  ],
+  "zeroYieldSources": [
+    "github-new-llm-tools",
+    "github-mcp-tools",
+    "github-local-llm"
+  ],
+  "recall": {
+    "poolSize": 20,
+    "included": 5,
+    "excluded": 15,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 10,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 3,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "writer",
+        "endpointId": "unknown",
+        "calls": 3,
+        "failures": 3,
+        "reasoningTokens": 0,
+        "elapsedMs": 0
+      },
+      {
+        "role": "writer",
+        "endpointId": "nvidia-nim",
+        "calls": 4,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 281035
+      },
+      {
+        "role": "writer",
+        "endpointId": "nous-proxy",
+        "calls": 3,
+        "failures": 0,
+        "reasoningTokens": 5247,
+        "elapsedMs": 151375
+      },
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 2,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 213329
+      }
+    ],
+    "llmCopyCount": 5
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.033003300330033,
+  "perSourcePublished": {
+    "exa-benchmark-sota": 2,
+    "exa-llm-news": 2,
+    "exa-model-launches": 1,
+    "exa-ai-industry": 1,
+    "twitter-feed": 1,
+    "exa-ai-hardware": 2,
+    "exa-ondevice-ai": 1
+  },
+  "langDistribution": {
+    "en": 10
+  }
+}

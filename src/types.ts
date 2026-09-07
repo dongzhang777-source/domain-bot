@@ -51,7 +51,7 @@ export interface SourceConfig {
   url: string
   weight: number
   enabled: boolean
-  /** 仅 exa：每次语义搜索返回条数（缺省 8） */
+  /** 每次拉取返回条数：exa 缺省 8；twitter 缺省 30（上限 50）；anysearch 缺省 10（服务端上限 10） */
   numResults?: number
 }
 

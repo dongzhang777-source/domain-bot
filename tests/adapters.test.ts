@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { fetchRss } from '../src/collector/adapters/rss.js'
 import { fetchGithub } from '../src/collector/adapters/github.js'
+import { extractMarkdown, parseAnysearchOutput } from '../src/collector/adapters/anysearch.js'
+import { parseTwitterFeed } from '../src/collector/adapters/twitter.js'
 import { itemId } from '../src/collector/dedupe.js'
 import type { SourceConfig } from '../src/types.js'
 
@@ -118,5 +120,93 @@ describe('github adapter', () => {
     const c = itemId('https://www.github.com/foo/llm-kit/', 'foo/llm-kit', 'yet another body')
     expect(b).toBe(a)
     expect(c).toBe(a)
+  })
+})
+
+describe('anysearch parseAnysearchOutput（扩源 T1，2026-09-07 审查 P2-3 补测）', () => {
+  it('标准 Markdown 结果块解析出 RawItem：publishedAt=0、URL 行剥出 body', () => {
+    const md = [
+      '## Search Results (2 results, 1.2s)',
+      '',
+      '### 1. Local LLM inference guide',
+      '- **URL**: https://example.com/llm-guide',
+      'A practical guide to running LLMs on device.',
+      '',
+      '### 2. Bad scheme entry',
+      '- **URL**: javascript:alert(1)',
+      'should be dropped',
+    ].join('\n')
+    const items = parseAnysearchOutput(md, 'as-1')
+    expect(items).toHaveLength(1)
+    expect(items[0].source).toBe('as-1')
+    expect(items[0].title).toBe('Local LLM inference guide')
+    expect(items[0].url).toBe('https://example.com/llm-guide')
+    expect(items[0].body).not.toContain('**URL**')
+    expect(items[0].body).toContain('practical guide')
+    // 搜索结果不带发布时间：publishedAt=0（DB-13 预筛对 =0 条目不判时效，reviewer 兜底）。
+    expect(items[0].publishedAt).toBe(0)
+    expect(items[0].id).toBe(itemId(items[0].url, items[0].title, items[0].body))
+  })
+
+  it('无结果块 / 空串返回空数组（不抛错）', () => {
+    expect(parseAnysearchOutput('', 'as-1')).toEqual([])
+    expect(parseAnysearchOutput('no results found for query', 'as-1')).toEqual([])
+  })
+})
+
+describe('anysearch extractMarkdown（MCP JSON-RPC → Markdown）', () => {
+  const rpc = (text: string) =>
+    JSON.stringify({ jsonrpc: '2.0', id: 1, result: { content: [{ type: 'text', text }] } })
+
+  it('取 result.content 中第一个 text 块', () => {
+    expect(extractMarkdown(rpc('## Search Results (1 result)'))).toBe('## Search Results (1 result)')
+  })
+
+  it('JSON-RPC error 抛错（调用方按源粒度降级）', () => {
+    const errRpc = JSON.stringify({ jsonrpc: '2.0', id: 1, error: { code: -32000, message: 'Invalid API key' } })
+    expect(() => extractMarkdown(errRpc)).toThrow('Invalid API key')
+  })
+
+  it('非 JSON / 无 text 块返回空串', () => {
+    expect(extractMarkdown('<html>not json</html>')).toBe('')
+    expect(extractMarkdown(JSON.stringify({ jsonrpc: '2.0', id: 1, result: { content: [] } }))).toBe('')
+  })
+})
+
+describe('twitter parseTwitterFeed（扩源 T3，2026-09-07 审查 P2-3 补测）', () => {
+  const feed = (tweets: unknown[], ok = true) => JSON.stringify({ ok, data: tweets })
+
+  it('标准 feed：handle 拼 status URL、t.co 链接剥离、标题取首行', () => {
+    const items = parseTwitterFeed(
+      feed([
+        { id: '123', text: 'LLMquant 更新了推理框架 https://t.co/abc123', author: { screenName: 'llmquant' }, createdAtISO: '2026-09-07T10:00:00Z' },
+      ]),
+      'tw-1',
+    )
+    expect(items).toHaveLength(1)
+    expect(items[0].url).toBe('https://x.com/llmquant/status/123')
+    expect(items[0].title).toBe('LLMquant 更新了推理框架')
+    expect(items[0].body).not.toContain('t.co')
+    expect(items[0].source).toBe('tw-1')
+    expect(items[0].publishedAt).toBe(Date.parse('2026-09-07T10:00:00Z'))
+  })
+
+  it('无 handle 时 url 兜底 x.com/i/web/status/<id>；缺 id/text 的条目被过滤', () => {
+    const items = parseTwitterFeed(
+      feed([
+        { id: '456', text: 'no author here' },
+        { id: '', text: 'missing id' },
+        { text: 'missing id field entirely' },
+      ]),
+      'tw-1',
+    )
+    expect(items).toHaveLength(1)
+    expect(items[0].url).toBe('https://x.com/i/web/status/456')
+  })
+
+  it('非 JSON / ok=false / data 非数组一律空数组（不抛错，调用方按空批处理）', () => {
+    expect(parseTwitterFeed('not json', 'tw-1')).toEqual([])
+    expect(parseTwitterFeed(feed([], false), 'tw-1')).toEqual([])
+    expect(parseTwitterFeed(JSON.stringify({ ok: true, data: 'oops' }), 'tw-1')).toEqual([])
   })
 })
