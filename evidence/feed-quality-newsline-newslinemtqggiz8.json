@@ -1,0 +1,344 @@
+{
+  "persona": "newsline",
+  "personaDisplay": "AI时事快线",
+  "digestId": "newslinemtqggiz8",
+  "generatedAt": 1788738063380,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 274
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 131
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 31
+    },
+    {
+      "stage": "afterGates",
+      "count": 12
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 12
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 12
+    },
+    {
+      "stage": "published",
+      "count": 7
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-a8e8f9dc895a026b51bb",
+      "title": "An Alien Mind",
+      "source": "hn-frontpage",
+      "url": "https://openai.com/index/an-alien-mind/",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 13 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-81d665f9e86a6f59e4b4",
+      "title": "v3.1.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.1.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-52346d0708da30e3fe18",
+      "title": "v3.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-e426bb385fd6a5910632",
+      "title": "6.3.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.3.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-56852fbf1855a1cf7d72",
+      "title": "v1.17.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/langgenius/dify/releases/tag/1.17.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 7 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-7eebfa572638476abeaf",
+      "title": "6.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-aa77211859b3af538313",
+      "title": "Windows 11's \"special\" developer edition looks like another marketing misfire",
+      "source": "hn-frontpage",
+      "url": "https://www.neowin.net/opinions/windows-11s-special-developer-edition-sounds-like-yet-another-marketing-misfire/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Windows OS marketing critique, not AI/LLM related"
+    },
+    {
+      "itemId": "u-6837118d1bcf261a5640",
+      "title": "Show HN: Mador – Make any DOM reactive with a tiny 80-line Proxy state tuple",
+      "source": "hn-frontpage",
+      "url": "https://github.com/marsbos/mador",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：JavaScript DOM library, not AI/LLM related"
+    },
+    {
+      "itemId": "u-0a7fab88510ee8b184af",
+      "title": "It took a year to ship WebAssembly in Anubis",
+      "source": "hn-frontpage",
+      "url": "https://anubis.techaro.lol/blog/2026/anubis-wasm/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：WebAssembly engineering blog, not AI/LLM related"
+    },
+    {
+      "itemId": "u-d240cb834695576091d8",
+      "title": "GrapheneOS Overhauled Default Apps and Secure Clipboard",
+      "source": "hn-frontpage",
+      "url": "https://grapheneos.social/@GrapheneOS/117225539756835649",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Android privacy OS update, not AI/LLM related"
+    },
+    {
+      "itemId": "u-e752bff20023ec5145af",
+      "title": "Nitter and XCancel resume service after legal advice",
+      "source": "hn-frontpage",
+      "url": "https://github.com/zedeus/nitter/commit/1428b4c2b4246f92a7e5b2673438e5fb39fcc4a3",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Twitter frontend services, not AI/LLM related"
+    },
+    {
+      "itemId": "u-e91c9bec111838a12006",
+      "title": "Research carried out using NetBSD",
+      "source": "hn-frontpage",
+      "url": "https://www.netbsd.org/gallery/research.html",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：NetBSD academic research gallery, not AI/LLM related"
+    },
+    {
+      "itemId": "u-f7f9058dd4784a263e54",
+      "title": "NetBSD 9.5 released and EOL for NetBSD-9",
+      "source": "hn-frontpage",
+      "url": "https://blog.netbsd.org/tnf/entry/netbsd_9_5_released_and",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：NetBSD OS release, not AI/LLM related"
+    },
+    {
+      "itemId": "u-4eb97e7acd8207b7f7ef",
+      "title": "Asahi Linux on M3",
+      "source": "hn-frontpage",
+      "url": "https://asahilinux.org/2026/09/m2-episode-1/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Linux on Apple Silicon, not AI/LLM related"
+    },
+    {
+      "itemId": "u-a7bae0d3d5c09f5475f5",
+      "title": "Icy Moons Are Ocean Worlds",
+      "source": "hn-frontpage",
+      "url": "https://mceglowski.substack.com/p/icy-moons-are-ocean-worlds",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Planetary science/astronomy, not AI/LLM related"
+    },
+    {
+      "itemId": "u-0c4cbb7ffcc5f1b9dca0",
+      "title": "Your intellectual fly is open (2025)",
+      "source": "hn-frontpage",
+      "url": "https://bcantrill.dtrace.org/2025/12/05/your-intellectual-fly-is-open/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Blog on intellectual property philosophy, not AI/LLM related"
+    },
+    {
+      "itemId": "u-b2298b008e38a01e7ed2",
+      "title": "Doomscrolling Ourselves to Death",
+      "source": "hn-frontpage",
+      "url": "https://www.edwest.co.uk/p/doomscrolling-ourselves-to-death",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Doomscrolling/psychology topic, not AI/LLM related"
+    },
+    {
+      "itemId": "u-2b97fcb197077f0f26b5",
+      "title": "Isar Aerospace reaches orbit and deploys payloads on second flight",
+      "source": "hn-frontpage",
+      "url": "https://isaraerospace.com/press/history-for-european-spaceflight-isar-aerospace-reaches-orbit-and-deploys-payloads-on-second-flight",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Space launch news, not AI/LLM related"
+    },
+    {
+      "itemId": "u-37a1e56e6b039da270c9",
+      "title": "JohanScheepers/meshtastic-zero-cost-hops: A practical guide on Meshtastic v2.7.11+ Zero-Cost Hops, featuring real-world backbone routing examples across the KZN mesh network (Durban to Mooi River).",
+      "source": "github-finetuning",
+      "url": "https://github.com/JohanScheepers/meshtastic-zero-cost-hops",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Mesh networking/LoRa guide, not AI/LLM related"
+    }
+  ],
+  "rejected": [
+    {
+      "itemId": "u-f8a527bfa4bb595ba1d6",
+      "title": "OpenAI's GPT-6 Astra Is Shockingly Good at Almost Everything - Decrypt",
+      "url": "https://decrypt.co/377514/openai-gpt-6-astra-review-shockingly-good",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「输入输出定价达前代2.5倍，却在24分钟内生成可玩的3D杭州与无瑕疵巴赫合唱。」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-5b93b0e88cb51d456636",
+      "title": "OpenAI scientist urges AI development slowdown for safety, impacting Anthropic odds",
+      "url": "https://cryptobriefing.com/openai-scientist-urges-ai-development-slowdown-for-safety-impacting-anthropic/",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「OpenAI首席科学家呼吁自愿放缓AI开发，但未给出量化时间表或具体对齐指标，引发行业对安全与速度权衡的重新评估」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-247f0d54b6ea061f4e99",
+      "title": "MBZUAI K2 Horizon: Six Fully Open Models Up to 375B Parameters | AI2Work",
+      "url": "https://ai2.work/blog/mbzuai-k2-horizon-six-fully-open-models-up-to-375b-parameters",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「全栈开放承诺打折扣，大模型复现与对齐审计面临黑盒风险」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-0baec82b323a0a976995",
+      "title": "Nvidia's $20B Groq bet goes live this year with new AI racks",
+      "url": "https://cryptobriefing.com/nvidia-groq-ai-inference-racks/",
+      "ruleId": "gk:hookEntity",
+      "detail": "钩子「从纸面授权到全面量产仅数月，低延迟推理的散热与稳定性面临极限考验」不含原文任何实体词，判为泛化文案",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-d83bb162e8f5be32ac3f",
+      "title": "Saganaki22/ComfyUI-Viggle-Animate-H3",
+      "url": "https://github.com/Saganaki22/ComfyUI-Viggle-Animate-H3",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 107 码点，低于 en 下限 300",
+      "from": "selected"
+    }
+  ],
+  "rejectCounts": {
+    "gk:hookEntity": 4,
+    "gk:summaryBelowFloor": 1
+  },
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 0,
+  "eventCount": 9,
+  "eventDemoted": 1,
+  "eventFillMode": false,
+  "skippedSources": [],
+  "zeroYieldSources": [
+    "hn-frontpage",
+    "exa-agent-releases"
+  ],
+  "recall": {
+    "poolSize": 15,
+    "included": 2,
+    "excluded": 13,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 7,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 1,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "writer",
+        "endpointId": "nous-proxy",
+        "calls": 2,
+        "failures": 0,
+        "reasoningTokens": 3534,
+        "elapsedMs": 79646
+      },
+      {
+        "role": "writer",
+        "endpointId": "unknown",
+        "calls": 1,
+        "failures": 1,
+        "reasoningTokens": 0,
+        "elapsedMs": 0
+      },
+      {
+        "role": "writer",
+        "endpointId": "deepseek-byok",
+        "calls": 2,
+        "failures": 0,
+        "reasoningTokens": 4234,
+        "elapsedMs": 44895
+      },
+      {
+        "role": "writer",
+        "endpointId": "nvidia-nim",
+        "calls": 1,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 78460
+      },
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 2,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 171806
+      }
+    ],
+    "llmCopyCount": 4
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.025547445255474453,
+  "perSourcePublished": {
+    "exa-ai-hardware": 2,
+    "exa-ondevice-ai": 2,
+    "exa-ai-industry": 2,
+    "exa-model-launches": 1
+  },
+  "langDistribution": {
+    "en": 7
+  }
+}
