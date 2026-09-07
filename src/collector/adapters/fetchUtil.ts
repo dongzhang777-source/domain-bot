@@ -96,7 +96,6 @@ function isLoopbackOrPrivateHost(host: string): boolean {
 
 /** 校验 URL 为公开 HTTPS（防 SSRF）。Reject localhost/私网 IP/非 https/纯 IP 元数据。 */
 const PRIVATE_HOSTS = new Set(['localhost', 'localhost.', 'ip6-localhost', 'ip6-loopback'])
-
 export function isPublicHttpsUrl(input: string): boolean {
   let parsed: URL
   try {
@@ -113,4 +112,22 @@ export function isPublicHttpsUrl(input: string): boolean {
   // 拒绝 URL 中包含 @ 的 userinfo（可绕过 host 解析）
   if (parsed.username || parsed.password) return false
   return true
+}
+
+/**
+ * 内容链接安全校验（P1，2026-09-07 审查）。
+ *
+ * 与 isPublicHttpsUrl 的区别：这里只防客户端 scheme 注入（`javascript:` 经包
+ * 直达 tuna「↗原文」），不做 SSRF 判定——链接文本永不直接被服务端抓取。
+ * http 允许（部分源如 V2EX API 返回 http 链接），空串允许（itemId 回退内容哈希派生）。
+ */
+export function isSafeLinkUrl(input: string): boolean {
+  if (input === '') return true
+  let parsed: URL
+  try {
+    parsed = new URL(input)
+  } catch {
+    return false
+  }
+  return parsed.protocol === 'http:' || parsed.protocol === 'https:'
 }

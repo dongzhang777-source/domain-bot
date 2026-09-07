@@ -233,3 +233,36 @@ describe('jina adapter SSRF 防护', () => {
     await expect(fetchJina(src('jina', 'https://user:pass@example.com/'), async () => ({ ok: true, status: 200, text: async () => '' }))).rejects.toThrow('SSRF')
   })
 })
+
+describe('P1 内容链接 scheme 校验（2026-09-07 审查）：javascript: 不得进包', () => {
+  it('exa：危险 scheme 整条丢弃，http 保留', () => {
+    const out = [
+      'Title: evil',
+      'URL: javascript:alert(1)',
+      'Published: N/A',
+      'Author: x',
+      'Highlights:',
+      'body',
+      '---',
+      'Title: legit http',
+      'URL: http://example.com/a',
+      'Published: N/A',
+      'Author: x',
+      'Highlights:',
+      'body',
+      '---',
+    ].join('\n')
+    const items = parseExaOutput(out, 'exa-x')
+    expect(items).toHaveLength(1)
+    expect(items[0]!.url).toBe('http://example.com/a')
+  })
+
+  it('v2ex：危险 scheme 置空（id 回退哈希），条目保留', async () => {
+    const body = JSON.stringify([
+      { title: 'evil link', url: 'javascript:alert(1)', content: 'x', created: 1790000000 },
+    ])
+    const items = await fetchV2ex(src('v2ex'), async () => ({ ok: true, status: 200, text: async () => body }))
+    expect(items).toHaveLength(1)
+    expect(items[0]!.url).toBe('')
+  })
+})

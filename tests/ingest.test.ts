@@ -175,6 +175,18 @@ describe('ingestTunaSignals：把 tuna 行为喂回记忆库', () => {
     expect(report.interestBySource[target.source]!).toBeGreaterThan(1 / 3)
   })
 
+  it('P1 收藏重复摄入不虚增计数（2026-09-07 审查：曾先计数后写入）', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dbot-ing4b-'))
+    const r = await publishOnce(dir)
+    const target = r.published[0]!
+    const path = signalsFile(dir, [], [{ postId: target.id, ts: Date.parse('2026-09-04T13:00:00Z') }])
+    const opts = { memoryDir: join(dir, 'memory'), sources, now: Date.parse('2026-09-04T13:30:00Z') }
+    const first = ingestTunaSignals(path, opts)
+    const second = ingestTunaSignals(path, { ...opts, now: Date.parse('2026-09-04T13:31:00Z') })
+    expect(first.favorites).toBe(1)
+    expect(second.favorites).toBe(0)
+  })
+
   it('幂等：同一份文件重复摄入不虚增反馈计数（判定线 P-2「有效反馈 ≥20 条」靠这条守住）', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'dbot-ing5-'))
     const r = await publishOnce(dir)

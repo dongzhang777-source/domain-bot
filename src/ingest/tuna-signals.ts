@@ -80,6 +80,8 @@ export function parsePostId(postId: string): { ref: string; digestId: string; in
   const [first, digestId, indexStr] = parts as [string, string, string]
   if (!first.startsWith('domain-bot')) return null
   if (!/^[a-z0-9]+$/.test(digestId)) return null
+  // P2（2026-09-07 审查）：Number('')===0，空 index 会伪造 ref 落到 index 0 上。
+  if (!/^\d+$/.test(indexStr)) return null
   const index = Number(indexStr)
   if (!Number.isInteger(index) || index < 0) return null
   return { ref: `${digestId}:${index}`, digestId, index, persona: first.replace(/^domain-bot-?/, '') || 'unknown' }
@@ -191,16 +193,19 @@ export function ingestTunaSignals(
       report.unresolved += 1
       continue
     }
-    report.favorites += 1
     // 收藏是最强的正信号
-    store.recordFeedback({
+    // P1（2026-09-07 审查）：曾先计数后写入且忽略去重返回值，同一文件重复摄入
+    // 即双倍计数（违反本模块幂等注释，污染 P-2）。与 views/feedback 同式守卫。
+    if (store.recordFeedback({
       itemId: resolved.itemId,
       digestId: resolved.digestId,
       source: resolved.source,
       signal: 'up',
       at: typeof f.ts === 'number' && f.ts > 0 ? f.ts : now,
-    })
-    recordExpandToDisk(opts.memoryDir, resolved.source)
+    })) {
+      report.favorites += 1
+      recordExpandToDisk(opts.memoryDir, resolved.source)
+    }
   }
 
   // 结算已过判定期的曝光（未展开者计弱负证据）。必须在写入本轮信号之后跑，

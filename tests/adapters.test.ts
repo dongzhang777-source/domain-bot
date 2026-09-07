@@ -57,6 +57,18 @@ describe('rss adapter', () => {
     const items = await fetchRss(rssSource, mockFetch(xml))
     expect(items[0].body).toBe('Real summary fallback content.')
   })
+
+  it('P1 feed 内危险 scheme 链接置空（2026-09-07 审查），条目保留', async () => {
+    const xml = `<?xml version="1.0"?><rss><channel><item>
+      <title>evil link in feed</title>
+      <description>body here</description>
+      <link>javascript:alert(1)</link>
+      <pubDate>Tue, 01 Sep 2026 00:00:00 GMT</pubDate>
+    </item></channel></rss>`
+    const items = await fetchRss(rssSource, mockFetch(xml))
+    expect(items).toHaveLength(1)
+    expect(items[0].url).toBe('')
+  })
 })
 
 describe('github adapter', () => {

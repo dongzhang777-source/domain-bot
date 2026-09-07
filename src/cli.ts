@@ -159,7 +159,11 @@ export function makeRecallJudge(
   const minRate = persona.recall.minAgreementRate ?? 0.7
   const maxTokens = editorial.reviewer.maxTokens
   const batchSize = editorial.reviewer.batchSize
-  const cachePath = join(memoryDir, 'recall-calibration.json')
+  // P1（2026-09-07 审查）：缓存曾是单文件跨 persona 共用，但 cacheKey 含 persona.id——
+  // newsline 写 key-A → deepthought 读到不符判失效重校准并覆盖 → 每轮重复全量 LLM 校准。
+  // 按 persona 分片，24h TTL 才能真正命中。
+  const safePersona = persona.id.replace(/[^a-z0-9-]/gi, '_')
+  const cachePath = join(memoryDir, `recall-calibration-${safePersona}.json`)
   // 缓存身份（DB-10/S2-7）：换 persona / 换端点链 / 改金标任一发生，旧校准结论一律失效
   const cacheKey =
     persona.id +

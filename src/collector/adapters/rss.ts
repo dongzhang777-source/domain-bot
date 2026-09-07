@@ -2,7 +2,7 @@ import { XMLParser } from 'fast-xml-parser'
 import { itemId } from '../dedupe.js'
 import type { FetchFn, RawItem, SourceConfig } from '../../types.js'
 
-import { TIMEOUTS, timeoutSignal, withSizeLimit } from './fetchUtil.js'
+import { TIMEOUTS, isSafeLinkUrl, timeoutSignal, withSizeLimit } from './fetchUtil.js'
 
 export const defaultFetch: FetchFn = (url, init) => fetch(url, init)
 
@@ -61,7 +61,10 @@ export async function fetchRss(source: SourceConfig, fetchFn: FetchFn = defaultF
     const title = text(e.title)
     const body = text(e.description) || text(e.summary) || text(e['content:encoded']) || ''
     const publishedAt = Date.parse(text(e.pubDate ?? e.updated ?? e.published ?? e['dc:date'])) || 0
-    const url = linkOf(e)
+    const rawUrl = linkOf(e)
+    // P1（2026-09-07 审查）：feed 内 link 不校验 scheme，`javascript:` 可直达 tuna。
+    // 非法 scheme 置空（itemId 回退内容哈希派生）；空串本就合法（linkOf 原样）。
+    const url = isSafeLinkUrl(rawUrl) ? rawUrl : ''
     return {
       // 规范 URL 派生（非内容哈希）：同一篇报道经 rss 与 exa 双渠道抓回时正文略异，
       // 内容派生会得到两个 id → dedupe 放行 → DB-03 实测 12 条完全重复。

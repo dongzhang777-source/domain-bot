@@ -12,7 +12,9 @@
     "github-agents",
     "github-rag",
     "yt-llm",
-    "bili-llm"
+    "bili-llm",
+    "anysearch-local-llm",
+    "anysearch-agent-bench"
   ],
   "maxAgeHours": 720,
   "maxItems": 10,

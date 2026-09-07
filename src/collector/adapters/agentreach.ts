@@ -1,7 +1,7 @@
 import { itemId } from '../dedupe.js'
 import type { FetchFn, RawItem, SourceConfig, SpawnFn } from '../../types.js'
 import { defaultFetch } from './rss.js'
-import { isPublicHttpsUrl, TIMEOUTS, timeoutSignal, withSizeLimit } from './fetchUtil.js'
+import { isPublicHttpsUrl, isSafeLinkUrl, TIMEOUTS, timeoutSignal, withSizeLimit } from './fetchUtil.js'
 
 /**
  * Agent-Reach（https://github.com/Panniantong/Agent-Reach）免登录通道适配器集合。
@@ -47,7 +47,7 @@ export function parseExaOutput(output: string, sourceId: string): RawItem[] {
       publishedAt: publishedRaw ? Date.parse(publishedRaw) || 0 : 0,
       raw: block,
     }
-  }).filter((i) => i.title && i.url)
+  }).filter((i) => i.title && i.url && isSafeLinkUrl(i.url))
 }
 
 export async function fetchExa(source: SourceConfig, spawnFn: SpawnFn = exaSpawn): Promise<RawItem[]> {
@@ -78,12 +78,15 @@ export async function fetchV2ex(source: SourceConfig, fetchFn: FetchFn = default
   const topics = JSON.parse(await res.text()) as V2exTopic[]
   return topics.map((t) => {
     const body = (t.content ?? '').slice(0, 600) || `节点：${t.node?.title ?? '未知'} · 作者：${t.member?.username ?? '未知'}`
+    // P1（2026-09-07 审查）：API 返回的 url 不校验 scheme，`javascript:` 可直达 tuna。
+    // 非法 scheme 置空（itemId 回退内容哈希派生，不误杀整条）。
+    const url = isSafeLinkUrl(t.url ?? '') ? (t.url as string) : ''
     return {
-      id: itemId(t.url, t.title, body),
+      id: itemId(url, t.title, body),
       source: source.id,
       title: t.title,
       body,
-      url: t.url,
+      url,
       publishedAt: t.created ? t.created * 1000 : 0,
       raw: t,
     }

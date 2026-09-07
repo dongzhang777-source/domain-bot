@@ -22,7 +22,8 @@
     "exa-benchmark-sota",
     "exa-open-weights",
     "github-inference-engines",
-    "exa-ai-hardware"
+    "exa-ai-hardware",
+    "twitter-feed"
   ],
   "maxAgeHours": 72,
   "maxItems": 10,
