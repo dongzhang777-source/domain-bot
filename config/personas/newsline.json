@@ -25,7 +25,7 @@
     "exa-ai-hardware"
   ],
   "maxAgeHours": 72,
-  "maxItems": 80,
+  "maxItems": 10,
   "minQualityScore": 6,
   "clusterThreshold": 0.35,
   "rejectRules": [

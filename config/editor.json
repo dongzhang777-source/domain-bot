@@ -11,18 +11,6 @@
     "temperature": 0.3,
     "chain": [
       {
-        "id": "deepseek-byok",
-        "baseUrlEnv": "DEEPSEEK_WRITER_BASE_URL",
-        "baseUrlDefault": "https://api.deepseek.com/v1",
-        "apiKeyEnv": "DEEPSEEK_API_KEY",
-        "modelEnv": "DEEPSEEK_WRITER_MODEL",
-        "modelDefault": "deepseek-v4-flash",
-        "timeoutMs": 180000,
-        "extraBody": {
-          "reasoning_effort": "low"
-        }
-      },
-      {
         "id": "nous-proxy",
         "baseUrlEnv": "EDITOR_WRITER_FALLBACK_BASE_URL",
         "baseUrlDefault": "http://127.0.0.1:8052/v1",

@@ -15,7 +15,7 @@
     "bili-llm"
   ],
   "maxAgeHours": 720,
-  "maxItems": 120,
+  "maxItems": 10,
   "minQualityScore": 7,
   "clusterThreshold": 0.35,
   "rejectRules": [
