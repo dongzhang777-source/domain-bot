@@ -325,6 +325,22 @@ describe('writePack 合并写（09-07 事故回归锁：同 digest 重跑不得�
     rmSync(dir, { recursive: true, force: true })
   })
 
+  it('v3：新 URL 条目 id 撞旧包占用时重映射到空闲序号（09-08 编号位移丢稿回归锁）', () => {
+    setup()
+    // 旧包：nl:0 = 条目 X（url /1）
+    writePack(buildPack([post()], ctx), dir)
+    // 新一轮：亲写条目编到 nl:0（与旧包同 id）但 URL 不同 → 不得挤占，也不得丢弃；
+    // 正确行为 = 重映射到空闲序号 1
+    const newPost = post({ id: 'domain-bot-newsline:abc123:0', url: 'https://arxiv.org/abs/9', title: 'A fresh editorial piece on new models' })
+    writePack(buildPack([newPost], ctx), dir)
+    const merged = read()
+    expect(merged.posts).toHaveLength(2)
+    expect(merged.posts.map((p: any) => p.sourceUrl)).toEqual(['https://arxiv.org/abs/1', 'https://arxiv.org/abs/9'])
+    expect(merged.brief.items).toHaveLength(2)
+    expect(() => assertPackContract(merged)).not.toThrow()
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('旧包损坏不可读时退回覆盖写，不阻断发布', () => {
     setup()
     require('node:fs').mkdirSync(dir, { recursive: true })

@@ -134,49 +134,68 @@ export function assertPackContract(pack: FeedPack): void {
   }
 }
 
+type Entry = { post: Record<string, unknown>; brief: FeedPack['brief']['items'][number] }
+
+const entryUrlOf = (e: Entry) => canonicalUrl(String(e.post.sourceUrl ?? ''))
+
 export function writePack(pack: FeedPack, outDir: string): string {
   const path = join(outDir, `feed-pack-${pack.persona}-${pack.digestId}.json`)
-  // 合并写（2026-09-07 事故修复）：同 digest 重跑 publish 时，此前已发布的条目会被
+  // 合并写 v3（2026-09-08 事故修复）：同 digest 重跑 publish 时，此前已发布的条目会被
   // 指纹库（gk:alreadyPublished）拦下、不在本轮 published 里——整文件覆盖会把它们从
-  // 交付面抹掉（已消费但不在任何 pack，下游永久丢稿，09-07 实测两轮各丢一半）。
-  // 合并规则：
-  //   a) 同 id（同一条目重发/文案刷新）→ 新胜。清指纹补发的恢复流程依赖此路径。
-  //   b) 不同 id 但规范 URL 相同（重跑重编号）→ 旧胜，不换号重发已交付内容。
-  //   c) 同 id 但 URL 变了（不应发生）→ 不挤占旧账，跳过新条。
+  // 交付面抹掉（已消费但不在任何 pack，下游永久丢稿）。
+  //
+  // **条目身份 = 规范 URL**（内容不变则身份不变）。v2 的「id 为主键」有致命缺陷：
+  // postId 的 index 是每次 publish 重编号的，跨 run 编号位移时，新亲写稿会与旧机械稿
+  // 撞 id——v2 规则把新条目当「挤占者」跳过，实测一晚丢 5 篇亲写稿。
+  // v3 规则：
+  //   a) 同 URL：同一条目。id 相同 → 文案刷新（新胜）；id 不同 → 保留已交付形态
+  //      （旧 id 已对外发布过，不换号，防 postId 漂移与重复）。
+  //   b) 新 URL：新条目。id 未被占用 → 直接加入；id 撞车（跨 run 编号位移）→
+  //      重映射到空闲序号（防「占坑跳过」式丢稿）。
   let merged = pack
   if (existsSync(path)) {
     try {
       const prev = JSON.parse(readFileSync(path, 'utf8')) as FeedPack
-      const byId = new Map(prev.posts.map((p) => [String(p.id), p]))
-      const briefById = new Map(prev.brief.items.map((i) => [i.postId, i]))
-      const seenUrls = new Set(
-        prev.posts
-          .map((p) => canonicalUrl(String(p.sourceUrl ?? '')))
-          .filter((u) => u.length > 0),
-      )
+      const urlOf = (p: Record<string, unknown>) => canonicalUrl(String(p.sourceUrl ?? ''))
+      const byUrl = new Map<string, Entry>()
+      const usedIds = new Set<string>()
+      for (let i = 0; i < prev.posts.length; i++) {
+        const post = prev.posts[i]!
+        byUrl.set(entryUrlOf({ post, brief: prev.brief.items[i]! }), { post, brief: prev.brief.items[i]! })
+        usedIds.add(String(post.id))
+      }
       for (let i = 0; i < pack.posts.length; i++) {
         const p = pack.posts[i]!
-        const id = String(p.id)
-        const url = canonicalUrl(String(p.sourceUrl ?? ''))
-        if (byId.has(id)) {
-          // a) 同 id 内容刷新：新胜（brief 同步换新）
-          byId.set(id, p)
-          briefById.set(id, pack.brief.items[i]!)
+        const k = entryUrlOf({ post: p, brief: pack.brief.items[i]! })
+        const hit = byUrl.get(k)
+        if (hit) {
+          // a) 同 URL：id 相同 = 同一条目刷新（新胜）；id 不同 = 保留已交付形态
+          if (String(hit.post.id) === String(p.id)) {
+            byUrl.set(k, { post: p, brief: pack.brief.items[i]! })
+          }
           continue
         }
-        if (url.length > 0 && seenUrls.has(url)) continue // b) 已按别的 id 交付过同文
-        if (url.length > 0) seenUrls.add(url)
-        byId.set(id, p)
-        briefById.set(id, pack.brief.items[i]!)
+        // b) 新 URL 条目：id 撞车（跨 run 编号位移）→ 重映射到空闲序号
+        let id = String(p.id)
+        if (usedIds.has(id)) {
+          const m = id.match(/^(.*:)(\d+)$/)
+          const prefix = m ? m[1] : id + ':'
+          let n = m ? Number(m[2]) : 0
+          do { id = prefix + n; n += 1 } while (usedIds.has(id))
+        }
+        byUrl.set(k, { post: { ...p, id }, brief: { ...pack.brief.items[i]!, postId: id } })
+        usedIds.add(id)
       }
-      const posts = [...byId.values()].sort((a, b) => postIndex(a) - postIndex(b))
+      const posts = [...byUrl.values()]
+        .map((e) => e.post)
+        .sort((a, b) => postIndex(a) - postIndex(b))
       merged = {
         ...pack,
         posts,
         brief: {
           generatedAt: pack.brief.generatedAt,
           items: posts
-            .map((p) => briefById.get(String(p.id)))
+            .map((p) => byUrl.get(entryUrlOf({ post: p, brief: { postId: '', why: '', source: 'static' } }))?.brief)
             .filter((i): i is FeedPack['brief']['items'][number] => i !== undefined),
         },
       }
