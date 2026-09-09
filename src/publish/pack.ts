@@ -169,10 +169,10 @@ export function writePack(pack: FeedPack, outDir: string): string {
         const k = entryUrlOf({ post: p, brief: pack.brief.items[i]! })
         const hit = byUrl.get(k)
         if (hit) {
-          // a) 同 URL：id 相同 = 同一条目刷新（新胜）；id 不同 = 保留已交付形态
-          if (String(hit.post.id) === String(p.id)) {
-            byUrl.set(k, { post: p, brief: pack.brief.items[i]! })
-          }
+          // a) 同 URL = 同一条目：**一律刷新为新文案**（新胜），id 沿用已交付形态的
+          // （postId 已对外发布过，保持稳定；文案刷新不换号）。恢复流程依赖此路径。
+          const keepId = String(hit.post.id)
+          byUrl.set(k, { post: { ...p, id: keepId }, brief: { ...pack.brief.items[i]!, postId: keepId } })
           continue
         }
         // b) 新 URL 条目：id 撞车（跨 run 编号位移）→ 重映射到空闲序号
