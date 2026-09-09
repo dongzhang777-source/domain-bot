@@ -44,7 +44,11 @@ export function renderPost(item: ScoredItem, ctx: RenderContext): GatekeeperInpu
   const lang = detectLang(`${item.title}\n${item.body}`)
   // DB-11/D1：tuna local-brief 路径不过 sanitize 闸门，生产端必须交付纯文本——
   // 标题与正文先剥裸 HTML（<p>/<a href> 等）再进钩子/摘要/底料，注入面在源头拆除。
-  const cleanTitle = stripHtml(item.title)
+  // GitHub 裸抓标题清洗（2026-09-09）：`owner/repo: 描述` 形态剥掉仓库前缀——
+  // 发布器 TITLE_SCRAPE 闸对这种形态一票拦（B1，老张批），亲写稿若保留原始标题
+  // 会被误伤（09-08 19:00 轮 wLLM 亲写稿实测被拦）。剥前缀后 title 即纯描述，
+  // 闸对本意（拦「整条裸抓」）依然有效。
+  const cleanTitle = stripHtml(item.title).replace(/^[\w.\-]+\/[\w.\-]+[:：]\s*/, '')
   const cleanBody = stripMetadata(stripHtml(item.body || item.title))
 
   // id 第一段用连字符而非冒号：tuna 侧正则 `^[a-z0-9-]+:[a-z0-9]+:\d+$` 只允许两段冒号，

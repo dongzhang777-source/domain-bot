@@ -716,3 +716,17 @@ describe('L3 篇幅：亲写 body 覆盖 + gk:bodyBelowFloor', () => {
     expect(BODY_MIN).toEqual({ zh: 600, en: 900 })
   })
 })
+
+describe('GitHub 裸抓标题清洗（09-09：owner/repo: 前缀剥离）', () => {
+  it('owner/repo: 形态的标题剥前缀，保留纯描述', () => {
+    const item = { id: 'i1', title: 'Sehastrajit-S/wLLM: A production-grade vLLM-style server for Windows', url: 'https://ex.com/1', valueScore: 0.9, body: 'A production-grade vLLM-style inference server rebuilt natively for Windows with PagedAttention and continuous batching support.', source: 'rss-1', publishedAt: Date.now(), lang: 'en' } as any
+    const rendered = renderPost(item, { persona: { id: 'newsline', displayName: 'x', domain: 'ai-llm', sources: ['rss-1'], maxAgeHours: 72, maxItems: 3, minQualityScore: 6, clusterThreshold: 0.35, rejectRules: [] }, digestId: 'abc1', index: 0, stopwords: new Set() })
+    expect(rendered.title).not.toMatch(/^Sehastrajit-S\/wLLM/)
+    expect(rendered.title).toContain('production-grade')
+  })
+  it('非裸抓形态的标题原样保留', () => {
+    const item = { id: 'i2', title: 'A normal paper title about knowledge conflict', url: 'https://ex.com/2', valueScore: 0.9, body: 'Normal body text that is long enough to pass any gates that might check it thoroughly.', source: 'rss-1', publishedAt: Date.now(), lang: 'en' } as any
+    const rendered = renderPost(item, { persona: { id: 'newsline', displayName: 'x', domain: 'ai-llm', sources: ['rss-1'], maxAgeHours: 72, maxItems: 3, minQualityScore: 6, clusterThreshold: 0.35, rejectRules: [] }, digestId: 'abc1', index: 0, stopwords: new Set() })
+    expect(rendered.title).toBe('A normal paper title about knowledge conflict')
+  })
+})
