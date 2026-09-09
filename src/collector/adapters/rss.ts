@@ -39,7 +39,7 @@ export async function fetchRss(source: SourceConfig, fetchFn: FetchFn = defaultF
   const res = await withSizeLimit(fetchFn, source.url, {
     signal: timeoutSignal(TIMEOUTS.collector),
     headers: { 'user-agent': 'domain-bot/0.1' },
-  })
+  }, { ssrfGuard: true })
   if (!res.ok) throw new Error(`rss ${source.id}: HTTP ${res.status}`)
   const xml = await res.text()
   // 实体防护保持布尔默认档（maxExpansionDepth=10 等），仅调大总展开数：

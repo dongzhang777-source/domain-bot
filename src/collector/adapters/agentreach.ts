@@ -74,7 +74,7 @@ export async function fetchV2ex(source: SourceConfig, fetchFn: FetchFn = default
   const res = await withSizeLimit(fetchFn, 'https://www.v2ex.com/api/topics/hot.json', {
     signal: timeoutSignal(TIMEOUTS.collector),
     headers: { 'user-agent': 'domain-bot/0.1' },
-  })
+  }, { ssrfGuard: true })
   if (!res.ok) throw new Error(`v2ex ${source.id}: HTTP ${res.status}`)
   const topics = JSON.parse(await res.text()) as V2exTopic[]
   return topics.map((t) => {
@@ -238,7 +238,7 @@ export async function fetchJina(source: SourceConfig, fetchFn: FetchFn = default
     const res = await withSizeLimit(fetchFn, `https://r.jina.ai/${source.url}`, {
       signal: timeoutSignal(TIMEOUTS.jina),
       headers,
-    })
+    }, { ssrfGuard: true })
     if (res.ok) {
       const text = await res.text()
       const title = text.match(/^Title: (.*)$/m)?.[1]?.trim() ?? source.url

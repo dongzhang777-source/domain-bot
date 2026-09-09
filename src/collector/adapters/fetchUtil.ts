@@ -4,6 +4,12 @@ import type { FetchFn } from '../../types.js'
  * 256 KiB 曾误伤 arXiv cs.AI 这类合法大 feed（单文件 1~2 MB），放宽后仍有界。 */
 export const MAX_BODY_BYTES = 2 * 1024 * 1024
 
+/** SSRF 重定向守卫最大跟跳数：超过视为重定向风暴，中止（2026-09-09 审查 P1）。 */
+export const MAX_REDIRECT_HOPS = 5
+
+/** 需要 manual 跟跳复核的重定向状态码 */
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308])
+
 /** 统一网络出口默认超时常量（ms） */
 export const TIMEOUTS = {
   collector: 25_000,
@@ -27,14 +33,61 @@ interface SizedReader {
 /** 包装 fetchFn，用 AbortController 计数字节并在超过上限时中止，避免把整响应读入内存。
  * 若底层返回无 body 流（如测试 mock），则在 text() 包装层做长度校验，确保上限仍生效。
  * 同时与传入的外部 signal（如超时）安全合并，防止覆盖。 */
+/** 初跳校验（scheme 不限）：sources.json 含 http:// 公网源（arxiv export API），故初跳只查
+ * 本机/私网主机与 userinfo；重定向跳才要求全量 isPublicHttpsUrl（https + 公网）。 */
+function assertNotPrivateOrigin(input: string): void {
+  let parsed: URL
+  try {
+    parsed = new URL(input)
+  } catch {
+    throw new Error(`SSRF 防护：URL 无法解析: ${input}`)
+  }
+  if (parsed.username || parsed.password) throw new Error('SSRF 防护：URL 含 userinfo，已拒绝')
+  const host = parsed.hostname
+  if (!host || PRIVATE_HOSTS.has(host.toLowerCase()) || isLoopbackOrPrivateHost(host)) {
+    throw new Error(`SSRF 防护：URL 指向本机/私网，已拒绝: ${host || input}`)
+  }
+}
+
+/** SSRF 重定向守卫下的抓取：redirect:'manual' 手动跟跳，初跳查私网主机（scheme 放行），
+ * 其后每一跳全量 isPublicHttpsUrl 重验，堵「公网 URL 302 → 本机/私网」绕道。 */
+async function fetchWithRedirectGuard(
+  fetchFn: FetchFn,
+  url: string,
+  init: RequestInit | undefined,
+  signal: AbortSignal,
+): Promise<Awaited<ReturnType<FetchFn>>> {
+  let currentUrl = url
+  for (let hop = 0; ; hop += 1) {
+    if (hop === 0) {
+      assertNotPrivateOrigin(currentUrl)
+    } else if (!isPublicHttpsUrl(currentUrl)) {
+      throw new Error(`SSRF 防护：重定向目标非公开 HTTPS URL，已拒绝: ${currentUrl}`)
+    }
+    const res = await fetchFn(currentUrl, { ...init, redirect: 'manual', signal })
+    const status = res.status ?? 0
+    // FetchFn 返回类型无 headers 字段（测试 mock 亦无），按结构访问；非重定向响应直接返回
+    const headers = (res as { headers?: { get?: (name: string) => string | null } }).headers
+    const location = REDIRECT_STATUSES.has(status) ? headers?.get?.('location') : undefined
+    if (!location) return res
+    if (hop >= MAX_REDIRECT_HOPS) {
+      throw new Error(`SSRF 防护：重定向超过 ${MAX_REDIRECT_HOPS} 跳，已中止`)
+    }
+    currentUrl = new URL(location, currentUrl).toString()
+  }
+}
+
 export async function withSizeLimit(
   fetchFn: FetchFn,
   url: string,
   init?: RequestInit,
+  opts?: { ssrfGuard?: boolean },
 ): Promise<{ ok: boolean; status?: number; text: () => Promise<string> }> {
   const controller = new AbortController()
   const signal = init?.signal ? AbortSignal.any([controller.signal, init.signal]) : controller.signal
-  const res = await fetchFn(url, { ...init, signal })
+  const res = opts?.ssrfGuard === true
+    ? await fetchWithRedirectGuard(fetchFn, url, init, signal)
+    : await fetchFn(url, { ...init, signal })
   const reader = (res as { body?: { getReader?: () => SizedReader } }).body?.getReader?.()
   if (!reader) {
     const origText = res.text.bind(res)
@@ -85,10 +138,33 @@ function isPrivateIPv4(host: string): boolean {
   return false
 }
 
+/** IPv6 本机/私有段判定（host 须已去方括号、小写）。仅对 IPv6 字面量生效（域名不含冒号）：
+ * - ::1 回环 / :: 未指定
+ * - fc00::/7 ULA（fc/fd 开头）
+ * - fe80::/10 链路本地（fe8/fe9/fea/feb 开头）
+ * - ::ffff:0:0/96 IPv4 映射地址——WHATWG 不展开 v6 字面量，`[::ffff:127.0.0.1]` 的
+ *   hostname 是 `[::ffff:7f00:1]`（实测），不查映射段则私网过滤形同虚设 */
+function isPrivateIPv6Literal(host: string): boolean {
+  if (!host.includes(':')) return false
+  if (host === '::1' || host === '::') return true
+  if (host.startsWith('fc') || host.startsWith('fd')) return true
+  if (host.startsWith('fe8') || host.startsWith('fe9') || host.startsWith('fea') || host.startsWith('feb')) return true
+  const mapped = host.match(/^::ffff:(?:([0-9a-f]{1,4}):([0-9a-f]{1,4})|(\d{1,3}(?:\.\d{1,3}){3}))$/)
+  if (mapped) {
+    const v4 = mapped[3] ?? (() => {
+      const hi = parseInt(mapped[1]!, 16)
+      const lo = parseInt(mapped[2]!, 16)
+      return `${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`
+    })()
+    return isPrivateIPv4(v4)
+  }
+  return false
+}
+
 function isLoopbackOrPrivateHost(host: string): boolean {
   const lower = host.toLowerCase()
   if (lower === 'localhost' || lower === 'localhost.' || lower === 'ip6-localhost' || lower === 'ip6-loopback') return true
-  if (lower === '::1' || lower === '[::1]') return true
+  if (isPrivateIPv6Literal(lower.replace(/^\[/, '').replace(/\]$/, ''))) return true
   if (/^\d+\.\d+\.\d+\.\d+$/.test(host) && isPrivateIPv4(host)) return true
   if (host.startsWith('10.') || host.startsWith('192.168.') || host.startsWith('127.')) return true
   return false

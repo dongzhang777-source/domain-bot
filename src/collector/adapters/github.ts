@@ -12,7 +12,7 @@ export async function fetchGithub(source: SourceConfig, fetchFn: FetchFn = defau
       'user-agent': 'domain-bot/0.1',
       'x-github-api-version': '2022-11-28',
     },
-  })
+  }, { ssrfGuard: true })
   if (!res.ok) throw new Error(`github ${source.id}: HTTP ${res.status}`)
   const data = JSON.parse(await res.text()) as {
     items?: Array<{
