@@ -83,6 +83,12 @@ const copies = targets.map((t) => {
   // 缺省回退原文底料。形状不对的字段直接整条走机械兜底，不进终审浪费坑位。
   if (c.body !== undefined && (typeof c.body !== 'string' || c.body.trim().length === 0)) return null;
   covered += 1;
+  // 篇幅预校验（规程 3）：提前拦，不等到终审才报错
+  const hooksLen = c.hooks.map(h => [...h].length);
+  hooksLen.forEach((n, i) => { if (n > 70) console.error('[xiaozhi-copy] ⚠️ hook[' + i + '] ' + n + ' 码点 > 70（终审将拒）'); });
+  const sumLen = [...c.summary].length;
+  if (sumLen > 300) console.error('[xiaozhi-copy] ⚠️ summary ' + sumLen + ' 码点 > 300（终审将拒）');
+  if (c.body && [...c.body].length < 600) console.error('[xiaozhi-copy] ⚠️ body ' + [...c.body].length + ' 码点 < 600（终审将拒）');
   return {
     hooks: c.hooks,
     summary: c.summary,
