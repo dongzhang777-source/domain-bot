@@ -1,0 +1,314 @@
+{
+  "persona": "newsline",
+  "personaDisplay": "AI时事快线",
+  "digestId": "newslinemtt1ci0k",
+  "generatedAt": 1788894079796,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 279
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 163
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 53
+    },
+    {
+      "stage": "afterGates",
+      "count": 30
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 30
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 20
+    },
+    {
+      "stage": "published",
+      "count": 10
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-81d665f9e86a6f59e4b4",
+      "title": "v3.1.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.1.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-e426bb385fd6a5910632",
+      "title": "6.3.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.3.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-52346d0708da30e3fe18",
+      "title": "v3.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-7eebfa572638476abeaf",
+      "title": "6.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-15d60ee5d7d52829c5fc",
+      "title": "N/A",
+      "source": "exa-ai-industry",
+      "url": "https://podscan.fm/podcasts/ai-convo-cast/episodes/openai-open-sources-mrc-deepminds-alphaevolve-anthropics-claude-finance-agents",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 3 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-195575a8d44cdab82d24",
+      "title": "HarmonyOS 7 goes public with agentic AI, stronger fraud protection and a storage trick that frees up to 109GB - GSMSpecs | GSMSpecs.com",
+      "source": "exa-ondevice-ai",
+      "url": "https://www.gsmspecs.com/news/harmonyos-7-public-beta-features",
+      "gate": "blacklist",
+      "ruleId": "ad:recruit",
+      "reason": "命中负向模式 ad:recruit（adRecruit）"
+    },
+    {
+      "itemId": "u-1af3a9bfba40bb0a07dc",
+      "title": "shutter-bashir/BASHIR-2.0: AI-powered multi-agent system that automates your internship/attachment search. Discovers companies via Google Maps, extracts emails from websites, writes personalized applications using a local LLM (Ollama), creates Gmail drafts with your CV attached, tracks everything in Google Sheets, and auto-follows up. Built for university students.",
+      "source": "github-local-llm",
+      "url": "https://github.com/shutter-bashir/BASHIR-2.0",
+      "gate": "blacklist",
+      "ruleId": "ad:resume",
+      "reason": "命中负向模式 ad:resume（adRecruit）"
+    },
+    {
+      "itemId": "u-32eecac48962b4db1a3e",
+      "title": "",
+      "source": "twitter-feed",
+      "url": "https://x.com/ClaudeDevs/status/2097369738968195513",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 0 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "(batch)",
+      "title": "2 条宽通道候选超池上限",
+      "source": "(multiple)",
+      "url": "",
+      "gate": "recall",
+      "ruleId": "recall:poolOverflow",
+      "reason": "待定池上限 20，按积分降序截断 2 条"
+    },
+    {
+      "itemId": "u-758ce278e938f33025c8",
+      "title": "🚀 New Jellyfin release: 12.0!",
+      "source": "twitter-feed",
+      "url": "https://x.com/jellyfin/status/2097141237832716783",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Media server release, no AI/LLM relevance"
+    },
+    {
+      "itemId": "u-1399e31b335e956dc991",
+      "title": "beepoo304/M2: M² — Android live monitor and packet diagnostics for the MeshCore network",
+      "source": "github-finetuning",
+      "url": "https://github.com/beepoo304/M2",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：LoRa mesh networking tool, no AI relevance"
+    },
+    {
+      "itemId": "u-37a1e56e6b039da270c9",
+      "title": "JohanScheepers/meshtastic-zero-cost-hops: A practical guide on Meshtastic v2.7.11+ Zero-Cost Hops, featuring real-world backbone routing examples across the KZN mesh network (Durban to Mooi River).",
+      "source": "github-finetuning",
+      "url": "https://github.com/JohanScheepers/meshtastic-zero-cost-hops",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Mesh networking guide, no AI relevance"
+    },
+    {
+      "itemId": "u-9b2a0cfa47832a1b8cb5",
+      "title": "Huawei unveils Kirin 9050 Pro chip, debuts new Mate XT 2 tri-folding smartphone · TechNode",
+      "source": "exa-ondevice-ai",
+      "url": "https://technode.com/2026/09/08/huawei-unveils-kirin-9050-pro-chip-debuts-new-mate-xt-2-tri-folding-smartphone/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Consumer smartphone chip launch, not AI-specific"
+    },
+    {
+      "itemId": "u-bd752ce0bed5cb5a7532",
+      "title": "Who here actually runs Linux as their daily desktop, not just servers? 👋",
+      "source": "twitter-feed",
+      "url": "https://x.com/sysxplore/status/2097319951480639837",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：General Linux desktop discussion, no AI relevance"
+    },
+    {
+      "itemId": "u-6d91a2a1d9225580f7a6",
+      "title": "First look at gameplay for ‘THE LEGEND OF ZELDA: OCARINA OF TIME’ remake.",
+      "source": "twitter-feed",
+      "url": "https://x.com/DiscussingFilm/status/2097327973351272627",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Gaming news, no AI relevance"
+    },
+    {
+      "itemId": "u-fb891203b547d4061900",
+      "title": "Things like this are going to be a big issue going forward with Tesla $TSLA robotaxis.",
+      "source": "twitter-feed",
+      "url": "https://x.com/JesseCohenInv/status/2097291290874380524",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Social incident about Tesla robotaxi interference, not AI news"
+    },
+    {
+      "itemId": "u-4bbfc7939ebd83ef3e19",
+      "title": "Stunning Icons in Seconds 😺",
+      "source": "twitter-feed",
+      "url": "https://x.com/code/status/2097328100464030148",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Clickbait promotional post about icon generation, no substance"
+    },
+    {
+      "itemId": "u-7d7784cda39551c71f19",
+      "title": "I think I can officially say: we are so back",
+      "source": "twitter-feed",
+      "url": "https://x.com/thsottiaux/status/2097088586843816330",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：No context, no AI relevance"
+    },
+    {
+      "itemId": "u-f92f8f359d67b594f030",
+      "title": "Esse Jogo é absurdamente foda.",
+      "source": "twitter-feed",
+      "url": "https://x.com/natebook11/status/2097089121898332660",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Portuguese gaming post, no AI relevance"
+    },
+    {
+      "itemId": "u-85efcb9fbe6006928b49",
+      "title": "终于知道马斯克为什么一定要搞人形机器人。",
+      "source": "twitter-feed",
+      "url": "https://x.com/kugo_A10/status/2097186000279888357",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Humorous meme about Musk/Cybercab, no substantive AI content"
+    },
+    {
+      "itemId": "u-11a49a10bb80594be8e9",
+      "title": "My dumb ass was wondering how they threw the boxes that high up",
+      "source": "twitter-feed",
+      "url": "https://x.com/NoContextHumans/status/2097293882140824053",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Unrelated casual comment, no AI relevance"
+    },
+    {
+      "itemId": "u-f942475c996885d1280c",
+      "title": "this quote from Carl Jung is truly great:",
+      "source": "twitter-feed",
+      "url": "https://x.com/QuoteJung/status/2097037324752212041",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Carl Jung philosophy quote, unrelated to AI"
+    }
+  ],
+  "rejected": [
+    {
+      "itemId": "u-973b0cec87d45c193959",
+      "title": "Nubia NaviX Ultra Launches as World's First AI-Agent Smartphone",
+      "url": "https://handheld.guru/nubia-navix-ultra-launches-worlds-first-ai-agent-smartphone/",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 416 码点，低于 en 下限 900（断头料不发）",
+      "from": "selected"
+    }
+  ],
+  "rejectCounts": {
+    "gk:bodyBelowFloor": 1
+  },
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 0,
+  "eventCount": 24,
+  "eventDemoted": 3,
+  "eventFillMode": false,
+  "skippedSources": [
+    "hn-frontpage",
+    "hn-search-llm",
+    "hn-search-ai"
+  ],
+  "zeroYieldSources": [
+    "github-finetuning",
+    "exa-agent-releases",
+    "github-local-llm"
+  ],
+  "recall": {
+    "poolSize": 20,
+    "included": 7,
+    "excluded": 13,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 10,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 0,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 2,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 302861
+      }
+    ],
+    "llmCopyCount": 5
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.035842293906810034,
+  "perSourcePublished": {
+    "twitter-feed": 4,
+    "exa-ai-industry": 2,
+    "exa-llm-news": 1,
+    "exa-open-weights": 1,
+    "exa-benchmark-sota": 1,
+    "exa-ai-hardware": 1
+  },
+  "langDistribution": {
+    "zh": 5,
+    "en": 5
+  }
+}

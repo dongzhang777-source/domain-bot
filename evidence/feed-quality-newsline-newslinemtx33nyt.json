@@ -1,0 +1,329 @@
+{
+  "persona": "newsline",
+  "personaDisplay": "AI时事快线",
+  "digestId": "newslinemtx33nyt",
+  "generatedAt": 1789138891541,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 232
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 128
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 106
+    },
+    {
+      "stage": "afterGates",
+      "count": 69
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 69
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 20
+    },
+    {
+      "stage": "published",
+      "count": 10
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-81d665f9e86a6f59e4b4",
+      "title": "v3.1.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.1.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-52346d0708da30e3fe18",
+      "title": "v3.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-e426bb385fd6a5910632",
+      "title": "6.3.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.3.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-5fac1a7daa7702e85372",
+      "title": "Nvidia’s 256-LPU Groq Rack Reshapes AI Inference | TEXXR",
+      "source": "exa-ai-hardware",
+      "url": "https://texxr.com/posts/ai-inference-infrastructure",
+      "gate": "blacklist",
+      "ruleId": "ad:recruit",
+      "reason": "命中负向模式 ad:recruit（adRecruit）"
+    },
+    {
+      "itemId": "u-557f4da9e1725f579060",
+      "title": "Dude, harsh!  🤣",
+      "source": "twitter-feed",
+      "url": "https://x.com/LundukeJournal/status/2098062963051561054",
+      "gate": "recall",
+      "ruleId": "recall:ineligible",
+      "reason": "宽通道预筛不达标（积分 0<3：零关键词命中）"
+    },
+    {
+      "itemId": "(batch)",
+      "title": "21 条宽通道候选超池上限",
+      "source": "(multiple)",
+      "url": "",
+      "gate": "recall",
+      "ruleId": "recall:poolOverflow",
+      "reason": "待定池上限 20，按积分降序截断 21 条"
+    },
+    {
+      "itemId": "u-9f32363a3724546c3d1e",
+      "title": "v9.8.0 — Honest Knowledge Pipeline",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/TaeSooPark-PTS/LatticeAI/releases/tag/v9.8.0",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Niche project changelog, not broadly useful news for AI readers."
+    },
+    {
+      "itemId": "u-b3bfe1ae9462aa2cc86f",
+      "title": "If you build with AI, you NEED to be using Herdr",
+      "source": "twitter-feed",
+      "url": "https://x.com/AlexFinn/status/2098243595593830436",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Promotional product recommendation, not news."
+    },
+    {
+      "itemId": "u-c845e92e50105b63d2ad",
+      "title": "a chinese guy dm'd me on telegram in december",
+      "source": "twitter-feed",
+      "url": "https://x.com/pifagor_dao/status/2098112484397728065",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Personal anecdote about GPU arbitrage; not news-worthy."
+    },
+    {
+      "itemId": "u-ffd941a57af6d905a1ca",
+      "title": "chenkb98/voxweave: Streaming speech language model plumbing: audio frames, turns, conversation schemas, batching, and adapters.",
+      "source": "github-llm-inference",
+      "url": "https://github.com/chenkb98/voxweave",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Small utility repo description, not news."
+    },
+    {
+      "itemId": "u-6b3c4d820dcdf4bbaada",
+      "title": "a portion of our team has gone back to Sol",
+      "source": "twitter-feed",
+      "url": "https://x.com/thdxr/status/2098279329419415702",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Vague personal team update, too thin for news value."
+    },
+    {
+      "itemId": "u-3167913838797d5d3327",
+      "title": "Houthis 'take control' of key island in global shipping route",
+      "source": "hn-frontpage",
+      "url": "https://www.bbc.com/news/live/cmd683p01eljt",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Geopolitics/military news, unrelated to AI"
+    },
+    {
+      "itemId": "u-9af4424a05ab8dfbde8b",
+      "title": "Ask HN: Can we please limit the AI news flood?",
+      "source": "hn-frontpage",
+      "url": "https://news.ycombinator.com/item?id=49657850",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Meta-complaint about HN feed saturation, not informative about AI itself"
+    },
+    {
+      "itemId": "u-315270e30a33af546d57",
+      "title": "Cherenkov Radiation - traveling faster than light",
+      "source": "hn-frontpage",
+      "url": "http://www.iaea.org/newscenter/news/what-is-cherenkov-radiation",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Physics topic unrelated to AI"
+    },
+    {
+      "itemId": "u-634f77dd62fae144424b",
+      "title": "CSS Curiosities of the Past",
+      "source": "hn-frontpage",
+      "url": "https://vale.rocks/posts/css-relics",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：CSS history, unrelated to AI"
+    },
+    {
+      "itemId": "u-3571337aeb54e25f6505",
+      "title": "Mexican student creates an acoustic fire extinguisher to put out fire in seconds",
+      "source": "hn-frontpage",
+      "url": "https://www.upsocl.com/en/16-year-old-mexican-student-creates-an-acoustic-fire-extinguisher-that-uses-sound-waves-to-put-out-fires-in-seconds/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Acoustic engineering invention, not AI-related"
+    },
+    {
+      "itemId": "u-8a0b18a35e536cf676b7",
+      "title": "NTSB issues investigative update on B-767 runway excursion accident in Miami",
+      "source": "hn-frontpage",
+      "url": "https://www.ntsb.gov:443/news/press-releases/Pages/NR20260909.aspx",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Aviation accident investigation, unrelated to AI"
+    }
+  ],
+  "rejected": [
+    {
+      "itemId": "u-e6b396225f0e54423d05",
+      "title": "LLaDA2.2 Mini – 131k context, open source | LLM Reference",
+      "url": "https://www.llmreference.com/model/llada2.2-mini",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 754 码点，低于 en 下限 900（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-7f2ce4dd2f0aff49a50b",
+      "title": "We're publishing our most detailed threat intelligence report to date. ",
+      "url": "https://x.com/AnthropicAI/status/2098097512544444447",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 862 码点，低于 en 下限 900（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-e9fa41919606a3d34322",
+      "title": "If coding is solved, what now?: Measuring the sloppiness of code",
+      "url": "https://earendil.com/posts/measuring-code-sloppiness/",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 152 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-b19b71063ad7b7266e86",
+      "title": "RTK reports token savings, but our cost benchmarks disagree",
+      "url": "https://quesma.com/blog/does-rtk-make-ai-coding-cheaper/",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 155 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-14a9ade9c7b7828d255b",
+      "title": "Nine coding harnesses vs. your laptop",
+      "url": "https://nasutton.notion.site/Nine-coding-harnesses-vs-your-laptop-3d139990182b80d59fa3cf500f0450ba?pvs=74",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 205 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-5db56f8b928eea76c282",
+      "title": "alphaparkinc/genpark-beam-search-autoregressive-decoder-skill: Production-grade genpark-beam-search-autoregressive-decoder-skill skill for AI agents",
+      "url": "https://github.com/alphaparkinc/genpark-beam-search-autoregressive-decoder-skill",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 192 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-13424de3b702997d5154",
+      "title": "Excited to share our fully integrated documentation experience for humans and agents, right in @GoogleAIStudio!!",
+      "url": "https://x.com/OfficialLoganK/status/2098088136794640882",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 271 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-646c4cfacd76fab63531",
+      "title": "Now live on WorkBuddy ⚡",
+      "url": "https://x.com/WorkBuddy_AI/status/2098076348749324362",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 69 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-aadadfed43e18db3adc9",
+      "title": "The Waymo effect: how AI is quietly making research less collaborative",
+      "url": "https://www.researchagenda.news/articles/the-waymo-effect.html",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 163 码点，低于 en 下限 300",
+      "from": "selected"
+    }
+  ],
+  "rejectCounts": {
+    "gk:bodyBelowFloor": 2,
+    "gk:summaryBelowFloor": 7
+  },
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 1,
+  "eventCount": 15,
+  "eventDemoted": 53,
+  "eventFillMode": true,
+  "skippedSources": [
+    "hn-search-llm",
+    "hn-search-ai",
+    "github-new-llm-tools",
+    "github-finetuning"
+  ],
+  "zeroYieldSources": [],
+  "recall": {
+    "poolSize": 20,
+    "included": 9,
+    "excluded": 11,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 10,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 0,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 2,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 332610
+      }
+    ],
+    "llmCopyCount": 0
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.04310344827586207,
+  "perSourcePublished": {
+    "exa-ondevice-ai": 2,
+    "exa-model-launches": 4,
+    "exa-benchmark-sota": 2,
+    "twitter-feed": 1,
+    "exa-ai-hardware": 1
+  },
+  "langDistribution": {
+    "en": 10
+  }
+}

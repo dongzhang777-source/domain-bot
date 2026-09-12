@@ -1,0 +1,394 @@
+{
+  "persona": "newsline",
+  "personaDisplay": "AI时事快线",
+  "digestId": "newslinemtxk91c6",
+  "generatedAt": 1789167695622,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 318
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 172
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 98
+    },
+    {
+      "stage": "afterGates",
+      "count": 50
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 50
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 20
+    },
+    {
+      "stage": "published",
+      "count": 8
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-cb81a18f3636b7fd272c",
+      "title": "Show HN: Bodily Oddities",
+      "source": "hn-frontpage",
+      "url": "https://vester.si/bodily-oddities/",
+      "gate": "blacklist",
+      "ruleId": "cross:biomed",
+      "reason": "命中负向模式 cross:biomed（crossDomain）"
+    },
+    {
+      "itemId": "u-81d665f9e86a6f59e4b4",
+      "title": "v3.1.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.1.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-52346d0708da30e3fe18",
+      "title": "v3.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-e426bb385fd6a5910632",
+      "title": "6.3.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.3.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-56852fbf1855a1cf7d72",
+      "title": "v1.17.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/langgenius/dify/releases/tag/1.17.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 7 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-5fac1a7daa7702e85372",
+      "title": "Nvidia’s 256-LPU Groq Rack Reshapes AI Inference | TEXXR",
+      "source": "exa-ai-hardware",
+      "url": "https://texxr.com/posts/ai-inference-infrastructure",
+      "gate": "blacklist",
+      "ruleId": "ad:recruit",
+      "reason": "命中负向模式 ad:recruit（adRecruit）"
+    },
+    {
+      "itemId": "u-ebfb43bdcba50a640497",
+      "title": "",
+      "source": "twitter-feed",
+      "url": "https://x.com/TiffanyFong/status/2098433498004832360",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 0 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-d7c986ad97d15e7aae6d",
+      "title": "真羡慕学生时期的爱情啊",
+      "source": "twitter-feed",
+      "url": "https://x.com/santaizi_James/status/2098403148461465941",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 11 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-84dd8d62c1b154e5b823",
+      "title": "HOLY CRAP…..💀😭",
+      "source": "twitter-feed",
+      "url": "https://x.com/ginamilan_/status/2098484986718642591",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 14 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-aec4f48439149e7df185",
+      "title": "🌸",
+      "source": "twitter-feed",
+      "url": "https://x.com/simge7456/status/2098442718737477805",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 1 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-9f0919ab2e0f6827e298",
+      "title": "QUE ES ESTOOO??? JAJAJA",
+      "source": "twitter-feed",
+      "url": "https://x.com/sadvibestw/status/2098228445985550536",
+      "gate": "recall",
+      "ruleId": "recall:ineligible",
+      "reason": "宽通道预筛不达标（积分 0<3：零关键词命中）"
+    },
+    {
+      "itemId": "u-c68bfbe3303a1fcae89e",
+      "title": "Why jump there 👆",
+      "source": "twitter-feed",
+      "url": "https://x.com/NeverteIImeodd/status/2098201682169692521",
+      "gate": "recall",
+      "ruleId": "recall:ineligible",
+      "reason": "宽通道预筛不达标（积分 0<3：零关键词命中）"
+    },
+    {
+      "itemId": "(batch)",
+      "title": "27 条宽通道候选超池上限",
+      "source": "(multiple)",
+      "url": "",
+      "gate": "recall",
+      "ruleId": "recall:poolOverflow",
+      "reason": "待定池上限 20，按积分降序截断 27 条"
+    },
+    {
+      "itemId": "u-b7ccd404c732d2458216",
+      "title": "Show HN: Godot and Rust based multiplexer (terminal panes and more)",
+      "source": "hn-frontpage",
+      "url": "https://github.com/godot-pty/gpty",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Terminal multiplexer project; no AI/LLM relevance."
+    },
+    {
+      "itemId": "u-276ab650ecdcd8020991",
+      "title": "Rune is now open source",
+      "source": "hn-frontpage",
+      "url": "https://rune.build/blog/rune-is-now-open-source",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：No AI/LLM connection evident from title or excerpt."
+    },
+    {
+      "itemId": "u-28a9cb3e9c5b51802522",
+      "title": "GrapheneOS' rewritten Messages app is released",
+      "source": "hn-frontpage",
+      "url": "https://github.com/GrapheneOS/Messaging/releases/tag/13",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Privacy OS messaging app release, not AI/LLM related."
+    },
+    {
+      "itemId": "u-25968ccc212fdfe830ce",
+      "title": "CIA Releases President's Daily Briefs in Commemoration of 9/11",
+      "source": "hn-frontpage",
+      "url": "https://www.cia.gov/stories/story/cia-releases-presidents-daily-briefs-in-commemoration-of-the-25th-anniversary-of-9-11/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Historical document release, unrelated to AI/LLM."
+    },
+    {
+      "itemId": "u-b037dd79699876100760",
+      "title": "I spent $220 on Google app ads and 60% of the installs were robots",
+      "source": "hn-frontpage",
+      "url": "https://dayzlegame.com/blog/google-ads-bot-farm/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Ad fraud/bot farm topic, not AI/LLM related."
+    },
+    {
+      "itemId": "u-026c760e63220d867c53",
+      "title": "Λ Snap – An inviting programming language for kids and adults for CS study",
+      "source": "hn-frontpage",
+      "url": "https://snap.berkeley.edu/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：CS education programming language, not AI/LLM related."
+    },
+    {
+      "itemId": "u-118e804dc5c0fc1ecfde",
+      "title": "Mind-altering drugs played key role in rise of Andean civilization",
+      "source": "hn-frontpage",
+      "url": "https://www.science.org/content/article/mind-altering-drugs-played-key-role-rise-andean-civilization",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Archaeology/anthropology topic, unrelated to AI."
+    },
+    {
+      "itemId": "u-30d36326d878ef9fa7b2",
+      "title": "Global Glacier Extinction Explorer",
+      "source": "hn-frontpage",
+      "url": "https://glacierextinction.com",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Climate data visualization tool, not AI/LLM related."
+    },
+    {
+      "itemId": "u-b812cd539537c8c1f223",
+      "title": "118M Queries per Second on Neki",
+      "source": "hn-frontpage",
+      "url": "https://planetscale.com/blog/118-million-queries-per-second-on-neki",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Database performance benchmark, not AI/LLM related."
+    }
+  ],
+  "rejected": [
+    {
+      "itemId": "u-b0708342c2195d3488a4",
+      "title": "Abacus.AI Releases Three Open-Weight Smaug Models for Agentic Workloads – Unite.AI",
+      "url": "https://www.unite.ai/abacus-ai-releases-three-open-weight-smaug-models-for-agentic-workloads/",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 540 码点，低于 zh 下限 600（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-700debec9c7716aa27f9",
+      "title": "Ling-3.0-flash-VL: Ant Group ships 124B MIT open weights",
+      "url": "https://datanorth.ai/news/ant-group-releases-ling-3-0-flash-vl",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 445 码点，低于 zh 下限 600（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-9dafcffc687afc89edb7",
+      "title": "OpenAI releases API for its voice conversation AI 'GPT-Live-1' - GIGAZINE",
+      "url": "https://gigazine.net/gsc_news/en/20260911-gpt-live-1/",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 325 码点，低于 zh 下限 600（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-a2b5fee0c66b8bf83058",
+      "title": "K2 Horizon: IFM reveals training data for all six AI models · Beckmann",
+      "url": "https://beckmann.ai/en/ai-models/2026-09/k2-horizon-ifm-fully-open-ai-models",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 159 码点，低于 zh 下限 600（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-1681b8d82e74d6d48b0f",
+      "title": "Can neural networks learn to think by denoising?",
+      "url": "https://x.com/ayhozade/status/2098391682353971546",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 338 码点，低于 en 下限 900（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-8f45028dfe076e1f4594",
+      "title": "vaibhav07772/llm-auto-retraining: LLM Auto-Retraining Pipeline — A self-improving LLM system that monitors quality, detects drift, auto fine-tunes with LoRA, and manages model versions. Built with Groq, Streamlit, and SQLite.",
+      "url": "https://github.com/vaibhav07772/llm-auto-retraining",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 314 码点，低于 en 下限 900（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-17ee56fd42bf877cba69",
+      "title": "phelpsyacht/dsh-finetune: 低成本学习微调大语言模型",
+      "url": "https://github.com/phelpsyacht/dsh-finetune",
+      "ruleId": "gk:blacklistRecheck",
+      "detail": "渲染后文本命中负向模式 damaged:titleTooShort：标题仅 12 码点，短于门槛 15，判为无意义碎条",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-eabb20d30a5d8c25e407",
+      "title": "shinegang/baron: Baron Munchausen — local memory for coding agents that outlives the chat, with a verdict on every answer. Public alpha.",
+      "url": "https://github.com/shinegang/baron",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 140 码点，低于 zh 下限 600（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-17195c4d1dca1fb0a5af",
+      "title": "Codeprojectingfuture/cloud-native-microservices-app: Cloud-native microservices application with JWT authentication, a React frontend, and an AI chat service powered by Hugging Face models.",
+      "url": "https://github.com/Codeprojectingfuture/cloud-native-microservices-app",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 179 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-1e30f8fcba15901114d2",
+      "title": "gxCaesar/open-research-skills: 从选题到可复现发布：十个可独立安装的科研 agent skill —— 顶会/期刊论文、科研绘图、基金 proposal 撰写、方法迭代到 SOTA、冷审与代码数据发布。Ten installable agent skills for research: scientific figures, conference and journal manuscripts, research funding proposals, method development, cold review and artifact release.",
+      "url": "https://github.com/gxCaesar/open-research-skills",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 476 码点，低于 en 下限 900（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-c1842f6e02f20546093a",
+      "title": "xiaYuTian11/maskit: 数据面具 Data Maskit — 专为大模型打造的本地隐私脱敏网关（请求自动打码，回复流式还原；支持 Cursor / Claude Code / Codex / Pi 等任意可配 Base URL 工具）",
+      "url": "https://github.com/xiaYuTian11/maskit",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 215 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-b27a704a0c0ff91a4468",
+      "title": "murzichek5-spec/memochka-bot: 😼 AI-участница Telegram-чата с памятью, локальными мемами, реакциями и собственным характером",
+      "url": "https://github.com/murzichek5-spec/memochka-bot",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 206 码点，低于 en 下限 300",
+      "from": "selected"
+    }
+  ],
+  "rejectCounts": {
+    "gk:bodyBelowFloor": 8,
+    "gk:blacklistRecheck": 1,
+    "gk:summaryBelowFloor": 3
+  },
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 0,
+  "eventCount": 33,
+  "eventDemoted": 9,
+  "eventFillMode": false,
+  "skippedSources": [
+    "hn-search-ai"
+  ],
+  "zeroYieldSources": [],
+  "recall": {
+    "poolSize": 20,
+    "included": 11,
+    "excluded": 9,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 8,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 0,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 2,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 332610
+      }
+    ],
+    "llmCopyCount": 0
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.025157232704402517,
+  "perSourcePublished": {
+    "exa-agent-releases": 1,
+    "exa-ondevice-ai": 3,
+    "exa-llm-news": 4
+  },
+  "langDistribution": {
+    "en": 8
+  }
+}

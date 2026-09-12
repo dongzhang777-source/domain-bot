@@ -1,0 +1,656 @@
+{
+  "persona": "deepthought",
+  "personaDisplay": "AI深度思想",
+  "digestId": "deepthoughtmtugwav1",
+  "generatedAt": 1788980664061,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 2132
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 1296
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 903
+    },
+    {
+      "stage": "afterGates",
+      "count": 349
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 349
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 20
+    },
+    {
+      "stage": "published",
+      "count": 10
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-77775c1731a745f527eb",
+      "title": "Everything in Moderation: Per-Domain Coverage Optima and Alignment-Resistant Domain Gaps in Multi-Domain Mid-Training",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.09081v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-f09e6146984fb8dd1d16",
+      "title": "Performance of Clinical AI System and Physicians and Frontier Language Models in primary care diagnostics",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.09070v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-6ad781e3c5ae24af106f",
+      "title": "Deposon: An Auditable, Conservation-Guaranteed, Game-Theoretically Tested Scattering Layer over LLM Reasoning Paths",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.09001v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-bb45ef4502e2bf6354f7",
+      "title": "PlannerForge: LLM Agents for Scenario-Based Testing of Motion Planners in Autonomous Driving",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.08965v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-09a7fa56652ccfdc5b52",
+      "title": "CASD: Chunk-Aligned Semantic Distillation for Multi-StageRobot Manipulation",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.08638v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-65e0e1fa22ff96e7134e",
+      "title": "From Version Conflicts to Decision Conflicts: Selective Revalidation for Long-Running AI Agents",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.08015v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-32e8067cb74fbd36948d",
+      "title": "CausalVerify: An Execution-Grounded Benchmark for LLM Causal Inference Workflows",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.07944v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-0e77df710c15840159d8",
+      "title": "Noēsis: Deterministic-First Retrieval with Two-Tier Context Hydration for Factuality-Critical Queries on Small Local Models",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.07663v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-da56c60601253fca5ff3",
+      "title": "Human mutation field reveals an equilibrium-like structure with irreversible circulation",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.07500v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-5e6c41a25eefc1197133",
+      "title": "Risk Is Not Review Value: Wrong-Answer Exposure Under Bounded Review Budgets",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.07095v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-56d14f77d01d29837223",
+      "title": "Characterizing Contention-Induced Reliability Collapse in KV-Cache Timing Side Channels for Multi-Tenant LLM Serving",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.06853v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-3ba890c745c2c2f6b399",
+      "title": "XYBench: Can LLMs Respond Pragmatically to Queries with Misconceptions?",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.06842v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-1c675eb13beb8a243824",
+      "title": "Simulating the Marginal Green Contribution of AI Modules in a Smart-Agriculture Platform: Evidence from Two Monte Carlo Experiments",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.06740v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-b89c11e3a7374231645d",
+      "title": "When Does a Laugh Begin? Structured Annotator Disagreement in Temporal Laughter Localization",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.06646v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-caab9f8541ceb93e77d0",
+      "title": "SWE-Test: Benchmarking LLM Vulnerability Discovery via Input Prediction",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.06229v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-6c677a908a01602f4097",
+      "title": "SCIRIGOR:Evaluating Open-Ended Scientific Analysis Beyond Final Scores",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.06192v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-820c2620e2dbf4882cfe",
+      "title": "Flawed but Memorable: Student Critical Reception of Interest-Personalized GenAI Analogies in Computing Education",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.06095v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-0e9e45cf5a2855346bc6",
+      "title": "Reading a Legal Question Word by Word: Embedding Trajectories of 2,144 Vietnamese Legal Headlines",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.08372v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-48eb74406333338aca7f",
+      "title": "Marginal Fidelity Does Not Establish User Simulation in Demographic Synthetic Survey Panels: Response Contracts, Support Collapse and Conditioning Failure",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.07305v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-9fcb6ece6d90594e2c6c",
+      "title": "Line-Coupled Language Model",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.07129v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-858c97276cef80b98b25",
+      "title": "Comparing Self-Supervised and Domain-Invariant Features for Cross-Domain Voice Phishing Detection",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.07079v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-4bc2e8326a7e8cb365c0",
+      "title": "DianShi-RxnDB: A Large-Scale, Fine-Grained Organic Reaction Data Platform Built via a Fully Automated Pipeline for Researchers and AI Agents",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.06703v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-10a4fc304155d4e96f68",
+      "title": "DataFlex-RL: An Evaluation Platform for RLVR Data Policies",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.06107v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-1f2e5ab7782662f971f6",
+      "title": "DPH Parser: A Bottom-Up Grammar-Driven Parser for Joint Constituency and Dependency Analysis",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.06070v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-bd3cc62311a0658052ca",
+      "title": "Solving versus Verifying: Catching Contradictions in Tax Reasoning Systems",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.05928v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-326bf3f8bb0e805e30c3",
+      "title": "What if LLMs Ate Their Words: Causal History Effects in Multi-Turn Interaction",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.05882v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-54de5ab7c27121831be1",
+      "title": "Better Together: Complementary Query Rewriting Under a Strong RAG Baseline",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.05637v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-095535ae148025fa80fc",
+      "title": "WearableQA: A Benchmark for Health Reasoning over Real-World Wearable Data",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.05405v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-584afe7c6c211a4dfd37",
+      "title": "NS-ST-GraphRAG: Neuro-Symbolic Spatio-Temporal GraphRAG for Literary Knowledge Processing",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.05139v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-afe0a069e9874c5e35f7",
+      "title": "How do LLMs Evaluate Perceived Moral Agency? Investigating Moral Decision-Making in Human-Artificial Agents Interactions",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.05037v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-2059a3a0f0d3a1805593",
+      "title": "When Do Internal Probes Beat Reading the Answer? Miscalibrated Readouts and Behavior-Concealed Knowledge in Language Models",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.04582v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-becd9ad1975171f07be6",
+      "title": "A Calibrated Reflection Approach for Enhancing Confidence Estimation in LLMs",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.04539v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-0d2767822712b633e6d0",
+      "title": "Shared circuits predict whether LLMs generalize across formats in arithmetic reasoning",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.04463v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-a3e5ba214a98af79b03a",
+      "title": "ESPO: Error-Structured Prompt Optimization via Diagnose, Diversify, and Stabilize",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.04197v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-ca41ad6246e0df05b660",
+      "title": "Legibility is Not Interpretability: Comparing Judged and Actual Importance in Chain-Of-Thought Reasoning",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.04194v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-f16fb1d79df668e7cba1",
+      "title": "IchthyoNoma: Nomenclature and Context Sensitivity of Zero-Shot Biological Vision--Language Models for Bangladeshi Freshwater Fish Recognition",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.03985v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-057491a02451447df2a5",
+      "title": "VestigeKV: The NoPE-MLA KV Cache Carries Its Own Eviction Signal in a Vestigial Branch",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.03949v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-9392d71643372664a53e",
+      "title": "What Do CAE Simulation Agents Really Need Beyond a Generic Harness?",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.03718v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-6b0835b17105c087ae44",
+      "title": "How Far Can Synthetic Data Take Thai OCR?",
+      "source": "arxiv-cs-cl",
+      "url": "https://arxiv.org/abs/2609.03595v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-48b703e44d7819622a58",
+      "title": "The BatchNorm Illusion: Diagnosing Normalization Artifacts in Machine Unlearning Evaluation",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.08901v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-b89a4c624ccfcd78485f",
+      "title": "Automated Chest CT Protocol Selection via Large Language Model Derived Text Embeddings from Imaging Request Text",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.07986v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-5f156b922e77914d6c8a",
+      "title": "Statistical versus machine learning-based spatial interpolation of post-processed ensemble weather forecasts",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.07512v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-27036c1f3969fb7ddc5d",
+      "title": "A Systematic Analysis of Automatic Differentiation versus Discretization-based Constraints for Physics-Informed PDE Solvers",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.07437v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-6a26dff1bc44256b7c39",
+      "title": "Multi-label versus multi-class classification of blood cells and their aggregates in microfluidic channels",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.07410v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-4a55a53f23dfd8a0410b",
+      "title": "Sector-Mean: Deterministic Initialization of K-Means Centroids via Angular Sector Partitioning",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.06468v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-0a8d167c8dea5515ebb4",
+      "title": "Deep learning from the crowd Fundamentals of morphological galaxy classification",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.06316v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-f88dae7b36dbaa2d07f8",
+      "title": "Spatial Attention Supervision for Defect Localization: Exploiting Ground-Truth Masks as Training Signal in Diffusion-Augmented Defect Detection",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.06232v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-bd1bec396b598f65970c",
+      "title": "FANS: Federated Adaptive Network Search Learning for Heterogeneous Devices",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.06106v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-2e855c87e4d7bb0e125b",
+      "title": "Interpretable and Fair Generalized Additive Neural Networks via Multi-objective Learning",
+      "source": "arxiv-cs-lg",
+      "url": "https://arxiv.org/abs/2609.05946v1",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-048aa76fa30eaedcfb78",
+      "title": "On the Navier–Stokes Millennium Prize Problem",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/8/on-navier-stokes/",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-0e0a28d0130f277a123c",
+      "title": "Claude Fable 5.1 made me a really nice animated pelican",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/1/claude-fable-5-1/",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-4bd66ccd76835faa80fa",
+      "title": "Alpha-Park/genpark-maximal-marginal-relevance-mmr-reranker-skill: GenPark AI Agent Skill - Maximal Marginal Relevance (MMR) diversity-aware vector reranker balancing query relevance vs intra-result redundancy.",
+      "source": "github-rag",
+      "url": "https://github.com/Alpha-Park/genpark-maximal-marginal-relevance-mmr-reranker-skill",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-165cd1c23726193d8b18",
+      "title": "Skills vs MCP vs RAG vs Memory: What AI Agents Need to Know",
+      "source": "yt-llm",
+      "url": "https://www.youtube.com/watch?v=X4FVEEegCbk",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-56efab169b081de82a8f",
+      "title": "We NEED a harness benchmark leaderboard : r/AI_Agents",
+      "source": "anysearch-agent-bench",
+      "url": "https://www.reddit.com/r/AI_Agents/comments/1ujj9ng/we_need_a_harness_benchmark_leaderboard/",
+      "gate": "persona",
+      "ruleId": "persona:reject:conceptComparison",
+      "reason": "命中 deepthought 淘汰红线 conceptComparison"
+    },
+    {
+      "itemId": "u-7ba25a3d582d9ac967d8",
+      "title": "The Audit Decides the Verdict: Instrument Effects Rival Demographic Bias in LLM Decision Audits",
+      "source": "arxiv-cs-ai",
+      "url": "https://arxiv.org/abs/2609.09048v1",
+      "gate": "blacklist",
+      "ruleId": "ad:recruit",
+      "reason": "命中负向模式 ad:recruit（adRecruit）"
+    },
+    {
+      "itemId": "u-1bfd7f6e1b29d8f30cc2",
+      "title": "llm 0.35",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/7/llm/",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 8 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-d7b11e7817581777769d",
+      "title": "GPT‑6 Astra",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/3/gpt6-astra/",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 11 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-3ee1ab8540785b1745a4",
+      "title": "llm 0.34",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/2/llm/",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 8 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-e1479f66767c7234cad9",
+      "title": "llm-anthropic 0.28",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/2/llm-anthropic/",
+      "gate": "blacklist",
+      "ruleId": "damaged:scrapeFragment",
+      "reason": "命中负向模式 damaged:scrapeFragment（damaged）"
+    },
+    {
+      "itemId": "u-43c216d63c8bd92a013d",
+      "title": "llm-gemini 0.34",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/2/llm-gemini/",
+      "gate": "blacklist",
+      "ruleId": "damaged:scrapeFragment",
+      "reason": "命中负向模式 damaged:scrapeFragment（damaged）"
+    },
+    {
+      "itemId": "u-1a5adf2188977d1fd9fe",
+      "title": "datasette-mcp 0.2",
+      "source": "simonwillison",
+      "url": "https://simonwillison.net/2026/Sep/1/datasette-mcp/",
+      "gate": "blacklist",
+      "ruleId": "damaged:scrapeFragment",
+      "reason": "命中负向模式 damaged:scrapeFragment（damaged）"
+    },
+    {
+      "itemId": "(batch)",
+      "title": "493 条宽通道候选超池上限",
+      "source": "(multiple)",
+      "url": "",
+      "gate": "recall",
+      "ruleId": "recall:poolOverflow",
+      "reason": "待定池上限 20，按积分降序截断 493 条"
+    }
+  ],
+  "rejected": [],
+  "rejectCounts": {},
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 0,
+  "eventCount": 20,
+  "eventDemoted": 328,
+  "eventFillMode": false,
+  "skippedSources": [],
+  "zeroYieldSources": [
+    "huggingface-blog",
+    "simonwillison",
+    "yt-llm",
+    "anysearch-agent-bench"
+  ],
+  "recall": {
+    "poolSize": 20,
+    "included": 20,
+    "excluded": 0,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 10,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 0,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 2,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 196433
+      }
+    ],
+    "llmCopyCount": 9
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.004690431519699813,
+  "perSourcePublished": {
+    "arxiv-cs-cl": 5,
+    "arxiv-cs-ai": 5
+  },
+  "langDistribution": {
+    "zh": 9,
+    "en": 1
+  }
+}

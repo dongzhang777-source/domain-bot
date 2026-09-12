@@ -1,0 +1,331 @@
+{
+  "persona": "newsline",
+  "personaDisplay": "AI时事快线",
+  "digestId": "newslinemtsss17e",
+  "generatedAt": 1788879687962,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 270
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 164
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 86
+    },
+    {
+      "stage": "afterGates",
+      "count": 42
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 42
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 20
+    },
+    {
+      "stage": "published",
+      "count": 10
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-1451192dde0495a06772",
+      "title": "Jellyfin 12.0",
+      "source": "hn-frontpage",
+      "url": "https://jellyfin.org/posts/jellyfin-release-12.0/",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 13 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-195575a8d44cdab82d24",
+      "title": "HarmonyOS 7 goes public with agentic AI, stronger fraud protection and a storage trick that frees up to 109GB - GSMSpecs | GSMSpecs.com",
+      "source": "exa-ondevice-ai",
+      "url": "https://www.gsmspecs.com/news/harmonyos-7-public-beta-features",
+      "gate": "blacklist",
+      "ruleId": "ad:recruit",
+      "reason": "命中负向模式 ad:recruit（adRecruit）"
+    },
+    {
+      "itemId": "u-1af3a9bfba40bb0a07dc",
+      "title": "shutter-bashir/BASHIR-2.0: AI-powered multi-agent system that automates your internship/attachment search. Discovers companies via Google Maps, extracts emails from websites, writes personalized applications using a local LLM (Ollama), creates Gmail drafts with your CV attached, tracks everything in Google Sheets, and auto-follows up. Built for university students.",
+      "source": "github-local-llm",
+      "url": "https://github.com/shutter-bashir/BASHIR-2.0",
+      "gate": "blacklist",
+      "ruleId": "ad:resume",
+      "reason": "命中负向模式 ad:resume（adRecruit）"
+    },
+    {
+      "itemId": "u-784179c195edef6dd3a9",
+      "title": "",
+      "source": "twitter-feed",
+      "url": "https://x.com/Trail_Cams/status/2097026988351352911",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 0 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-14af4e318c7c8417d794",
+      "title": "名古屋やばいよ",
+      "source": "twitter-feed",
+      "url": "https://x.com/miodesudesu/status/2097225065465303540",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 7 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-39dea92849273618b787",
+      "title": "Switzerland 🇨🇭",
+      "source": "twitter-feed",
+      "url": "https://x.com/Switzerland_aib/status/2096976788597448865",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 14 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-87bf329144ea1477e598",
+      "title": "お願い🙏これ以上は来ないで…",
+      "source": "twitter-feed",
+      "url": "https://x.com/KurumaniaGTR/status/2097219284170924459",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 14 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-b3434d47f604a45839bc",
+      "title": "That's illegal😁😂",
+      "source": "twitter-feed",
+      "url": "https://x.com/Logan_Lawrence3/status/2097024647195943356",
+      "gate": "recall",
+      "ruleId": "recall:ineligible",
+      "reason": "宽通道预筛不达标（积分 0<3：零关键词命中）"
+    },
+    {
+      "itemId": "u-693e58be5d53d9b2eb82",
+      "title": "Work harder❌ work smarter ✅",
+      "source": "twitter-feed",
+      "url": "https://x.com/moi_kazuba/status/2097176114011492607",
+      "gate": "recall",
+      "ruleId": "recall:ineligible",
+      "reason": "宽通道预筛不达标（积分 0<3：零关键词命中）"
+    },
+    {
+      "itemId": "u-4668f40a03acb69b7313",
+      "title": "Not For Your Amusement Park😬",
+      "source": "twitter-feed",
+      "url": "https://x.com/maniaUFO/status/2097186657455742985",
+      "gate": "recall",
+      "ruleId": "recall:ineligible",
+      "reason": "宽通道预筛不达标（积分 0<3：零关键词命中）"
+    },
+    {
+      "itemId": "(batch)",
+      "title": "22 条宽通道候选超池上限",
+      "source": "(multiple)",
+      "url": "",
+      "gate": "recall",
+      "ruleId": "recall:poolOverflow",
+      "reason": "待定池上限 20，按积分降序截断 22 条"
+    },
+    {
+      "itemId": "u-fd50cb96fd9882757c81",
+      "title": "🎬New video: How I designed my SaaS landing page using AI tools",
+      "source": "twitter-feed",
+      "url": "https://x.com/inkdrop_app/status/2097316759561015609",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Personal project showcase video; clickbait, not substantive AI news."
+    },
+    {
+      "itemId": "u-0859f97a65cc9810125e",
+      "title": "TALA Is Open-Source",
+      "source": "hn-frontpage",
+      "url": "https://d2lang.com/blog/tala-is-open-source/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Diagramming language open-sourcing; not AI/LLM related."
+    },
+    {
+      "itemId": "u-c4767ab95af72da73935",
+      "title": "agamrossen/VolAnti: Open-source acoustic drone detection. It hears the propellers, not the radio, so it works against fibre-optic FPV aircraft that emit no signal at all.",
+      "source": "github-finetuning",
+      "url": "https://github.com/agamrossen/VolAnti",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Acoustic drone detection via DSP; not AI/ML related."
+    },
+    {
+      "itemId": "u-388e95844ab4795ac948",
+      "title": "El día de hoy Microsoft hizo público un proyecto nuevo llamado tgrep que permite buscar en monorepos enormes sin tener q",
+      "source": "twitter-feed",
+      "url": "https://x.com/FaztTech/status/2097070678516068842",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Code search tool (trigram index); not AI/LLM related."
+    },
+    {
+      "itemId": "u-758ce278e938f33025c8",
+      "title": "🚀 New Jellyfin release: 12.0!",
+      "source": "twitter-feed",
+      "url": "https://x.com/jellyfin/status/2097141237832716783",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Media server release, not AI/LLM related"
+    },
+    {
+      "itemId": "u-8ac7ef403b228925b698",
+      "title": "We Must Return to the Office to Use AI in Person",
+      "source": "hn-frontpage",
+      "url": "https://www.mcsweeneys.net/articles/why-we-must-return-to-the-office-to-use-ai-in-person",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：McSweeney's satire, not genuine AI news"
+    },
+    {
+      "itemId": "u-0b1ba0dd184b20637203",
+      "title": "DaVinci Resolve 21.1",
+      "source": "hn-frontpage",
+      "url": "https://www.blackmagicdesign.com/media/release/20260908-03",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Video editing software release, not AI/LLM"
+    },
+    {
+      "itemId": "u-0c66f27aef2ddf1b2119",
+      "title": "Show HN: Copperhead – Hardware as Fast as Software",
+      "source": "hn-frontpage",
+      "url": "https://copperhead.sh/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Unclear AI relevance from title alone"
+    },
+    {
+      "itemId": "u-74a3be22ed6701ea01ce",
+      "title": "PISA 2025 Students' reading and mathematics performance declined across the OECD",
+      "source": "hn-frontpage",
+      "url": "https://www.oecd.org/en/about/news/press-releases/2026/09/pisa-2025-students-reading-and-mathematics-performance-declined-sharply-across-the-oecd.html",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Education statistics, not AI/LLM"
+    },
+    {
+      "itemId": "u-c04fad48814607d74967",
+      "title": "Why getting your hands dirty is good for you",
+      "source": "hn-frontpage",
+      "url": "https://www.bbc.com/future/article/20260904-how-getting-your-hands-dirty-boosts-your-health-within-weeks",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Health article, not AI/LLM"
+    },
+    {
+      "itemId": "u-369f26bb0404c22b5311",
+      "title": "Antiquated HTML Snippets and Artefacts",
+      "source": "hn-frontpage",
+      "url": "https://vale.rocks/posts/html-relics",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Web history topic, not AI/LLM"
+    },
+    {
+      "itemId": "u-e15bd53e375fc0019f3a",
+      "title": "Among European Companies That Use a CDN, Nearly 9 in 10 Use Cloudflare",
+      "source": "hn-frontpage",
+      "url": "https://ciphercue.com/blog/european-cdn-concentration-cloudflare-nine-in-ten",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：CDN infrastructure, not AI/LLM"
+    }
+  ],
+  "rejected": [
+    {
+      "itemId": "u-177f7414e41b1a4ea580",
+      "title": "New Models Today — AI & LLM Releases Last 24 Hours",
+      "url": "https://pricepertoken.com/news/model-releases",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 636 码点，低于 en 下限 900（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-b77b7b12e5a335e73fb6",
+      "title": "poisonxa16/pxa: The set-and-forget LLM engine for Pascal and Volta: PXQ codec + kernels, auto-tuned per card, measured against llama.cpp, ik_llama.cpp and 1Cat vLLM",
+      "url": "https://github.com/poisonxa16/pxa",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 243 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-f1dded41928340a1016f",
+      "title": "Noisyxl/brier: Anyone can predict the future. Almost nobody keeps the receipt. A hash-chained prediction ledger for LLMs — sealed before the answer exists, graded with proper scoring rules.",
+      "url": "https://github.com/Noisyxl/brier",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 220 码点，低于 en 下限 300",
+      "from": "selected"
+    }
+  ],
+  "rejectCounts": {
+    "gk:bodyBelowFloor": 1,
+    "gk:summaryBelowFloor": 2
+  },
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 0,
+  "eventCount": 19,
+  "eventDemoted": 21,
+  "eventFillMode": false,
+  "skippedSources": [],
+  "zeroYieldSources": [],
+  "recall": {
+    "poolSize": 20,
+    "included": 8,
+    "excluded": 12,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 10,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 0,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 2,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 302861
+      }
+    ],
+    "llmCopyCount": 6
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.037037037037037035,
+  "perSourcePublished": {
+    "exa-open-weights": 2,
+    "exa-benchmark-sota": 1,
+    "exa-llm-news": 3,
+    "hn-frontpage": 2,
+    "exa-ai-hardware": 2
+  },
+  "langDistribution": {
+    "zh": 6,
+    "en": 4
+  }
+}

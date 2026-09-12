@@ -1,0 +1,505 @@
+{
+  "persona": "newsline",
+  "personaDisplay": "AI时事快线",
+  "digestId": "newslinemtt9wr2q",
+  "generatedAt": 1788908461586,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 258
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 154
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 57
+    },
+    {
+      "stage": "afterGates",
+      "count": 23
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 23
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 20
+    },
+    {
+      "stage": "published",
+      "count": 1
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-52346d0708da30e3fe18",
+      "title": "v3.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-e426bb385fd6a5910632",
+      "title": "6.3.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.3.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-81d665f9e86a6f59e4b4",
+      "title": "v3.1.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.1.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-56852fbf1855a1cf7d72",
+      "title": "v1.17.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/langgenius/dify/releases/tag/1.17.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 7 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-15d60ee5d7d52829c5fc",
+      "title": "N/A",
+      "source": "exa-ai-industry",
+      "url": "https://podscan.fm/podcasts/ai-convo-cast/episodes/openai-open-sources-mrc-deepminds-alphaevolve-anthropics-claude-finance-agents",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 3 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-195575a8d44cdab82d24",
+      "title": "HarmonyOS 7 goes public with agentic AI, stronger fraud protection and a storage trick that frees up to 109GB - GSMSpecs | GSMSpecs.com",
+      "source": "exa-ondevice-ai",
+      "url": "https://www.gsmspecs.com/news/harmonyos-7-public-beta-features",
+      "gate": "blacklist",
+      "ruleId": "ad:recruit",
+      "reason": "命中负向模式 ad:recruit（adRecruit）"
+    },
+    {
+      "itemId": "u-1af3a9bfba40bb0a07dc",
+      "title": "shutter-bashir/BASHIR-2.0: AI-powered multi-agent system that automates your internship/attachment search. Discovers companies via Google Maps, extracts emails from websites, writes personalized applications using a local LLM (Ollama), creates Gmail drafts with your CV attached, tracks everything in Google Sheets, and auto-follows up. Built for university students.",
+      "source": "github-local-llm",
+      "url": "https://github.com/shutter-bashir/BASHIR-2.0",
+      "gate": "blacklist",
+      "ruleId": "ad:resume",
+      "reason": "命中负向模式 ad:resume（adRecruit）"
+    },
+    {
+      "itemId": "u-5515c731fa278f4a597c",
+      "title": "",
+      "source": "twitter-feed",
+      "url": "https://x.com/riya_mishra007/status/2097206925175976444",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 0 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-b8f7f5c61e9f258bf138",
+      "title": "最高すぎる朝散歩。",
+      "source": "twitter-feed",
+      "url": "https://x.com/ruiruicamovi/status/2097295953434906688",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 9 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-c8b02925479c96022ca9",
+      "title": "Legends",
+      "source": "twitter-feed",
+      "url": "https://x.com/autoass/status/2097157441947377884",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 7 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-d9c557106225f2aef776",
+      "title": "Con sus dos cojones morenos.",
+      "source": "twitter-feed",
+      "url": "https://x.com/canalhumor_/status/2097297319628550545",
+      "gate": "recall",
+      "ruleId": "recall:ineligible",
+      "reason": "宽通道预筛不达标（积分 0<3：零关键词命中）"
+    },
+    {
+      "itemId": "u-acfced650e611e938acd",
+      "title": "🦀 ⇄ 🦎 metamorphosis",
+      "source": "twitter-feed",
+      "url": "https://x.com/junior_rojas_d/status/2097210576405708808",
+      "gate": "recall",
+      "ruleId": "recall:ineligible",
+      "reason": "宽通道预筛不达标（积分 0<3：零关键词命中）"
+    },
+    {
+      "itemId": "(batch)",
+      "title": "7 条宽通道候选超池上限",
+      "source": "(multiple)",
+      "url": "",
+      "gate": "recall",
+      "ruleId": "recall:poolOverflow",
+      "reason": "待定池上限 20，按积分降序截断 7 条"
+    },
+    {
+      "itemId": "u-29a8f7ea046f6f002cd7",
+      "title": "I've joined @AnthropicAI!",
+      "source": "twitter-feed",
+      "url": "https://x.com/addyosmani/status/2097210828659564642",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Personal job announcement, not substantive news for readers"
+    },
+    {
+      "itemId": "u-758ce278e938f33025c8",
+      "title": "🚀 New Jellyfin release: 12.0!",
+      "source": "twitter-feed",
+      "url": "https://x.com/jellyfin/status/2097141237832716783",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Media server software release, unrelated to AI/LLM"
+    },
+    {
+      "itemId": "u-1399e31b335e956dc991",
+      "title": "beepoo304/M2: M² — Android live monitor and packet diagnostics for the MeshCore network",
+      "source": "github-finetuning",
+      "url": "https://github.com/beepoo304/M2",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Mesh networking tool, unrelated to AI/LLM"
+    },
+    {
+      "itemId": "u-37a1e56e6b039da270c9",
+      "title": "JohanScheepers/meshtastic-zero-cost-hops: A practical guide on Meshtastic v2.7.11+ Zero-Cost Hops, featuring real-world backbone routing examples across the KZN mesh network (Durban to Mooi River).",
+      "source": "github-finetuning",
+      "url": "https://github.com/JohanScheepers/meshtastic-zero-cost-hops",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Mesh networking guide, unrelated to AI/LLM"
+    },
+    {
+      "itemId": "u-9b2a0cfa47832a1b8cb5",
+      "title": "Huawei unveils Kirin 9050 Pro chip, debuts new Mate XT 2 tri-folding smartphone · TechNode",
+      "source": "exa-ondevice-ai",
+      "url": "https://technode.com/2026/09/08/huawei-unveils-kirin-9050-pro-chip-debuts-new-mate-xt-2-tri-folding-smartphone/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Smartphone chip launch, no AI/LLM focus in excerpt"
+    },
+    {
+      "itemId": "u-76c74695097000f97aec",
+      "title": "Some human stupidity over tech is unparalleled.",
+      "source": "twitter-feed",
+      "url": "https://x.com/brahma_4u/status/2097181972774945158",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Vague tech opinion, no AI/LLM content"
+    },
+    {
+      "itemId": "u-fb891203b547d4061900",
+      "title": "Things like this are going to be a big issue going forward with Tesla $TSLA robotaxis.",
+      "source": "twitter-feed",
+      "url": "https://x.com/JesseCohenInv/status/2097291290874380524",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Human behavior complaint about robotaxis, not AI tech"
+    },
+    {
+      "itemId": "u-85efcb9fbe6006928b49",
+      "title": "终于知道马斯克为什么一定要搞人形机器人。",
+      "source": "twitter-feed",
+      "url": "https://x.com/kugo_A10/status/2097186000279888357",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Meme/joke about robotaxi, no substantive AI content"
+    },
+    {
+      "itemId": "u-12913f346978f725a419",
+      "title": "Omarchy has bulit-in LocalSend, but its look doesn’t quite fit the system.",
+      "source": "twitter-feed",
+      "url": "https://x.com/huacnlee/status/2097283296850063733",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Linux distro file transfer tool, not AI"
+    },
+    {
+      "itemId": "u-7029eadc7e69566514c7",
+      "title": "🚨 UPDATE: All London airports are now closed for arriving flights till at least 11pm due to the air traffic control out",
+      "source": "twitter-feed",
+      "url": "https://x.com/PolitlcsUK/status/2097385763050504338",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Air traffic control outage, unrelated to AI"
+    },
+    {
+      "itemId": "u-1f3f4612de8c5dde4a02",
+      "title": "ok this is getting out of hand",
+      "source": "twitter-feed",
+      "url": "https://x.com/erikrjohansson/status/2096675181796217078",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：No content, no AI relevance"
+    },
+    {
+      "itemId": "u-9687957efd98795e7490",
+      "title": "im in china rn and i went to the grocery store to buy soap and the cashier grabbed it went \"no no no\", put it away and d",
+      "source": "twitter-feed",
+      "url": "https://x.com/buffyvibe/status/2097378069589954847",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Personal anecdote about grocery store, not AI"
+    },
+    {
+      "itemId": "u-d18b03785eccf683141e",
+      "title": "Just a keeper and his giant aquatic puppies demanding head pats while he cleans. 🐢💚",
+      "source": "twitter-feed",
+      "url": "https://x.com/oceaiii/status/2097118019118149892",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Animal content, unrelated to AI"
+    },
+    {
+      "itemId": "u-ae0ed297135eab79beb2",
+      "title": "Rubik's cube and graph theory.",
+      "source": "twitter-feed",
+      "url": "https://x.com/ViralScroll/status/2097302572138635305",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Math/puzzle topic, not AI/LLM"
+    },
+    {
+      "itemId": "u-4ca613c1214b14e7a6d6",
+      "title": "NEW: Bank of America Institute used customer data to deduce that households who participate in online betting have a ban",
+      "source": "twitter-feed",
+      "url": "https://x.com/esaagar/status/2097395757254943000",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Financial/betting data analysis, not AI-focused"
+    }
+  ],
+  "rejected": [
+    {
+      "itemId": "u-2771f2da0ad097d33a02",
+      "title": "BUILD AN AI AGENT THAT HELPS PEOPLE FOR OUR HACKATHON. THERE'S $40K IN CASH PRIZES AND EVERYONE GETS $50 IN AWS CREDITS ",
+      "url": "https://x.com/awsdevelopers/status/2097363078341878092",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 163 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-59c1bfe9bc4e01ea0ba4",
+      "title": "OpenBMB Releases MiniCPM5-2B: A 2.52B Dense Model Averaging 53.9 Across 34 Benchmarks and Built to Run On Device - MarkTechPost",
+      "url": "https://www.marktechpost.com/2026/09/07/openbmb-releases-minicpm5-2b-a-2-52b-dense-model-averaging-53-9-across-34-benchmarks-and-built-to-run-on-device/",
+      "ruleId": "gk:alreadyPublished",
+      "detail": "规范 URL 已在已发布指纹库中：https://marktechpost.com/2026/09/07/openbmb-releases-minicpm5-2b-a-2-52b-dense-model-averaging-53-9-across-34-benchmarks-and-built-to-run-on-device",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-401a974f16e881159ed1",
+      "title": "Is the AI chip dead? What Arm's new CPUs mean for your next Android phone",
+      "url": "https://www.androidauthority.com/arm-c2-ultra-explained-3706334/",
+      "ruleId": "gk:alreadyPublished",
+      "detail": "规范 URL 已在已发布指纹库中：https://androidauthority.com/arm-c2-ultra-explained-3706334",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-00a1beef6ce53c58a1e8",
+      "title": "DeepMind’s new genome ‘atlas’ charts effects of all 9 billion human gene mutations | Nature",
+      "url": "https://www.nature.com/articles/d41586-026-02835-4",
+      "ruleId": "gk:alreadyPublished",
+      "detail": "规范 URL 已在已发布指纹库中：https://nature.com/articles/d41586-026-02835-4",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-191a0a2c2c54d78b4016",
+      "title": "deepagents==0.7.9",
+      "url": "https://github.com/langchain-ai/deepagents/releases/tag/deepagents%3D%3D0.7.9",
+      "ruleId": "gk:alreadyPublished",
+      "detail": "规范 URL 已在已发布指纹库中：https://github.com/langchain-ai/deepagents/releases/tag/deepagents%3D%3D0.7.9",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-cb0147efa39ead9c0a43",
+      "title": "OpenAI Files First EU AI Act Incident Report as Chief Scientist Admits Monitoring Gap",
+      "url": "https://www.techtimes.com/articles/326933/20260908/openai-files-first-eu-ai-act-incident-report-chief-scientist-admits-monitoring-gap.htm",
+      "ruleId": "gk:alreadyPublished",
+      "detail": "规范 URL 已在已发布指纹库中：https://techtimes.com/articles/326933/20260908/openai-files-first-eu-ai-act-incident-report-chief-scientist-admits-monitoring-gap.htm",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-3c99a4571c8da078fc9e",
+      "title": "Today we're excited to announce Mercury 2.5",
+      "url": "https://x.com/StefanoErmon/status/2097363229681099062",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 212 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-ca04e134feb5c2324780",
+      "title": "Arm releases CSS for Mobile 2: C2-Ultra CPU and Mali G2-Ultra NX debut, with 1.7x AI performance boost and 38% lower power consumption. - King of Computer Media",
+      "url": "https://en.kocpc.com.tw/archives/25270",
+      "ruleId": "gk:alreadyPublished",
+      "detail": "规范 URL 已在已发布指纹库中：https://en.kocpc.com.tw/archives/25270",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-19ea2b7ec0a30dd6ebba",
+      "title": "Meta bets on AI agent Muse to catch up in AI race | The Verge",
+      "url": "https://www.theverge.com/ai-artificial-intelligence/991216/meta-bets-on-ai-agent-muse-to-catch-up-in-ai-race",
+      "ruleId": "gk:alreadyPublished",
+      "detail": "规范 URL 已在已发布指纹库中：https://theverge.com/ai-artificial-intelligence/991216/meta-bets-on-ai-agent-muse-to-catch-up-in-ai-race",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-bb0f7d861dca28f968b2",
+      "title": "AMD Unveils Threadripper Halo Station, a Six-Figure Desktop Built to Run Trillion-Parameter AI Models — Unbiased Headlines",
+      "url": "https://unbiasedheadlines.com/article/amd-unveils-threadripper-halo-station-a-six-figure-desktop-built-to-run-trillion-parameter-ai-models",
+      "ruleId": "gk:alreadyPublished",
+      "detail": "规范 URL 已在已发布指纹库中：https://unbiasedheadlines.com/article/amd-unveils-threadripper-halo-station-a-six-figure-desktop-built-to-run-trillion-parameter-ai-models",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-cfde25b01186f6665ce2",
+      "title": "Meta debuts its Muse AI agent. Will consumers trust it? | TechCrunch",
+      "url": "https://techcrunch.com/2026/09/08/meta-debuts-its-muse-ai-agent-will-consumers-trust-it/",
+      "ruleId": "gk:alreadyPublished",
+      "detail": "规范 URL 已在已发布指纹库中：https://techcrunch.com/2026/09/08/meta-debuts-its-muse-ai-agent-will-consumers-trust-it",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-34a344a6ae5449d9c07d",
+      "title": "muhammeteminayhan/vla-fine-tuning: How much does it cost to teach a robot a new part? Measuring the demonstration-count vs. success-rate curve for SmolVLA on LIBERO, on a single 8GB consumer GPU.",
+      "url": "https://github.com/muhammeteminayhan/vla-fine-tuning",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 285 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-67a5b3defc9213200fe1",
+      "title": "Meta launches AI agent that can access other apps to send emails, make payments | Reuters",
+      "url": "https://www.reuters.com/business/meta-launches-ai-agent-that-can-access-other-apps-send-emails-make-payments-2026-09-08/",
+      "ruleId": "gk:alreadyPublished",
+      "detail": "规范 URL 已在已发布指纹库中：https://reuters.com/business/meta-launches-ai-agent-that-can-access-other-apps-send-emails-make-payments-2026-09-08",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-859aea9bf0e4debc9743",
+      "title": "OpenAI Ships GPT-6 Astra With AGI Claims and New Safety Promises After Hugging Face Breach | The Beat | The Beat",
+      "url": "https://thebeat.tech/articles/openai-ships-gpt-6-astra-with-agi-claims-and-new-safety-promises-after-hugging-face-breach",
+      "ruleId": "gk:alreadyPublished",
+      "detail": "规范 URL 已在已发布指纹库中：https://thebeat.tech/articles/openai-ships-gpt-6-astra-with-agi-claims-and-new-safety-promises-after-hugging-face-breach",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-322ab661de71fa8f3782",
+      "title": "Our CI team's on-call first responder is Claude Tag.",
+      "url": "https://x.com/ClaudeDevs/status/2097437571634639035",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 252 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-e3a77d4939f1c70f5781",
+      "title": "Lo siento pero si Addy y Karpathy van a Anthropic yo voy con Anthropic a muerte.",
+      "url": "https://x.com/Rafael_Casuso/status/2097226046458204368",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 80 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-f951e9195d1190c5dcff",
+      "title": "Used Fable 5.1 to turn my Kindle into a Linux terminal so I could work without blue light at night",
+      "url": "https://x.com/ryanlpeterman/status/2097406401068896283",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 98 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-1242c5fb985c8a056fc3",
+      "title": "Mistral Raises €3B Series D to Expand Sovereign AI – Unite.AI",
+      "url": "https://www.unite.ai/mistral-raises-e3b-series-d-to-expand-sovereign-ai/",
+      "ruleId": "gk:alreadyPublished",
+      "detail": "规范 URL 已在已发布指纹库中：https://unite.ai/mistral-raises-e3b-series-d-to-expand-sovereign-ai",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-2e09b0ec91faefcb8442",
+      "title": "OpenBMB Releases MiniCPM5-2B: A 2.52B Dense Model Averaging 53.9 Across 34 Benchmarks and Built to Run On Device - juicytalk.now",
+      "url": "https://juicytalk.now/openbmb-releases-minicpm5-2b-a-2-52b-dense-model-averaging-53-9-across-34-benchmarks-and-built-to-run-on-device/",
+      "ruleId": "gk:alreadyPublished",
+      "detail": "规范 URL 已在已发布指纹库中：https://juicytalk.now/openbmb-releases-minicpm5-2b-a-2-52b-dense-model-averaging-53-9-across-34-benchmarks-and-built-to-run-on-device",
+      "from": "selected"
+    }
+  ],
+  "rejectCounts": {
+    "gk:summaryBelowFloor": 6,
+    "gk:alreadyPublished": 13
+  },
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 0,
+  "eventCount": 16,
+  "eventDemoted": 4,
+  "eventFillMode": false,
+  "skippedSources": [
+    "hn-frontpage",
+    "hn-search-llm",
+    "hn-search-ai"
+  ],
+  "zeroYieldSources": [
+    "github-local-llm"
+  ],
+  "recall": {
+    "poolSize": 20,
+    "included": 5,
+    "excluded": 15,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 1,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 0,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 2,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 302861
+      }
+    ],
+    "llmCopyCount": 1
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.003875968992248062,
+  "perSourcePublished": {
+    "github-finetuning": 1
+  },
+  "langDistribution": {
+    "zh": 1
+  }
+}

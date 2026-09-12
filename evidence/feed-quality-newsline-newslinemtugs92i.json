@@ -1,0 +1,282 @@
+{
+  "persona": "newsline",
+  "personaDisplay": "AI时事快线",
+  "digestId": "newslinemtugs92i",
+  "generatedAt": 1788980475114,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 282
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 146
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 91
+    },
+    {
+      "stage": "afterGates",
+      "count": 65
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 65
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 20
+    },
+    {
+      "stage": "published",
+      "count": 10
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-52346d0708da30e3fe18",
+      "title": "v3.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-81d665f9e86a6f59e4b4",
+      "title": "v3.1.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.1.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-e426bb385fd6a5910632",
+      "title": "6.3.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.3.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-7eebfa572638476abeaf",
+      "title": "6.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-dc215635065aec8cf7e8",
+      "title": "",
+      "source": "twitter-feed",
+      "url": "https://x.com/akshay_pachaar/status/2097698181480153563",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 0 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-63363eb5e5c1a301f998",
+      "title": "",
+      "source": "twitter-feed",
+      "url": "https://x.com/PunchingCat/status/2097404708969402760",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 0 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-86e9fdfe9d3f6a24eb30",
+      "title": "Ai Race Situation:",
+      "source": "twitter-feed",
+      "url": "https://x.com/Ezitou/status/2097438964680667514",
+      "gate": "recall",
+      "ruleId": "recall:ineligible",
+      "reason": "宽通道预筛不达标（积分 0<3：仅命中 ai(generic+0)）"
+    },
+    {
+      "itemId": "(batch)",
+      "title": "7 条宽通道候选超池上限",
+      "source": "(multiple)",
+      "url": "",
+      "gate": "recall",
+      "ruleId": "recall:poolOverflow",
+      "reason": "待定池上限 20，按积分降序截断 7 条"
+    },
+    {
+      "itemId": "u-d134434e72dc72e0580d",
+      "title": "Dryxio/gta-scout: Create GTA-style 3D models and scenes with your AI and Blender, using models and textures from your game. Early alpha.",
+      "source": "github-mcp-tools",
+      "url": "https://github.com/Dryxio/gta-scout",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Niche gaming/Blender tool, minimal AI/LLM relevance"
+    },
+    {
+      "itemId": "u-1399e31b335e956dc991",
+      "title": "beepoo304/M2: M² — Android live monitor and packet diagnostics for the MeshCore network",
+      "source": "github-finetuning",
+      "url": "https://github.com/beepoo304/M2",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Mesh networking tool, unrelated to AI/LLM"
+    },
+    {
+      "itemId": "u-43bb846ceb47419fd5e0",
+      "title": "How many holes are in shirt? ",
+      "source": "twitter-feed",
+      "url": "https://x.com/Zara_588/status/2097607620433776671",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Clickbait engagement bait, not AI related"
+    },
+    {
+      "itemId": "u-590d7c49dae398cdba0b",
+      "title": "🤯 THIS IS THE CRAZIEST ANIMATION EVER",
+      "source": "twitter-feed",
+      "url": "https://x.com/TheAppleDesign/status/2097749193955881368",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Clickbait animation post, not AI related"
+    },
+    {
+      "itemId": "u-28b75cd6c28ee7594c40",
+      "title": "Holy shit this progressive blur effect when opening/closing the Duo is absolutely gorgeous",
+      "source": "twitter-feed",
+      "url": "https://x.com/bnj/status/2097747074066567279",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：UI blur effect discussion, not AI related"
+    },
+    {
+      "itemId": "u-453b82bc14bb1514259f",
+      "title": "This guy keeps locking the only door to an 'escape room' business. The paper was clues to the combination of the lock he",
+      "source": "twitter-feed",
+      "url": "https://x.com/FightStorage/status/2097512565731426470",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Escape room anecdote, unrelated to AI/LLM"
+    },
+    {
+      "itemId": "u-5d6eaf7555148a33ac1c",
+      "title": "Siempre dije que había que bloquearle el acceso a Internet a los Smart-TVs, mejor aún ni conectarlos a la red. Tenía raz",
+      "source": "twitter-feed",
+      "url": "https://x.com/ui_pro/status/2097471290990809563",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Smart TV privacy issue, not AI/LLM-adjacent"
+    },
+    {
+      "itemId": "u-3ee26d1079aa9d5e7ad2",
+      "title": "the ultimate productivity setup",
+      "source": "twitter-feed",
+      "url": "https://x.com/iamdavidhill/status/2097753140921544861",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Vague clickbait title, no substantive content"
+    },
+    {
+      "itemId": "u-1253cd08574aedd6b8c4",
+      "title": "JUST IN: New Apple $AAPL iPhone prices: ",
+      "source": "twitter-feed",
+      "url": "https://x.com/WatcherGuru/status/2097752289775620251",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Consumer electronics pricing, not AI/LLM"
+    },
+    {
+      "itemId": "u-8171c485b2d8ec607ad1",
+      "title": "Based on the entirety of this photograph, what is your best estimation of the year it was taken ??",
+      "source": "twitter-feed",
+      "url": "https://x.com/Sofia50020Sofia/status/2097691495180668944",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Thin AI prompt with no substantive content"
+    },
+    {
+      "itemId": "u-1ff2ddf6105d18c6af97",
+      "title": "Might be a dumb question but why is the nfl starting on Wednesday this year?",
+      "source": "twitter-feed",
+      "url": "https://x.com/khalenNOTkaylen/status/2097713789286121714",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Sports scheduling question, unrelated to AI"
+    },
+    {
+      "itemId": "u-ea605ee6453e76cae167",
+      "title": "Researchers spent 500 hours and $70,000 and found LG TVs logging plain text transcripts in standby, mapping every device",
+      "source": "twitter-feed",
+      "url": "https://x.com/MarioNawfal/status/2097490173953012033",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Smart TV privacy/surveillance, not AI/LLM-specific"
+    }
+  ],
+  "rejected": [],
+  "rejectCounts": {},
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 0,
+  "eventCount": 34,
+  "eventDemoted": 21,
+  "eventFillMode": false,
+  "skippedSources": [
+    "hn-frontpage",
+    "hn-search-llm",
+    "hn-search-ai"
+  ],
+  "zeroYieldSources": [
+    "exa-agent-releases"
+  ],
+  "recall": {
+    "poolSize": 20,
+    "included": 8,
+    "excluded": 12,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 10,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 0,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 2,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 181704
+      }
+    ],
+    "llmCopyCount": 7
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.03546099290780142,
+  "perSourcePublished": {
+    "exa-llm-news": 4,
+    "exa-open-weights": 1,
+    "exa-ondevice-ai": 3,
+    "exa-model-launches": 1,
+    "exa-ai-industry": 1
+  },
+  "langDistribution": {
+    "zh": 7,
+    "en": 3
+  }
+}

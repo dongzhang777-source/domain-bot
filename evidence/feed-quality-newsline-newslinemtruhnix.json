@@ -1,0 +1,397 @@
+{
+  "persona": "newsline",
+  "personaDisplay": "AI时事快线",
+  "digestId": "newslinemtruhnix",
+  "generatedAt": 1788822096729,
+  "funnel": [
+    {
+      "stage": "collected",
+      "count": 287
+    },
+    {
+      "stage": "afterSourcePrescreen",
+      "count": 157
+    },
+    {
+      "stage": "afterDedupe",
+      "count": 46
+    },
+    {
+      "stage": "afterGates",
+      "count": 10
+    },
+    {
+      "stage": "afterEventCap",
+      "count": 10
+    },
+    {
+      "stage": "afterTruncate",
+      "count": 10
+    },
+    {
+      "stage": "published",
+      "count": 4
+    }
+  ],
+  "dropped": [
+    {
+      "itemId": "u-52346d0708da30e3fe18",
+      "title": "v3.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-81d665f9e86a6f59e4b4",
+      "title": "v3.1.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/deepset-ai/haystack/releases/tag/v3.1.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 6 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-e426bb385fd6a5910632",
+      "title": "6.3.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.3.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-56852fbf1855a1cf7d72",
+      "title": "v1.17.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/langgenius/dify/releases/tag/1.17.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 7 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-7eebfa572638476abeaf",
+      "title": "6.0.0",
+      "source": "exa-agent-releases",
+      "url": "https://github.com/labsai/EDDI/releases/tag/6.0.0",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 5 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-1af3a9bfba40bb0a07dc",
+      "title": "shutter-bashir/BASHIR-2.0: AI-powered multi-agent system that automates your internship/attachment search. Discovers companies via Google Maps, extracts emails from websites, writes personalized applications using a local LLM (Ollama), creates Gmail drafts with your CV attached, tracks everything in Google Sheets, and auto-follows up. Built for university students.",
+      "source": "github-local-llm",
+      "url": "https://github.com/shutter-bashir/BASHIR-2.0",
+      "gate": "blacklist",
+      "ruleId": "ad:resume",
+      "reason": "命中负向模式 ad:resume（adRecruit）"
+    },
+    {
+      "itemId": "u-634555d002f677e9c0bb",
+      "title": "",
+      "source": "twitter-feed",
+      "url": "https://x.com/rubenhassid/status/2096841587313787149",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 0 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-6953caa06384a787140f",
+      "title": "Babashka",
+      "source": "twitter-feed",
+      "url": "https://x.com/magnus_sedlacek/status/2096855788329279810",
+      "gate": "blacklist",
+      "ruleId": "damaged:titleTooShort",
+      "reason": "标题仅 8 码点，短于门槛 15，判为无意义碎条"
+    },
+    {
+      "itemId": "u-35e059d668172f1cba98",
+      "title": "Current Ai Race Situation:",
+      "source": "twitter-feed",
+      "url": "https://x.com/Sam8002642/status/2096875247916224742",
+      "gate": "recall",
+      "ruleId": "recall:ineligible",
+      "reason": "宽通道预筛不达标（积分 0<3：仅命中 ai(generic+0)）"
+    },
+    {
+      "itemId": "(batch)",
+      "title": "10 条宽通道候选超池上限",
+      "source": "(multiple)",
+      "url": "",
+      "gate": "recall",
+      "ruleId": "recall:poolOverflow",
+      "reason": "待定池上限 20，按积分降序截断 10 条"
+    },
+    {
+      "itemId": "u-20178df353fc6c622e8a",
+      "title": "别再到处找 API ，这个开源仓库收集了全球免费 API ",
+      "source": "twitter-feed",
+      "url": "https://x.com/axichuhai/status/2096855625636389336",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：General free API collection, not AI/LLM related"
+    },
+    {
+      "itemId": "u-f9705e7b00fad60beb6c",
+      "title": "Huawei launches high-performance Kirin 9050 Pro chip, boosting flagship mobile phone performance by 42% with integrated approach: company - Global Times",
+      "source": "exa-ondevice-ai",
+      "url": "https://www.globaltimes.cn/page/202609/1370015.shtml",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Mobile phone chip announcement, not AI compute focused"
+    },
+    {
+      "itemId": "u-557a948b0c220fddcfa0",
+      "title": "Huawei Mate XT 2: Tri-fold with Privacy Screen, Kirin 9050 Pro",
+      "source": "exa-ondevice-ai",
+      "url": "https://soyacincau.com/2026/09/07/huawei-mate-xt-2-tri-fold-smartphone-launch-price-specs/",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Smartphone launch, not AI-specific"
+    },
+    {
+      "itemId": "u-93bd7ea32f59668e4004",
+      "title": "it’s been years and i still don’t understand the architecture of this situation",
+      "source": "twitter-feed",
+      "url": "https://x.com/andrewgrutt/status/2096946606998167852",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Meme/joke, no AI content"
+    },
+    {
+      "itemId": "u-1399e31b335e956dc991",
+      "title": "beepoo304/M2: M² — Android live monitor and packet diagnostics for the MeshCore network",
+      "source": "github-finetuning",
+      "url": "https://github.com/beepoo304/M2",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Mesh networking tool; LoRa is radio tech, not ML"
+    },
+    {
+      "itemId": "u-37a1e56e6b039da270c9",
+      "title": "JohanScheepers/meshtastic-zero-cost-hops: A practical guide on Meshtastic v2.7.11+ Zero-Cost Hops, featuring real-world backbone routing examples across the KZN mesh network (Durban to Mooi River).",
+      "source": "github-finetuning",
+      "url": "https://github.com/JohanScheepers/meshtastic-zero-cost-hops",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Mesh networking guide; LoRa is radio, not ML"
+    },
+    {
+      "itemId": "u-a0b1c66b88879b8f7838",
+      "title": "Omarchy on M1 and M2 (and soon more!) in about five minutes!! Still more to polish, but this is an excellent start towar",
+      "source": "twitter-feed",
+      "url": "https://x.com/dhh/status/2096969329975673168",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Linux on Apple Silicon, not AI-related"
+    },
+    {
+      "itemId": "u-8c8766666642e76f463b",
+      "title": "Only those who notice the logic will find the correct answer.",
+      "source": "twitter-feed",
+      "url": "https://x.com/farman4x/status/2096885359602741650",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Number puzzle, not AI-related"
+    },
+    {
+      "itemId": "u-23c34d83711781be8f7e",
+      "title": "Somewhere, somebody said, “Let’s go for a peaceful little swim.”",
+      "source": "twitter-feed",
+      "url": "https://x.com/earthing5000/status/2096769912190464286",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Summer swimming post, no AI relevance"
+    },
+    {
+      "itemId": "u-52100db5228d81b6f60f",
+      "title": "A wonderful unforgettable moment for her.  He’s a gentleman",
+      "source": "twitter-feed",
+      "url": "https://x.com/WolfofX/status/2096791620591157578",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Generic social moment, no AI relevance"
+    },
+    {
+      "itemId": "u-556c7631949828c6dac8",
+      "title": "My dumb ass was wondering how they threw the boxes that high up",
+      "source": "twitter-feed",
+      "url": "https://x.com/JostKachi/status/2096743907124019276",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Unrelated video comment, no AI relevance"
+    },
+    {
+      "itemId": "u-bedd3c62324363d48d39",
+      "title": "Bu adamı bulun ve lütfen ona zam yapın.",
+      "source": "twitter-feed",
+      "url": "https://x.com/Coldlovee0/status/2096883001888014508",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Turkish text about a raise, no AI relevance"
+    },
+    {
+      "itemId": "u-7d7784cda39551c71f19",
+      "title": "I think I can officially say: we are so back",
+      "source": "twitter-feed",
+      "url": "https://x.com/thsottiaux/status/2097088586843816330",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Vague statement, no AI relevance"
+    },
+    {
+      "itemId": "u-e5e77d302b0142272aba",
+      "title": "The smartest people I know have strong opinions weakly held and change them when new information arises",
+      "source": "twitter-feed",
+      "url": "https://x.com/levelsio/status/2096907554748014767",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：General philosophy, no AI relevance"
+    },
+    {
+      "itemId": "u-b4a2b9d68b48a29f83de",
+      "title": "I turned Omarchy into macOS. ",
+      "source": "twitter-feed",
+      "url": "https://x.com/anshvar1502/status/2096839383924269217",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Linux desktop customization, not AI/LLM"
+    },
+    {
+      "itemId": "u-d35396191ad3937a64fe",
+      "title": "5 seconds of her life saved her 😳",
+      "source": "twitter-feed",
+      "url": "https://x.com/RealJudeOdeke/status/2096770736329195963",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Viral video comment, no AI relevance"
+    },
+    {
+      "itemId": "u-dfefbafa7d3b7311af20",
+      "title": "Backflip…..Wow!",
+      "source": "twitter-feed",
+      "url": "https://x.com/ProfSK5/status/2096829055522013341",
+      "gate": "recall",
+      "ruleId": "recall:excluded",
+      "reason": "LLM 判定不召回：Backflip video comment, no AI relevance"
+    }
+  ],
+  "rejected": [
+    {
+      "itemId": "u-045aed7889a97cd2c5b1",
+      "title": "ishandutta2007/OmniTune: Fine-Tuning of 100+ LLMs",
+      "url": "https://github.com/ishandutta2007/OmniTune",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 71 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-b5b9f50d8d0cc2c4e254",
+      "title": "Delinor-Hens/Vortex: ИИ под названием Vortex для любых задач. Сейчас уже доступна рабочая версия проекта, которая ежедневно улучшается",
+      "url": "https://github.com/Delinor-Hens/Vortex",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 237 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-10addaf6810c3ac0c592",
+      "title": "Andrej Karpathy spent 8 years working at OpenAI and Tesla",
+      "url": "https://x.com/0xjmori/status/2096966918867399092",
+      "ruleId": "gk:bodyBelowFloor",
+      "detail": "L3 正文仅 369 码点，低于 en 下限 900（断头料不发）",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-d7337886256c62d2a3c7",
+      "title": "IDK why anyone has a problem with having strong opinions, weakly held.",
+      "url": "https://x.com/GergelyOrosz/status/2096845854992712030",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 272 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-4844b76ecb8737844a5e",
+      "title": "yifanchen12/MangaColorAI: 参考图引导的本地漫画上色与风格训练 · Local reference-guided comic colorization and style training",
+      "url": "https://github.com/yifanchen12/MangaColorAI",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 176 码点，低于 en 下限 300",
+      "from": "selected"
+    },
+    {
+      "itemId": "u-24b6b2c9a9a742945641",
+      "title": "What's a feature in Claude Code you wish you'd discovered sooner? Curious what we should surface better",
+      "url": "https://x.com/lydiahallie/status/2097061523550322858",
+      "ruleId": "gk:summaryBelowFloor",
+      "detail": "summary 仅 103 码点，低于 en 下限 300",
+      "from": "selected"
+    }
+  ],
+  "rejectCounts": {
+    "gk:summaryBelowFloor": 5,
+    "gk:bodyBelowFloor": 1
+  },
+  "backfilled": 0,
+  "poolExhausted": true,
+  "eventTrimmed": 0,
+  "eventCount": 8,
+  "eventDemoted": 1,
+  "eventFillMode": false,
+  "skippedSources": [
+    "hn-frontpage",
+    "hn-search-llm",
+    "hn-search-ai"
+  ],
+  "zeroYieldSources": [
+    "exa-agent-releases",
+    "exa-ondevice-ai",
+    "github-local-llm"
+  ],
+  "recall": {
+    "poolSize": 20,
+    "included": 3,
+    "excluded": 17,
+    "note": "宽通道=DB-08 关键词漏网召回：待定池经 reviewer 二元判定，include 并入候选走同一终审链；排除/漏答计入 dropped(gate=recall)。candidates/relevant 口径含捞回条目，observations 的 recall* 字段单独存档。"
+  },
+  "publishedFingerprintCount": 4,
+  "compileErrors": [],
+  "editorial": {
+    "enabled": true,
+    "active": true,
+    "writerDegradedBatches": 0,
+    "reviewerDegradedBatches": 0,
+    "truncatedBatches": 0,
+    "calibrationPassed": true,
+    "calibrationProblems": [],
+    "endpoints": [
+      {
+        "role": "reviewer",
+        "endpointId": "qwen38-tb",
+        "calls": 1,
+        "failures": 0,
+        "reasoningTokens": 0,
+        "elapsedMs": 86761
+      }
+    ],
+    "llmCopyCount": 2
+  },
+  "schema": "domain-bot-quality-board-v1",
+  "selfEvolutionActive": true,
+  "selfEvolutionNote": "已有行为信号入账，interest.ts 的 Beta 后验与 weights.ts 的源权重学习已接通（由 src/ingest/tuna-signals.ts 喂入）。",
+  "signalCounts": {
+    "views": 5,
+    "engagements": 4,
+    "feedback": 5
+  },
+  "qualityYieldRatio": 0.013937282229965157,
+  "perSourcePublished": {
+    "exa-llm-news": 1,
+    "exa-ai-industry": 1,
+    "exa-model-launches": 2
+  },
+  "langDistribution": {
+    "zh": 2,
+    "en": 2
+  }
+}
